@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isSameDay } from 'date-fns';
 import { FC } from 'react';
 import { FiRefreshCcw } from 'react-icons/fi';
 import { SiGooglemeet, SiYoutube, SiZoom } from 'react-icons/si';
@@ -13,10 +13,25 @@ export const Meetings: FC<{ data: CalendarEvent[] }> = ({ data }) => {
     return (
         <div className="flex gap-3">
             <div className="flex flex-col">
-                {data?.map((event) => (
-                    // @ts-ignore
-                    <MeetingPreview key={event.uid + event.start?.toString()} event={event} />
-                ))}
+                {data?.map((event, idx) => {
+                    const prevEvent = idx > 0 ? data[idx - 1] : undefined;
+                    const currentDate = event.start ? parseISO(event.start) : undefined;
+                    const prevDate = prevEvent?.start ? parseISO(prevEvent.start) : undefined;
+                    const showDateSeparator =
+                        prevDate && currentDate && !isSameDay(prevDate, currentDate);
+                    const key = `${event?.uid ?? idx}_${event?.start ?? ''}`;
+                    return (
+                        <>
+                            {showDateSeparator && (
+                                <div className="text-center my-2 text-xs font-semibold text-primary/80">
+                                    {currentDate ? format(currentDate, 'EEEE, MMMM d, yyyy') : ''}
+                                </div>
+                            )}
+                            {/* @ts-ignore */}
+                            <MeetingPreview key={key} event={event} />
+                        </>
+                    );
+                })}
             </div>
         </div>
     );
