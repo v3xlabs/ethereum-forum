@@ -1,7 +1,10 @@
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
+
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { formatDistance } from 'date-fns';
-import { FiGithub, FiYoutube } from 'react-icons/fi';
+import { FiGithub } from 'react-icons/fi';
 import { SiDiscourse } from 'react-icons/si';
+import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 import sanitizeHtml from 'sanitize-html';
 
 import { getPM, PMMeetingData, usePM } from '@/api/pm';
@@ -26,7 +29,7 @@ type OneOffMeeting = components['schemas']['PMOneOffMeeting'];
 type Occurrence = components['schemas']['PMOccurrence'];
 
 function extractAgendaHtml(html: string) {
-    const agendaHeaderMatch = html.match(/<h1>.*?>.*?Agenda.*?<\/h1>/i);
+    const agendaHeaderMatch = html.match(/<h([1-6])>.*?>.*?Agenda.*?<\/h\1>/i);
 
     if (!agendaHeaderMatch) return '';
 
@@ -59,7 +62,7 @@ function RouteComponent() {
                     },
                     transformTags: {
                         ul: sanitizeHtml.simpleTransform('ul', {
-                            class: 'line-disc',
+                            class: 'line-square',
                         }),
                     },
                 }),
@@ -98,23 +101,6 @@ function RouteComponent() {
                         Thread
                     </Link>
                 )}
-                {occurence?.youtube_streams && occurence.youtube_streams.length > 0 && (
-                    <ul>
-                        {occurence.youtube_streams.map((stream) => (
-                            <li key={stream.stream_url}>
-                                <a
-                                    href={stream.stream_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="button flex w-fit items-center gap-2"
-                                >
-                                    <FiYoutube />
-                                    {new URL(stream.stream_url).searchParams.get('v')}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                )}
                 <a
                     href={`https://github.com/ethereum/pm/issues/${occurence?.issue_number}`}
                     className="button flex w-fit items-center gap-2"
@@ -122,6 +108,19 @@ function RouteComponent() {
                     <FiGithub /> Issue
                 </a>
             </div>
+
+            {'youtube_streams' in occurence && (occurence?.youtube_streams?.length || 0) > 0 && (
+                <ul>
+                    {occurence.youtube_streams?.map((stream) => (
+                        <li key={stream.stream_url}>
+                            <LiteYouTubeEmbed
+                                id={parseYoutubeUrl(stream.stream_url)}
+                                title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
+                            />
+                        </li>
+                    ))}
+                </ul>
+            )}
 
             <p>
                 This {'occurrence_rate' in pm ? pm.occurrence_rate : ''}
@@ -137,7 +136,7 @@ function RouteComponent() {
 
             <style
                 dangerouslySetInnerHTML={{
-                    __html: '.line-disc {list-style: square}',
+                    __html: '.line-square {list-style: square}',
                 }}
             />
         </div>
