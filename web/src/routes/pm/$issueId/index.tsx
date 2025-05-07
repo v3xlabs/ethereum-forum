@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { FiExternalLink, FiYoutube } from 'react-icons/fi';
+import { formatDistance } from 'date-fns';
+import { FiGithub, FiYoutube } from 'react-icons/fi';
+import { SiDiscourse } from 'react-icons/si';
+import sanitizeHtml from 'sanitize-html';
 
 import { getPM, PMMeetingData, usePM } from '@/api/pm';
 import { components } from '@/api/schema.gen';
+import { usePosts } from '@/api/topics';
 import { queryClient } from '@/util/query';
 
 export const Route = createFileRoute('/pm/$issueId/')({
@@ -21,33 +25,80 @@ export const Route = createFileRoute('/pm/$issueId/')({
 type OneOffMeeting = components['schemas']['PMOneOffMeeting'];
 type Occurrence = components['schemas']['PMOccurrence'];
 
+function extractAgendaHtml(html: string) {
+    const agendaHeaderMatch = html.match(/<h1>.*?>.*?Agenda.*?<\/h1>/i);
+
+    if (!agendaHeaderMatch) return '';
+
+    const [agendaHeader] = agendaHeaderMatch;
+    const agendaHeaderIndex = html.indexOf(agendaHeader);
+
+    const ulStart = html.indexOf('<ul>', agendaHeaderIndex);
+    const ulEnd = html.indexOf('</ul>', ulStart);
+
+    if (ulStart === -1 || ulEnd === -1) return '';
+
+    const agendaList = html.slice(ulStart, ulEnd + 5); // </ul> is exactly 5 chars
+
+    return agendaList;
+}
+
 function RouteComponent() {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
+    const { data: post } = usePosts(occurence.discourse_topic_id || '', 1);
 
-    const content = (
-        <div className="card whitespace-pre-wrap">{JSON.stringify(occurence, null, 2)}</div>
+    const agenda = (
+        <div
+            dangerouslySetInnerHTML={{
+                __html: sanitizeHtml(extractAgendaHtml(post?.posts[0].cooked || ''), {
+                    allowedTags: ['ul', 'li'],
+                    allowedAttributes: {
+                        ul: ['class'],
+                    },
+                    transformTags: {
+                        ul: sanitizeHtml.simpleTransform('ul', {
+                            class: 'line-disc',
+                        }),
+                    },
+                }),
+            }}
+        />
     );
+
+    const inPast = new Date(occurence?.start_time as string) < new Date();
+
+    if (!pm) {
+        return (
+            <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-4">
+                This PM event could not be found
+            </div>
+        );
+    }
 
     return (
         <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-4">
-            <h1 className="">
-                pm/<b>{issueId}</b>
-            </h1>
-            {occurence?.discourse_topic_id && (
-                <Link
-                    to="/t/$topicId"
-                    params={{ topicId: occurence.discourse_topic_id }}
-                    className="button flex w-fit items-center gap-2"
-                >
-                    Thread
-                    <FiExternalLink />
-                </Link>
-            )}
-            {occurence?.youtube_streams && occurence.youtube_streams.length > 0 && (
-                <div className="card">
-                    <h2>Youtube Streams</h2>
+            <div>
+                <h2 className="">
+                    pm/<b>{issueId}</b>
+                </h2>
+                <h1 className="text-2xl font-bold">
+                    {occurence?.issue_title || occurence?.issue_number}
+                </h1>
+            </div>
+            <div className="flex flex-row gap-2">
+                {occurence?.discourse_topic_id && (
+                    <Link
+                        to="/t/$topicId"
+                        params={{ topicId: occurence.discourse_topic_id }}
+                        className="button flex w-fit items-center gap-2"
+                    >
+                        <SiDiscourse />
+                        Thread
+                    </Link>
+                )}
+                {occurence?.youtube_streams && occurence.youtube_streams.length > 0 && (
                     <ul>
                         {occurence.youtube_streams.map((stream) => (
                             <li key={stream.stream_url}>
@@ -55,35 +106,45 @@ function RouteComponent() {
                                     href={stream.stream_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="flex items-center gap-2 button"
+                                    className="button flex w-fit items-center gap-2"
                                 >
                                     <FiYoutube />
-                                    {stream.stream_url}
+                                    {new URL(stream.stream_url).searchParams.get('v')}
                                 </a>
-                                <iframe
-                                    src={convertYoutubeUrlToEmbedUrl(stream.stream_url)}
-                                    width="100%"
-                                    height="100%"
-                                    className="w-full h-full aspect-video"
-                                ></iframe>
                             </li>
                         ))}
                     </ul>
-                </div>
-            )}
-            {content}
+                )}
+                <a
+                    href={`https://github.com/ethereum/pm/issues/${occurence?.issue_number}`}
+                    className="button flex w-fit items-center gap-2"
+                >
+                    <FiGithub /> Issue
+                </a>
+            </div>
+
+            <p>
+                This {'occurrence_rate' in pm ? pm.occurrence_rate : ''}
+                {'is_recurring' in pm && pm.is_recurring ? ' recurring ' : ''} event start
+                {inPast ? 'ed' : 's'}{' '}
+                {formatDistance(occurence?.start_time as string, new Date(), {
+                    addSuffix: true,
+                })}
+            </p>
+
+            <h2 className="text-xl">Agenda</h2>
+            {agenda}
+
+            <style
+                dangerouslySetInnerHTML={{
+                    __html: '.line-disc {list-style: square}',
+                }}
+            />
         </div>
     );
 }
 
-export const getOccurence = (
-    pm: PMMeetingData,
-    issueId: number
-): OneOffMeeting | Occurrence | null => {
-    if (!pm) {
-        return null;
-    }
-
+export const getOccurence = (pm: PMMeetingData, issueId: number): OneOffMeeting | Occurrence => {
     if ('occurrences' in pm) {
         // @ts-ignore
         return pm.occurrences?.find((occurrence) => occurrence.issue_number === issueId) as
@@ -91,11 +152,7 @@ export const getOccurence = (
             | undefined;
     }
 
-    if ('issue_number' in pm && pm.issue_number === issueId) {
-        return pm;
-    }
-
-    return null;
+    return pm;
 };
 
 const parseYoutubeUrl = (url: string) => {
