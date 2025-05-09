@@ -52,17 +52,61 @@ function RouteComponent() {
     const occurence = getOccurence(pm as any, Number(issueId));
     const { data: post } = usePosts(occurence.discourse_topic_id || '', 1);
 
+    // Parse post content to extract more youtube links
+    post?.posts.forEach((post) => {
+        // Example: "<p>YouTube recording available: <a href="https://youtu.be/dotZwMwz_8Q">https://youtu.be/dotZwMwz_8Q</a></p>"
+        // Allow youtu.be, youtube.com, and www.youtube.com links
+        const youtubeLinks = post.cooked.match(
+            /<a href="(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+?<\/a>/g
+        );
+
+        if (youtubeLinks) {
+            youtubeLinks.forEach((link) => {
+                const url = link.match(/href="([^"]+)"/)?.[1];
+
+                // Insert into occurence.youtube_streams if it doesn't exist
+                if (
+                    url &&
+                    typeof occurence === 'object' &&
+                    occurence !== null &&
+                    'youtube_streams' in occurence
+                ) {
+                    const videoId = parseYoutubeUrl(url);
+
+                    if (videoId) {
+                        occurence.youtube_streams = occurence.youtube_streams || [];
+
+                        if (
+                            !occurence.youtube_streams.find(
+                                (stream: any) => stream.stream_url === url
+                            )
+                        ) {
+                            // @ts-expect-error: dynamic property check above
+                            occurence.youtube_streams.push({
+                                stream_url: url,
+                            });
+                        }
+                    }
+                }
+            });
+        }
+    });
+
     const agenda = (
         <div
             dangerouslySetInnerHTML={{
                 __html: sanitizeHtml(extractAgendaHtml(post?.posts[0].cooked || ''), {
-                    allowedTags: ['ul', 'li'],
+                    allowedTags: ['ul', 'li', 'a'],
                     allowedAttributes: {
-                        ul: ['class'],
+                        ul: ['style'],
+                        a: ['href', 'style'],
                     },
                     transformTags: {
                         ul: sanitizeHtml.simpleTransform('ul', {
-                            class: 'line-square',
+                            style: 'list-style-type: square',
+                        }),
+                        a: sanitizeHtml.simpleTransform('a', {
+                            style: 'color: #1e90ff',
                         }),
                     },
                 }),
@@ -113,10 +157,12 @@ function RouteComponent() {
                 <ul>
                     {occurence.youtube_streams?.map((stream) => (
                         <li key={stream.stream_url}>
-                            <LiteYouTubeEmbed
-                                id={parseYoutubeUrl(stream.stream_url)}
-                                title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
-                            />
+                            <div className="rounded-lg overflow-hidden max-w-md w-full my-4">
+                                <LiteYouTubeEmbed
+                                    id={parseYoutubeUrl(stream.stream_url || '') || ''}
+                                    title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
+                                />
+                            </div>
                         </li>
                     ))}
                 </ul>
@@ -133,12 +179,6 @@ function RouteComponent() {
 
             <h2 className="text-xl">Agenda</h2>
             {agenda}
-
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: '.line-square {list-style: square}',
-                }}
-            />
         </div>
     );
 }
@@ -168,12 +208,6 @@ const parseYoutubeUrl = (url: string) => {
     }
 
     return null;
-};
-
-const convertYoutubeUrlToEmbedUrl = (url: string) => {
-    const videoId = parseYoutubeUrl(url);
-
-    return `https://www.youtube.com/embed/${videoId}`;
 };
 
 // https://i3.ytimg.com/vi/YvlLhvICtbc/maxresdefault.jpg
