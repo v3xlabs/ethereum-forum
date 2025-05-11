@@ -41,7 +41,7 @@ function extractAgendaHtml(html: string) {
 
     if (ulStart === -1 || ulEnd === -1) return '';
 
-    const agendaList = html.slice(ulStart, ulEnd + 5); // </ul> is exactly 5 chars
+    const agendaList = html.slice(ulStart, ulEnd + '</ul>'.length);
 
     return agendaList;
 }
@@ -52,10 +52,7 @@ function RouteComponent() {
     const occurence = getOccurence(pm as any, Number(issueId));
     const { data: post } = usePosts(occurence.discourse_topic_id || '', 1);
 
-    // Parse post content to extract more youtube links
     post?.posts.forEach((post) => {
-        // Example: "<p>YouTube recording available: <a href="https://youtu.be/dotZwMwz_8Q">https://youtu.be/dotZwMwz_8Q</a></p>"
-        // Allow youtu.be, youtube.com, and www.youtube.com links
         const youtubeLinks = post.cooked.match(
             /<a href="(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+?<\/a>/g
         );
@@ -64,7 +61,6 @@ function RouteComponent() {
             youtubeLinks.forEach((link) => {
                 const url = link.match(/href="([^"]+)"/)?.[1];
 
-                // Insert into occurence.youtube_streams if it doesn't exist
                 if (
                     url &&
                     typeof occurence === 'object' &&
