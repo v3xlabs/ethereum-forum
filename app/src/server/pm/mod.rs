@@ -1,14 +1,10 @@
-use futures::{StreamExt, stream};
 use poem::{Result, web::Data};
 use poem_openapi::param::Path;
 use poem_openapi::{Object, OpenApi, payload::Json};
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use crate::models::ical::CalendarEvent;
-use crate::models::ical::rich::RichCalendarEvent;
-use crate::models::pm::{PMData, PMMeetingData};
+use crate::models::pm::PMMeetingData;
 use crate::server::ApiTags;
 use crate::state::AppState;
 
