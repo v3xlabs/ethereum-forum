@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, TimeZone, Utc};
 use icalendar::{CalendarDateTime, Component, DatePerhapsTime, Event};
 use meetings::{try_parse_meeting, Meeting};
 use poem_openapi::{Enum, Object};
@@ -93,16 +93,16 @@ impl CalendarEvent {
 fn date_perhaps_time_to_datetime(date_perhaps_time: DatePerhapsTime) -> Option<DateTime<Utc>> {
     match date_perhaps_time {
         DatePerhapsTime::DateTime(calendar_dt) => match calendar_dt {
-            CalendarDateTime::Floating(naive_dt) => Some(DateTime::<Utc>::from_utc(naive_dt, Utc)),
+            CalendarDateTime::Floating(naive_dt) => Some(Utc.from_utc_datetime(&naive_dt)),
             CalendarDateTime::Utc(dt) => Some(dt.into()),
             CalendarDateTime::WithTimezone {
                 date_time: naive_dt,
                 tzid: _,
-            } => Some(DateTime::<Utc>::from_utc(naive_dt, Utc)),
+            } => Some(Utc.from_utc_datetime(&naive_dt)),
         },
         DatePerhapsTime::Date(naive_date) => {
-            let naive_dt = naive_date.and_hms(0, 0, 0);
-            Some(DateTime::<Utc>::from_utc(naive_dt, Utc))
+            let naive_dt = naive_date.and_hms_opt(0, 0, 0)?;
+            Some(Utc.from_utc_datetime(&naive_dt))
         }
     }
 }
