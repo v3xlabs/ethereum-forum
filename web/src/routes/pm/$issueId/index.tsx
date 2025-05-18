@@ -1,15 +1,16 @@
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
 
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { formatDistance } from 'date-fns';
 import { FiGithub } from 'react-icons/fi';
 import { SiDiscourse } from 'react-icons/si';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
-import sanitizeHtml from 'sanitize-html';
 
 import { getPM, PMMeetingData, usePM } from '@/api/pm';
 import { components } from '@/api/schema.gen';
 import { useGithubIssueComments, usePosts } from '@/api/topics';
+import { GithubPost } from '@/components/github/GithubPost';
+import { TopicPost } from '@/components/topic/TopicPost';
+import { GithubIssueComment } from '@/types/github';
 import { queryClient } from '@/util/query';
 
 export const Route = createFileRoute('/pm/$issueId/')({
@@ -28,75 +29,7 @@ export const Route = createFileRoute('/pm/$issueId/')({
 type OneOffMeeting = components['schemas']['PMOneOffMeeting'];
 type Occurrence = components['schemas']['PMOccurrence'];
 
-function extractAgendaHtml(html: string) {
-    const agendaHeaderMatch = html.match(/<h([1-6])>.*?>.*?Agenda.*?<\/h\1>/i);
-
-    if (!agendaHeaderMatch) return '';
-
-    const [agendaHeader] = agendaHeaderMatch;
-    const agendaHeaderIndex = html.indexOf(agendaHeader);
-
-    const ulStart = html.indexOf('<ul>', agendaHeaderIndex);
-    const ulEnd = html.indexOf('</ul>', ulStart);
-
-    if (ulStart === -1 || ulEnd === -1) return '';
-
-    const agendaList = html.slice(ulStart, ulEnd + '</ul>'.length);
-
-    return agendaList;
-}
-import type { Post } from '@/api/topics';
-import { TopicPost } from '@/components/topic/TopicPost';
-import { GithubPost } from '@/components/github/GithubPost';
-import { GithubIssueComment } from '@/types/github';
-interface PostsResponse {
-    posts: Post[];
-    has_more: boolean;
-}
-
-function Conversation({
-    posts,
-}: {
-    posts: (
-        | {
-              type: 'github';
-              post: GithubIssueComment;
-          }
-        | {
-              type: 'discourse';
-              post: {
-                  post_id: number;
-                  topic_id: number;
-                  user_id: number;
-                  post_number: number;
-                  updated_at?: string;
-                  created_at?: string;
-                  cooked?: string;
-                  post_url?: string;
-                  extra?: unknown;
-              };
-          }
-    )[];
-}) {
-    if (!posts) {
-        return <div>Loading...</div>;
-    }
-
-    return (
-        <div className="flex flex-col gap-4">
-            {posts.map((post) => (
-                <>
-                    {post.type === 'discourse' && <TopicPost post={post.post} />}
-                    {post.type === 'github' && post.post.user.login !== 'github-actions[bot]' && (
-                        <GithubPost post={post.post} />
-                    )}
-                </>
-            ))}
-        </div>
-    );
-}
-
-function RouteComponent() {
+const RouteComponent = () => {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
@@ -211,10 +144,24 @@ function RouteComponent() {
                 {'is_recurring' in pm && pm.is_recurring ? ' recurring ' : ''}
             </p>
 
-            <Conversation posts={posts} />
+            {posts.map((post) => {
+                switch (post.type) {
+                    case 'github':
+                        return (
+                            post.post.user.login !== 'github-actions[bot]' && (
+                                <GithubPost
+                                    key={post.post.id}
+                                    post={post.post as GithubIssueComment}
+                                />
+                            )
+                        );
+                    case 'discourse':
+                        return <TopicPost key={post.post.post_id} post={post.post} />;
+                }
+            })}
         </div>
     );
-}
+};
 
 export const getOccurence = (pm: PMMeetingData, issueId: number): OneOffMeeting | Occurrence => {
     if ('occurrences' in pm) {
