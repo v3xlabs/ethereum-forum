@@ -27,30 +27,19 @@ import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/
 import { formatBigNumber } from '@/util/numbers';
 import { queryClient } from '@/util/query';
 
-interface DiscourseUser {
+type DiscourseUser = {
     id: number;
     // stylistic
     name: string;
     // real
     username: string;
     avatar_template: string;
-}
+};
 
-interface TopicDetails {
+type TopicDetails = {
     links?: Partial<RelevantLink>[];
     created_by?: DiscourseUser;
-}
-
-export const Route = createFileRoute('/t/$topicId/')({
-    component: RouteComponent,
-    beforeLoad: async ({ params }) => {
-        const topic = await queryClient.ensureQueryData(getTopic(params.topicId));
-
-        return {
-            title: topic?.title,
-        };
-    },
-});
+};
 
 type RelevantLink = {
     url: string;
@@ -63,7 +52,7 @@ type RelevantLink = {
     root_domain: string;
 };
 
-function normalizeRelevantLink(link: Partial<RelevantLink>): RelevantLink {
+const normalizeRelevantLink = (link: Partial<RelevantLink>): RelevantLink => {
     return {
         ...link,
         domain: link.domain ?? '',
@@ -75,9 +64,9 @@ function normalizeRelevantLink(link: Partial<RelevantLink>): RelevantLink {
         reflection: link.reflection ?? false,
         clicks: link.clicks ?? 0,
     };
-}
+};
 
-function RouteComponent() {
+const RouteComponent = () => {
     const { topicId } = Route.useParams();
     const { data: topic } = useTopic(topicId);
 
@@ -262,8 +251,18 @@ function RouteComponent() {
             </div>
         </>
     );
-}
+};
 
+export const Route = createFileRoute('/t/$topicId/')({
+    component: RouteComponent,
+    beforeLoad: async ({ params }) => {
+        const topic = await queryClient.ensureQueryData(getTopic(params.topicId));
+
+        return {
+            title: topic?.title,
+        };
+    },
+});
 const RelevantLink = ({ link }: { link: RelevantLink }) => {
     let icon = undefined;
     const url = link.url.toLowerCase();
