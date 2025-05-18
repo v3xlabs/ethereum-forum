@@ -8,6 +8,7 @@ import {
 
 import { useApi } from './api';
 import { components } from './schema.gen';
+import { GithubIssueComment } from '@/types/github';
 
 // Get the Post type from schema
 export type Post = components['schemas']['Post'];
@@ -101,6 +102,19 @@ export const getPostsInfinite = (topicId: string) =>
             });
 
             return response.data;
+        },
+    });
+
+export const useGithubIssueComments = (issueId: number) =>
+    useQuery({
+        queryKey: ['githubIssues', 'ethereum/pm', issueId, 'comments'],
+        queryFn: async () => {
+            const response = await fetch(
+                `https://api.github.com/repos/ethereum/pm/issues/${issueId}/comments`
+            );
+            const data = (await response.json()) as GithubIssueComment[];
+
+            return data;
         },
     });
 

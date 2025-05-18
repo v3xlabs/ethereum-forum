@@ -9,7 +9,7 @@ import sanitizeHtml from 'sanitize-html';
 
 import { getPM, PMMeetingData, usePM } from '@/api/pm';
 import { components } from '@/api/schema.gen';
-import { usePosts } from '@/api/topics';
+import { useGithubIssueComments, usePosts } from '@/api/topics';
 import { queryClient } from '@/util/query';
 
 export const Route = createFileRoute('/pm/$issueId/')({
@@ -45,28 +45,94 @@ function extractAgendaHtml(html: string) {
 
     return agendaList;
 }
+import type { Post } from '@/api/topics';
+import { TopicPost } from '@/components/topic/TopicPost';
+import { GithubPost } from '@/components/github/GithubPost';
+import { GithubIssueComment } from '@/types/github';
+interface PostsResponse {
+    posts: Post[];
+    has_more: boolean;
+}
+
+function Conversation({
+    posts,
+}: {
+    posts: (
+        | {
+              type: 'github';
+              post: GithubIssueComment;
+          }
+        | {
+              type: 'discourse';
+              post: {
+                  post_id: number;
+                  topic_id: number;
+                  user_id: number;
+                  post_number: number;
+                  updated_at?: string;
+                  created_at?: string;
+                  cooked?: string;
+                  post_url?: string;
+                  extra?: unknown;
+              };
+          }
+    )[];
+}) {
+    if (!posts) {
+        return <div>Loading...</div>;
+    }
+
+    return (
+        <div className="flex flex-col gap-4">
+            {posts.map((post) => (
+                <>
+                    {post.type === 'discourse' && <TopicPost post={post.post} />}
+                    {post.type === 'github' && post.post.user.login !== 'github-actions[bot]' && (
+                        <GithubPost post={post.post} />
+                    )}
+                </>
+            ))}
+        </div>
+    );
+}
 
 function RouteComponent() {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
-    const { data: post } = usePosts(occurence.discourse_topic_id || '', 1);
+    const { data: discoursePosts } = usePosts(occurence.discourse_topic_id || '', 1);
+    const { data: githubPosts } = useGithubIssueComments(parseInt(issueId) || 0);
 
-    post?.posts.forEach((post) => {
-        const youtubeLinks = post.cooked.match(
-            /<a href="(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+?<\/a>/g
-        );
+    const posts = [
+        ...(githubPosts || []).map((post) => ({
+            type: 'github' as const,
+            post,
+        })),
+        ...(discoursePosts?.posts || []).map((post) => ({
+            type: 'discourse' as const,
+            post,
+        })),
+    ];
+
+    posts.forEach((post) => {
+        const youtubeLinks =
+            post.type === 'discourse'
+                ? post.post.cooked?.match(
+                      /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
+                  )
+                : post.post.body?.match(
+                      /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
+                  );
 
         if (youtubeLinks) {
-            youtubeLinks.forEach((link) => {
-                const url = link.match(/href="([^"]+)"/)?.[1];
-
+            youtubeLinks.forEach((url) => {
                 if (
                     url &&
                     typeof occurence === 'object' &&
                     occurence !== null &&
                     'youtube_streams' in occurence
                 ) {
+                    console.log('Found youtube link:', url);
                     const videoId = parseYoutubeUrl(url);
 
                     if (videoId) {
@@ -87,30 +153,6 @@ function RouteComponent() {
             });
         }
     });
-
-    const agenda = (
-        <div
-            dangerouslySetInnerHTML={{
-                __html: sanitizeHtml(extractAgendaHtml(post?.posts[0].cooked || ''), {
-                    allowedTags: ['ul', 'li', 'a'],
-                    allowedAttributes: {
-                        ul: ['style'],
-                        a: ['href', 'style'],
-                    },
-                    transformTags: {
-                        ul: sanitizeHtml.simpleTransform('ul', {
-                            style: 'list-style-type: square',
-                        }),
-                        a: sanitizeHtml.simpleTransform('a', {
-                            style: 'color: #1e90ff',
-                        }),
-                    },
-                }),
-            }}
-        />
-    );
-
-    const inPast = new Date(occurence?.start_time as string) < new Date();
 
     if (!pm) {
         return (
@@ -165,16 +207,11 @@ function RouteComponent() {
             )}
 
             <p>
-                This {'occurrence_rate' in pm ? pm.occurrence_rate : ''}
-                {'is_recurring' in pm && pm.is_recurring ? ' recurring ' : ''} event start
-                {inPast ? 'ed' : 's'}{' '}
-                {formatDistance(occurence?.start_time as string, new Date(), {
-                    addSuffix: true,
-                })}
+                {'occurrence_rate' in pm ? pm.occurrence_rate : ''}
+                {'is_recurring' in pm && pm.is_recurring ? ' recurring ' : ''}
             </p>
 
-            <h2 className="text-xl">Agenda</h2>
-            {agenda}
+            <Conversation posts={posts} />
         </div>
     );
 }
