@@ -1,4 +1,4 @@
-export interface GithubIssueComment {
+export type GithubIssueComment = {
     url: string;
     html_url: string;
     issue_url: string;
@@ -11,9 +11,9 @@ export interface GithubIssueComment {
     body: string;
     reactions: Reactions;
     performed_via_github_app: never;
-}
+};
 
-export interface User {
+export type User = {
     login: string;
     id: number;
     node_id: string;
@@ -33,9 +33,9 @@ export interface User {
     type: string;
     user_view_type: string;
     site_admin: boolean;
-}
+};
 
-export interface Reactions {
+export type Reactions = {
     url: string;
     total_count: number;
     '+1': number;
@@ -46,4 +46,4 @@ export interface Reactions {
     heart: number;
     rocket: number;
     eyes: number;
-}
+};
