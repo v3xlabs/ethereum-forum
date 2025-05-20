@@ -30,7 +30,7 @@ impl PMApi {
             .pm
             .get_by_issue_id(issue_id.0)
             .await
-            .unwrap();
+            .or(Err(poem::Error::from_status(StatusCode::NOT_FOUND)))?;
 
         info!("PM data: {:?}", pm);
         Ok(Json(pm))

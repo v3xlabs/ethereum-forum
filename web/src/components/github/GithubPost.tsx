@@ -1,9 +1,10 @@
 import { parseISO } from 'date-fns';
 import { FC } from 'react';
-import { FiGithub, FiLink } from 'react-icons/fi';
-
+import { FiGithub } from 'react-icons/fi';
 import Markdown from 'react-markdown';
+
 import { GithubIssueComment } from '@/types/github';
+
 import { TimeAgo } from '../TimeAgo';
 
 export const GithubPost: FC<{ post: GithubIssueComment }> = ({ post }) => {
@@ -36,7 +37,9 @@ export const GithubPost: FC<{ post: GithubIssueComment }> = ({ post }) => {
                     {post.updated_at ? <TimeAgo date={parseISO(post.updated_at)} /> : ''}
                 </div>
             </div>
-            <Markdown>{post.body}</Markdown>
+            <div className="prose">
+                <Markdown>{post.body}</Markdown>
+            </div>
             <div className="flex items-center gap-2 justify-end">
                 <div className="text-sm text-gray-500 flex items-center gap-1">
                     <div className="flex items-center gap-1">

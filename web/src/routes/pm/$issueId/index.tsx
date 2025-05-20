@@ -2,7 +2,7 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css';
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { FiGithub } from 'react-icons/fi';
-import { SiDiscourse } from 'react-icons/si';
+import { SiEthereum } from 'react-icons/si';
 import LiteYouTubeEmbed from 'react-lite-youtube-embed';
 
 import { getPM, PMMeetingData, usePM } from '@/api/pm';
@@ -12,6 +12,10 @@ import { GithubPost } from '@/components/github/GithubPost';
 import { TopicPost } from '@/components/topic/TopicPost';
 import { GithubIssueComment } from '@/types/github';
 import { queryClient } from '@/util/query';
+
+function capitalizeFirst(str: string) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
 export const Route = createFileRoute('/pm/$issueId/')({
     component: RouteComponent,
@@ -33,7 +37,7 @@ const RouteComponent = () => {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
-    const { data: discoursePosts } = usePosts(occurence.discourse_topic_id || '', 1);
+    const { data: discoursePosts } = usePosts(occurence?.discourse_topic_id || '', 1);
     const { data: githubPosts } = useGithubIssueComments(parseInt(issueId) || 0);
 
     const posts = [
@@ -112,7 +116,7 @@ const RouteComponent = () => {
                         params={{ topicId: occurence.discourse_topic_id }}
                         className="button flex w-fit items-center gap-2"
                     >
-                        <SiDiscourse />
+                        <SiEthereum />
                         Thread
                     </Link>
                 )}
@@ -122,27 +126,27 @@ const RouteComponent = () => {
                 >
                     <FiGithub /> Issue
                 </a>
+                {'occurrence_rate' in pm && (
+                    <div className="button">{capitalizeFirst(pm.occurrence_rate || '')}</div>
+                )}
             </div>
 
-            {'youtube_streams' in occurence && (occurence?.youtube_streams?.length || 0) > 0 && (
-                <ul>
-                    {occurence.youtube_streams?.map((stream) => (
-                        <li key={stream.stream_url}>
-                            <div className="rounded-lg overflow-hidden max-w-md w-full my-4">
-                                <LiteYouTubeEmbed
-                                    id={parseYoutubeUrl(stream.stream_url || '') || ''}
-                                    title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
-                                />
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
-
-            <p>
-                {'occurrence_rate' in pm ? pm.occurrence_rate : ''}
-                {'is_recurring' in pm && pm.is_recurring ? ' recurring ' : ''}
-            </p>
+            {occurence &&
+                'youtube_streams' in occurence &&
+                (occurence?.youtube_streams?.length || 0) > 0 && (
+                    <ul className="w-full">
+                        {occurence.youtube_streams?.map((stream) => (
+                            <li key={stream.stream_url} className="w-full">
+                                <div className="rounded-lg overflow-hidden w-full my-4">
+                                    <LiteYouTubeEmbed
+                                        id={parseYoutubeUrl(stream.stream_url || '') || ''}
+                                        title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
+                                    />
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
 
             {posts.map((post) => {
                 switch (post.type) {
@@ -163,7 +167,12 @@ const RouteComponent = () => {
     );
 };
 
-export const getOccurence = (pm: PMMeetingData, issueId: number): OneOffMeeting | Occurrence => {
+export const getOccurence = (
+    pm: PMMeetingData,
+    issueId: number
+): OneOffMeeting | Occurrence | undefined => {
+    if (!pm) return;
+
     if ('occurrences' in pm) {
         // @ts-ignore
         return pm.occurrences?.find((occurrence) => occurrence.issue_number === issueId) as
