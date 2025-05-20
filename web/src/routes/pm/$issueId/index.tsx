@@ -141,6 +141,9 @@ const RouteComponent = () => {
                                     <LiteYouTubeEmbed
                                         id={parseYoutubeUrl(stream.stream_url || '') || ''}
                                         title={occurence.issue_title || 'PM Meeting'} // For accessibility, never shown
+                                        adNetwork={false}
+                                        poster="maxresdefault"
+                                        cookie={false}
                                     />
                                 </div>
                             </li>
