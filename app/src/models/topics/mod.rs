@@ -110,6 +110,28 @@ impl Post {
         .await?;
 
         if let Some(meili) = &state.meili {
+            let posts = meili.index("posts");
+            let search_doc = PostSearchDocument {
+                post_id: self.post_id,
+                topic_id: self.topic_id,
+                post_number: self.post_number,
+                user_id: self.user_id,
+                cooked: self.cooked.clone(),
+            };
+
+            posts
+                .add_documents(&[search_doc], Some("post_id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+        }
+
+
+        if let Some(meili) = &state.meili {
             let forum = meili.index("forum");
             let search_doc = ForumSearchDocument {
                 id: format!("post_{}", self.post_id),
@@ -227,6 +249,28 @@ impl Topic {
         )
         .execute(&state.database.pool)
         .await?;
+
+        if let Some(meili) = &state.meili {
+            let topics = meili.index("topics");
+            let search_doc = TopicSearchDocument {
+                topic_id: self.topic_id,
+                title: self.title.clone(),
+                slug: self.slug.clone(),
+                pm_issue: self.pm_issue,
+            };
+
+            topics
+                .add_documents(&[search_doc], Some("topic_id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+            info!("Indexed topic {} in Meilisearch", self.topic_id);
+        }
+
 
         if let Some(meili) = &state.meili {
             let forum = meili.index("forum");
