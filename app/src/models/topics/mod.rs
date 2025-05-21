@@ -49,6 +49,23 @@ pub struct Post {
     pub extra: Option<serde_json::Value>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TopicSearchDocument {
+    pub topic_id: i32,
+    pub title: String,
+    pub slug: String,
+    pub pm_issue: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PostSearchDocument {
+    pub post_id: i32,
+    pub topic_id: i32,
+    pub post_number: i32,
+    pub user_id: i32,
+    pub cooked: Option<String>,
+}
+
 impl Post {
     pub fn from_discourse(post: DiscourseTopicPost) -> Self {
         Self {
@@ -77,6 +94,28 @@ impl Post {
         )
         .execute(&state.database.pool)
         .await?;
+
+        if let Some(meili) = &state.meili {
+            let posts = meili.index("posts");
+            let search_doc = PostSearchDocument {
+                post_id: self.post_id,
+                topic_id: self.topic_id,
+                post_number: self.post_number,
+                user_id: self.user_id,
+                cooked: self.cooked.clone(),
+            };
+
+            posts
+                .add_documents(&[search_doc], Some("post_id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+        }
+
         Ok(())
     }
 
@@ -170,6 +209,28 @@ impl Topic {
         )
         .execute(&state.database.pool)
         .await?;
+
+        if let Some(meili) = &state.meili {
+            let topics = meili.index("topics");
+            let search_doc = TopicSearchDocument {
+                topic_id: self.topic_id,
+                title: self.title.clone(),
+                slug: self.slug.clone(),
+                pm_issue: self.pm_issue,
+            };
+
+            topics
+                .add_documents(&[search_doc], Some("topic_id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+            info!("Indexed topic {} in Meilisearch", self.topic_id);
+        }
+
         Ok(())
     }
 
