@@ -3,6 +3,8 @@ import classNames from 'classnames';
 import { FC, useEffect, useState } from 'react';
 import { SiEthereum } from 'react-icons/si';
 
+import { SearchBar } from './search';
+
 export const Navbar: FC = () => {
     const data = useMatches();
 
@@ -17,8 +19,8 @@ export const Navbar: FC = () => {
 
     return (
         <>
-            <div className="w-full bg-secondary fixed top-0 grid grid-cols-[1fr_auto_1fr] h-8 z-10">
-                <div className="flex items-stretch gap-2 h-full px-3">
+            <div className="w-full bg-secondary fixed top-0 grid grid-cols-[1fr_auto_1fr] max-h-16 z-10">
+                <div className="flex items-stretch gap-2 px-3 h-full">
                     <Link
                         to="/"
                         className="text-primary font-bold text-base hover:underline py-1 flex items-center gap-1"
@@ -30,6 +32,9 @@ export const Navbar: FC = () => {
                             <span>forum</span>
                         </span>
                     </Link>
+                    <div>
+                        <SearchBar />
+                    </div>
                 </div>
                 <div
                     className={classNames(
@@ -51,14 +56,6 @@ export const Navbar: FC = () => {
         </>
     );
 };
-
-// function findMap<T, U>(data: T[], fn: (t: T) => U | undefined): U | undefined {
-//     for (const t of data) {
-//         const u = fn(t);
-
-//         if (u) return u;
-//     }
-// }
 
 function findMapReverse<T, U>(data: T[], fn: (t: T) => U | undefined): U | undefined {
     for (let i = data.length - 1; i >= 0; i--) {
