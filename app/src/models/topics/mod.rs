@@ -66,6 +66,20 @@ pub struct PostSearchDocument {
     pub cooked: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ForumSearchDocument {
+    pub id: String,
+    pub type_field: String,
+    pub topic_id: Option<i32>,
+    pub post_id: Option<i32>,
+    pub post_number: Option<i32>,
+    pub user_id: Option<i32>,
+    pub title: Option<String>,
+    pub slug: Option<String>,
+    pub pm_issue: Option<i32>,
+    pub cooked: Option<String>,
+}
+
 impl Post {
     pub fn from_discourse(post: DiscourseTopicPost) -> Self {
         Self {
@@ -96,17 +110,21 @@ impl Post {
         .await?;
 
         if let Some(meili) = &state.meili {
-            let posts = meili.index("posts");
-            let search_doc = PostSearchDocument {
-                post_id: self.post_id,
-                topic_id: self.topic_id,
-                post_number: self.post_number,
-                user_id: self.user_id,
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("post_{}", self.post_id),
+                type_field: "post".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: Some(self.post_id),
+                post_number: Some(self.post_number),
+                user_id: Some(self.user_id),
+                title: None,
+                slug: None,
+                pm_issue: None,
                 cooked: self.cooked.clone(),
             };
-
-            posts
-                .add_documents(&[search_doc], Some("post_id"))
+            forum
+                .add_documents(&[search_doc], Some("id"))
                 .await
                 .map_err(|e| {
                     sqlx::Error::Io(std::io::Error::new(
@@ -211,16 +229,21 @@ impl Topic {
         .await?;
 
         if let Some(meili) = &state.meili {
-            let topics = meili.index("topics");
-            let search_doc = TopicSearchDocument {
-                topic_id: self.topic_id,
-                title: self.title.clone(),
-                slug: self.slug.clone(),
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("topic_{}", self.topic_id),
+                type_field: "topic".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: None,
+                post_number: None,
+                user_id: None,
+                title: Some(self.title.clone()),
+                slug: Some(self.slug.clone()),
                 pm_issue: self.pm_issue,
+                cooked: None,
             };
-
-            topics
-                .add_documents(&[search_doc], Some("topic_id"))
+            forum
+                .add_documents(&[search_doc], Some("id"))
                 .await
                 .map_err(|e| {
                     sqlx::Error::Io(std::io::Error::new(
