@@ -1,7 +1,9 @@
+import { useTopic } from '@/api/topics';
 import * as Dialog from '@radix-ui/react-dialog';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
 import { MeiliSearch } from 'meilisearch';
 import { useEffect, useState } from 'react';
+import { TopicPost } from '../topic/TopicPost';
 
 const client = new MeiliSearch({
     host: 'http://localhost:7700',
@@ -10,28 +12,106 @@ const client = new MeiliSearch({
 
 const MEILISEARCH_INDEX_NAME = 'forum';
 
-type TopicResult = {
-    id: number;
-    title: string;
-    slug: string;
-    post_number: number;
-    user_id: number;
-    pm_issue: number;
+type ForumSearchDocument = {
+    id: string;
+    type_field: string;
+    topic_id?: number;
+    post_id?: number;
+    post_number?: number;
+    user_id?: number;
+    title?: string;
+    slug?: string;
+    pm_issue?: number;
+    cooked?: string;
+};
+
+type TopicSearchResult = ForumSearchDocument & {
     type_field: 'topic';
-};
-
-type PostResult = {
-    id: number;
+    topic_id: number;
     title: string;
     slug: string;
-    post_number: number;
-    user_id: number;
-    pm_issue: number;
-    type_field: 'post';
-    cooked: string;
+    pm_issue?: number;
+    post_id?: never;
+    post_number?: never;
+    user_id?: never;
+    cooked?: never;
 };
 
-type SearchResult = TopicResult | PostResult;
+type PostSearchResult = ForumSearchDocument & {
+    type_field: 'post';
+    topic_id: number;
+    post_id: number;
+    post_number: number;
+    user_id: number;
+    cooked?: string;
+    title?: never;
+    slug?: never;
+    pm_issue?: never;
+};
+
+type SearchResult = TopicSearchResult | PostSearchResult;
+
+const SelectedResult = ({ result }: { result: SearchResult }) => {
+    const { data: topic, isLoading } = useTopic(result.topic_id.toString());
+
+    if (isLoading) {
+        return <p>Loading...</p>;
+    }
+
+    if (!topic) {
+        return <p>Topic not found.</p>;
+    }
+
+    if (result.type_field === 'topic') {
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-2">{result.title}</h2>
+            </div>
+        );
+    }
+
+    if (result.type_field === 'post') {
+        const extra = (topic.extra || {}) as Record<string, unknown>;
+        const details = extra.details as Record<string, unknown> | undefined;
+        const participants = details?.participants as
+            | Array<{
+                  id: number;
+                  name: string;
+                  username: string;
+                  avatar_template: string;
+              }>
+            | undefined;
+        const participant = participants?.find((p) => p.id === result.user_id);
+
+        return (
+            <div>
+                <h2 className="text-2xl font-bold mb-2">{topic.title}</h2>
+                <a href={'/t/' + result.topic_id + '#p-' + result.post_id}>View context</a>
+                <TopicPost
+                    post={{
+                        post_id: result.post_id,
+                        post_number: result.post_number,
+                        user_id: result.user_id,
+                        topic_id: result.topic_id,
+                        cooked: result.cooked,
+                        extra: {
+                            display_username: participant?.name,
+                            username: participant?.username,
+                            avatar_template: participant?.avatar_template,
+                            post_url: '',
+                            hidden: false,
+                            trust_level: 0,
+                            moderator: false,
+                            admin: false,
+                        },
+                    }}
+                />
+            </div>
+        );
+    }
+
+    return null;
+};
 
 export const SearchBar = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -114,19 +194,20 @@ export const SearchBar = () => {
                                     }`}
                                 >
                                     {result.type_field === 'topic' && (
-                                        <h3
-                                            className="overflow-hidden text-ellipsis whitespace-nowrap mb-1 text-lg font-semibold text-gray-800"
-                                            dangerouslySetInnerHTML={{
-                                                __html: result.title || 'Untitled Topic',
-                                            }}
-                                        />
+                                        <h3 className="overflow-hidden text-ellipsis whitespace-nowrap mb-1 text-lg font-semibold text-gray-800">
+                                            {result.title}
+                                        </h3>
                                     )}
                                     {result.type_field === 'post' && (
                                         <>
                                             <p
                                                 className="text-sm text-gray-600 max-h-24 overflow-hidden text-ellipsis"
                                                 dangerouslySetInnerHTML={{
-                                                    __html: result.cooked || 'No content',
+                                                    __html:
+                                                        new DOMParser().parseFromString(
+                                                            result.cooked || '',
+                                                            'text/html'
+                                                        ).body.textContent || '',
                                                 }}
                                             />
                                         </>
@@ -137,16 +218,7 @@ export const SearchBar = () => {
                         <div className="w-3/5 p-5 overflow-y-auto">
                             {selectedResult ? (
                                 <div>
-                                    <div
-                                        className="text-base leading-relaxed prose max-w-none"
-                                        dangerouslySetInnerHTML={{
-                                            __html:
-                                                selectedResult?.type_field === 'post'
-                                                    ? selectedResult.cooked
-                                                    : selectedResult?.title ||
-                                                      'Select an item to see details.',
-                                        }}
-                                    />
+                                    <SelectedResult result={selectedResult} />
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-gray-500">
