@@ -27,25 +27,19 @@ import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/
 import { formatBigNumber } from '@/util/numbers';
 import { queryClient } from '@/util/query';
 
-interface DiscourseUser {
+type DiscourseUser = {
     id: number;
     // stylistic
     name: string;
     // real
     username: string;
     avatar_template: string;
-}
+};
 
-export const Route = createFileRoute('/t/$topicId/')({
-    component: RouteComponent,
-    beforeLoad: async ({ params }) => {
-        const topic = await queryClient.ensureQueryData(getTopic(params.topicId));
-
-        return {
-            title: topic?.title,
-        };
-    },
-});
+type TopicDetails = {
+    links?: Partial<RelevantLink>[];
+    created_by?: DiscourseUser;
+};
 
 type RelevantLink = {
     url: string;
@@ -58,7 +52,21 @@ type RelevantLink = {
     root_domain: string;
 };
 
-function RouteComponent() {
+const normalizeRelevantLink = (link: Partial<RelevantLink>): RelevantLink => {
+    return {
+        ...link,
+        domain: link.domain ?? '',
+        root_domain: link.root_domain ?? '',
+        url: link.url ?? '',
+        title: link.title ?? '',
+        internal: link.internal ?? false,
+        attachment: link.attachment ?? false,
+        reflection: link.reflection ?? false,
+        clicks: link.clicks ?? 0,
+    };
+};
+
+const RouteComponent = () => {
     const { topicId } = Route.useParams();
     const { data: topic } = useTopic(topicId);
 
@@ -68,16 +76,17 @@ function RouteComponent() {
     const extra = topic?.extra as Record<string, unknown>;
     const tags = decodeCategory(extra?.['category_id'] as number);
 
-    const all_links = ((extra?.details?.links || []) as RelevantLink[]).sort(
-        (a, b) => b.clicks - a.clicks
-    );
+    const details = extra?.details as TopicDetails | undefined;
+    const all_links = (details?.links || [])
+        .map(normalizeRelevantLink)
+        .sort((a, b) => b.clicks - a.clicks);
     const [standards_links, relevant_links1] = spliceRelatedLinks(all_links, (link) =>
         isStandardsLink(link.url)
     );
     const [github_links, relevant_links] = spliceRelatedLinks(relevant_links1, (link) =>
         isGithub(link.url)
     );
-    const creator = extra?.details?.created_by as DiscourseUser;
+    const creator = details?.created_by as DiscourseUser;
 
     useEffect(() => {
         document.documentElement.classList.add('prose-page');
@@ -154,7 +163,7 @@ function RouteComponent() {
                     <ExpandableList title="Standards Links" maxItems={4}>
                         {standards_links.map((link) => (
                             <li key={link.url}>
-                                <RelevantLink link={link} />
+                                <RelevantLink link={normalizeRelevantLink(link)} />
                             </li>
                         ))}
                     </ExpandableList>
@@ -163,7 +172,7 @@ function RouteComponent() {
                     <ExpandableList title="Github Links" maxItems={4}>
                         {github_links.map((link) => (
                             <li key={link.url}>
-                                <RelevantLink link={link} />
+                                <RelevantLink link={normalizeRelevantLink(link)} />
                             </li>
                         ))}
                     </ExpandableList>
@@ -172,7 +181,7 @@ function RouteComponent() {
                     <ExpandableList title="Related Links" maxItems={4}>
                         {relevant_links?.map((link) => (
                             <li key={link.url}>
-                                <RelevantLink link={link} />
+                                <RelevantLink link={normalizeRelevantLink(link)} />
                             </li>
                         ))}
                     </ExpandableList>
@@ -242,8 +251,18 @@ function RouteComponent() {
             </div>
         </>
     );
-}
+};
 
+export const Route = createFileRoute('/t/$topicId/')({
+    component: RouteComponent,
+    beforeLoad: async ({ params }) => {
+        const topic = await queryClient.ensureQueryData(getTopic(params.topicId));
+
+        return {
+            title: topic?.title,
+        };
+    },
+});
 const RelevantLink = ({ link }: { link: RelevantLink }) => {
     let icon = undefined;
     const url = link.url.toLowerCase();
