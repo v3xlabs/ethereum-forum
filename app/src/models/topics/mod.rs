@@ -49,6 +49,37 @@ pub struct Post {
     pub extra: Option<serde_json::Value>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TopicSearchDocument {
+    pub topic_id: i32,
+    pub title: String,
+    pub slug: String,
+    pub pm_issue: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PostSearchDocument {
+    pub post_id: i32,
+    pub topic_id: i32,
+    pub post_number: i32,
+    pub user_id: i32,
+    pub cooked: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ForumSearchDocument {
+    pub id: String,
+    pub type_field: String,
+    pub topic_id: Option<i32>,
+    pub post_id: Option<i32>,
+    pub post_number: Option<i32>,
+    pub user_id: Option<i32>,
+    pub title: Option<String>,
+    pub slug: Option<String>,
+    pub pm_issue: Option<i32>,
+    pub cooked: Option<String>,
+}
+
 impl Post {
     pub fn from_discourse(post: DiscourseTopicPost) -> Self {
         Self {
@@ -77,6 +108,57 @@ impl Post {
         )
         .execute(&state.database.pool)
         .await?;
+
+        if let Some(meili) = &state.meili {
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("post_{}", self.post_id),
+                type_field: "post".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: Some(self.post_id),
+                post_number: Some(self.post_number),
+                user_id: Some(self.user_id),
+                title: None,
+                slug: None,
+                pm_issue: None,
+                cooked: self.cooked.clone(),
+            };
+            forum
+                .add_documents(&[search_doc], Some("id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+        }
+
+        if let Some(meili) = &state.meili {
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("post_{}", self.post_id),
+                type_field: "post".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: Some(self.post_id),
+                post_number: Some(self.post_number),
+                user_id: Some(self.user_id),
+                title: None,
+                slug: None,
+                pm_issue: None,
+                cooked: self.cooked.clone(),
+            };
+            forum
+                .add_documents(&[search_doc], Some("id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+        }
+
         Ok(())
     }
 
@@ -104,13 +186,17 @@ impl Post {
         Ok((posts, has_more))
     }
 
+    pub async fn find_by_post_id(post_id: i32, state: &AppState) -> Result<Self, sqlx::Error> {
+        let post = query_as!(Self, "SELECT * FROM posts WHERE post_id = $1", post_id)
+            .fetch_one(&state.database.pool)
+            .await?;
+        Ok(post)
+    }
+
     pub async fn count_by_topic_id(topic_id: i32, state: &AppState) -> Result<i32, sqlx::Error> {
-        let count = query_scalar!(
-            "SELECT COUNT(*) FROM posts WHERE topic_id = $1",
-            topic_id
-        )
-        .fetch_one(&state.database.pool)
-        .await?;
+        let count = query_scalar!("SELECT COUNT(*) FROM posts WHERE topic_id = $1", topic_id)
+            .fetch_one(&state.database.pool)
+            .await?;
 
         Ok(count.unwrap_or_default() as i32)
     }
@@ -170,6 +256,59 @@ impl Topic {
         )
         .execute(&state.database.pool)
         .await?;
+
+        if let Some(meili) = &state.meili {
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("topic_{}", self.topic_id),
+                type_field: "topic".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: None,
+                post_number: None,
+                user_id: None,
+                title: Some(self.title.clone()),
+                slug: Some(self.slug.clone()),
+                pm_issue: self.pm_issue,
+                cooked: None,
+            };
+            forum
+                .add_documents(&[search_doc], Some("id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+            info!("Indexed topic {} in Meilisearch", self.topic_id);
+        }
+
+        if let Some(meili) = &state.meili {
+            let forum = meili.index("forum");
+            let search_doc = ForumSearchDocument {
+                id: format!("topic_{}", self.topic_id),
+                type_field: "topic".to_string(),
+                topic_id: Some(self.topic_id),
+                post_id: None,
+                post_number: None,
+                user_id: None,
+                title: Some(self.title.clone()),
+                slug: Some(self.slug.clone()),
+                pm_issue: self.pm_issue,
+                cooked: None,
+            };
+            forum
+                .add_documents(&[search_doc], Some("id"))
+                .await
+                .map_err(|e| {
+                    sqlx::Error::Io(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        e.to_string(),
+                    ))
+                })?;
+            info!("Indexed topic {} in Meilisearch", self.topic_id);
+        }
+
         Ok(())
     }
 

@@ -125,6 +125,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/post/{post_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_post"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users": {
         parameters: {
             query?: never;
@@ -403,6 +419,10 @@ export interface components {
             post_url?: string;
             extra?: unknown;
         };
+        /** PostResponse */
+        PostResponse: {
+            post: components["schemas"]["Post"];
+        };
         /** PostsResponse */
         PostsResponse: {
             posts: components["schemas"]["Post"][];
@@ -529,6 +549,27 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["PostsResponse"];
+                };
+            };
+        };
+    };
+    get_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                post_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PostResponse"];
                 };
             };
         };

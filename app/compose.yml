@@ -15,7 +15,22 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  meilisearch:
+    image: getmeili/meilisearch:v1.3
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_KEY}
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili-data:/data.ms
+    healthcheck:
+      test: set -o pipefail;curl -fsS http://localhost:7700/health | grep -q '{"status":"available"}'
+      retries: 3
+      timeout: 5s
 
 volumes:
   pg-data:
-   driver: local
+    driver: local
+  meili-data:
+    driver: local

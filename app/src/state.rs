@@ -1,7 +1,16 @@
-use crate::{database::Database, modules::{discourse::DiscourseService, ical::{self, ICalConfig}, pm::PMModule}, tmp::CacheService};
-use figment::{providers::Env, Figment};
+use crate::{
+    database::Database,
+    modules::{
+        discourse::DiscourseService,
+        ical::{self, ICalConfig},
+        pm::PMModule,
+    },
+    tmp::CacheService,
+};
+use figment::{Figment, providers::Env};
+use meilisearch_sdk::client::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 pub type AppState = Arc<AppStateInner>;
 
@@ -15,8 +24,7 @@ pub struct AppStateInner {
     pub ical: Option<ICalConfig>,
     pub discourse: DiscourseService,
     pub pm: PMModule,
-
-    //
+    pub meili: Option<Client>,
     pub cache: CacheService,
 }
 
@@ -38,12 +46,26 @@ impl AppStateInner {
 
         let pm = PMModule::default();
 
+        let meili = match (env::var("MEILI_HOST"), env::var("MEILI_KEY")) {
+            (Ok(meili_url), Ok(meili_key)) => {
+                let client = Client::new(&meili_url, Some(meili_key.as_str()))
+                    .expect("Failed to create MeiliSearch client");
+                let _ = client
+                    .index("posts")
+                    .set_separator_tokens(&vec!["<".to_string(), ">".to_string()])
+                    .await;
+                Some(client)
+            }
+            _ => None,
+        };
+
         Self {
             database,
             ical,
             cache,
             discourse,
             pm,
+            meili,
         }
     }
 }
