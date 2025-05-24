@@ -166,7 +166,7 @@ export const SearchBar = () => {
                         className="px-3 py-2 mb-4 border border-primary rounded-md text-base w-full"
                     />
                     <div className="flex md:flex-row flex-col flex-grow overflow-hidden border border-primary rounded-md">
-                        <div className="md:w-2/5 md:max-h-fit max-h-52 border-r overflow-y-auto p-2.5 flex flex-col space-y-2">
+                        <div className="md:w-2/5 md:max-h-fit max-h-52 border-r overflow-y-auto p-3 flex flex-col space-y-2.5">
                             {searchResults.length === 0 && searchTerm.trim() !== '' && (
                                 <p className="text-gray-500">No results found.</p>
                             )}
@@ -174,21 +174,33 @@ export const SearchBar = () => {
                                 <div
                                     key={result.id}
                                     onClick={() => handleResultClick(result)}
-                                    className={`border p-3 rounded-md cursor-pointer transition-colors duration-200 ease-in-out outline-offset-[-2px] ${
+                                    className={`p-4 rounded-md cursor-pointer transition-all duration-200 ease-in-out shadow-sm hover:shadow ${
                                         selectedResult?.id === result.id
-                                            ? 'border-transparent outline outline-2 outline-blue-500 bg-blue-50'
-                                            : 'border-secondary bg-white hover:bg-gray-50'
+                                            ? 'bg-secondary border-l-4 border-blue-500'
+                                            : 'bg-secondary hover:border-l-4 hover:border-gray-300'
                                     }`}
                                 >
                                     {result.type_field === 'topic' && (
-                                        <h3 className="overflow-hidden text-ellipsis whitespace-nowrap mb-1 text-lg font-semibold text-gray-800">
-                                            {result.title}
-                                        </h3>
+                                        <>
+                                            <div className="flex items-center mb-1.5">
+                                                <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    Topic
+                                                </span>
+                                            </div>
+                                            <h3 className="overflow-hidden text-ellipsis whitespace-nowrap mb-1.5 font-semibold text-gray-800">
+                                                {result.title}
+                                            </h3>
+                                        </>
                                     )}
                                     {result.type_field === 'post' && (
                                         <>
+                                            <div className="flex items-center mb-1.5">
+                                                <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
+                                                    Post
+                                                </span>
+                                            </div>
                                             <p
-                                                className="text-sm text-gray-600 max-h-24 overflow-hidden text-ellipsis"
+                                                className="text-sm text-gray-600 max-h-20 overflow-hidden text-ellipsis line-clamp-3"
                                                 dangerouslySetInnerHTML={{
                                                     __html:
                                                         new DOMParser().parseFromString(
