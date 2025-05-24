@@ -1,9 +1,13 @@
-import { useTopic } from '@/api/topics';
 import * as Dialog from '@radix-ui/react-dialog';
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons';
+import { Link } from '@tanstack/react-router';
 import { MeiliSearch } from 'meilisearch';
 import { useEffect, useState } from 'react';
+
+import { usePost, useTopic } from '@/api/topics';
+
 import { TopicPost } from '../topic/TopicPost';
+import { TopicPreview } from '../topic/TopicPreview';
 
 const client = new MeiliSearch({
     host: 'http://localhost:7700',
@@ -51,66 +55,49 @@ type PostSearchResult = ForumSearchDocument & {
 
 type SearchResult = TopicSearchResult | PostSearchResult;
 
-const SelectedResult = ({ result }: { result: SearchResult }) => {
+const SelectedPostResult = ({ result, onClose }: { result: SearchResult; onClose: () => void }) => {
+    const { data: post, isLoading } = usePost((result.post_id || 0).toString());
+
+    if (isLoading) {
+        return <p>Loading post...</p>;
+    }
+
+    if (!post || !post.post) {
+        return <p>Post not found</p>;
+    }
+
+    return (
+        <div>
+            <Link to={'/t/' + result.topic_id + '#p-' + result.post_id} onClick={onClose}>
+                View context
+            </Link>
+            {post && post.post && <TopicPost post={post!.post} />}
+        </div>
+    );
+};
+
+const SelectedTopicResult = ({
+    result,
+    onClose,
+}: {
+    result: TopicSearchResult;
+    onClose: () => void;
+}) => {
     const { data: topic, isLoading } = useTopic(result.topic_id.toString());
 
     if (isLoading) {
-        return <p>Loading...</p>;
+        return <p>Loading topic...</p>;
     }
 
     if (!topic) {
-        return <p>Topic not found.</p>;
+        return <p>Topic not found</p>;
     }
 
-    if (result.type_field === 'topic') {
-        return (
-            <div>
-                <h2 className="text-2xl font-bold mb-2">{result.title}</h2>
-            </div>
-        );
-    }
-
-    if (result.type_field === 'post') {
-        const extra = (topic.extra || {}) as Record<string, unknown>;
-        const details = extra.details as Record<string, unknown> | undefined;
-        const participants = details?.participants as
-            | Array<{
-                  id: number;
-                  name: string;
-                  username: string;
-                  avatar_template: string;
-              }>
-            | undefined;
-        const participant = participants?.find((p) => p.id === result.user_id);
-
-        return (
-            <div>
-                <h2 className="text-2xl font-bold mb-2">{topic.title}</h2>
-                <a href={'/t/' + result.topic_id + '#p-' + result.post_id}>View context</a>
-                <TopicPost
-                    post={{
-                        post_id: result.post_id,
-                        post_number: result.post_number,
-                        user_id: result.user_id,
-                        topic_id: result.topic_id,
-                        cooked: result.cooked,
-                        extra: {
-                            display_username: participant?.name,
-                            username: participant?.username,
-                            avatar_template: participant?.avatar_template,
-                            post_url: '',
-                            hidden: false,
-                            trust_level: 0,
-                            moderator: false,
-                            admin: false,
-                        },
-                    }}
-                />
-            </div>
-        );
-    }
-
-    return null;
+    return (
+        <div onClick={onClose}>
+            <TopicPreview topic={topic} />
+        </div>
+    );
 };
 
 export const SearchBar = () => {
@@ -169,17 +156,17 @@ export const SearchBar = () => {
             </Dialog.Trigger>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/50 z-20" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary rounded-lg shadow-lg p-5 w-[90vw] max-w-4xl h-[80vh] max-h-[600px] flex flex-col z-30">
+                <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary rounded-lg shadow-lg p-5 w-[90vw] max-w-6xl h-[80vh] max-h-[800px] flex flex-col z-30">
                     <Dialog.Title className="text-xl font-bold mb-4">Search Forum</Dialog.Title>
                     <input
                         type="text"
                         placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="px-3 py-2 mb-4 border border-gray-300 rounded-md text-base w-full"
+                        className="px-3 py-2 mb-4 border border-primary rounded-md text-base w-full"
                     />
-                    <div className="flex flex-grow overflow-hidden border border-gray-200 rounded-md">
-                        <div className="w-2/5 border-r border-gray-200 overflow-y-auto p-2.5 flex flex-col space-y-2">
+                    <div className="flex md:flex-row flex-col flex-grow overflow-hidden border border-primary rounded-md">
+                        <div className="md:w-2/5 md:max-h-fit max-h-52 border-r overflow-y-auto p-2.5 flex flex-col space-y-2">
                             {searchResults.length === 0 && searchTerm.trim() !== '' && (
                                 <p className="text-gray-500">No results found.</p>
                             )}
@@ -190,7 +177,7 @@ export const SearchBar = () => {
                                     className={`border p-3 rounded-md cursor-pointer transition-colors duration-200 ease-in-out outline-offset-[-2px] ${
                                         selectedResult?.id === result.id
                                             ? 'border-transparent outline outline-2 outline-blue-500 bg-blue-50'
-                                            : 'border-gray-300 bg-white hover:bg-gray-50'
+                                            : 'border-secondary bg-white hover:bg-gray-50'
                                     }`}
                                 >
                                     {result.type_field === 'topic' && (
@@ -215,10 +202,21 @@ export const SearchBar = () => {
                                 </div>
                             ))}
                         </div>
-                        <div className="w-3/5 p-5 overflow-y-auto">
+                        <div className="md:w-3/5 p-5 overflow-y-auto">
                             {selectedResult ? (
                                 <div>
-                                    <SelectedResult result={selectedResult} />
+                                    {selectedResult.type_field === 'post' && (
+                                        <SelectedPostResult
+                                            result={selectedResult}
+                                            onClose={() => setIsModalOpen(false)}
+                                        />
+                                    )}
+                                    {selectedResult.type_field === 'topic' && (
+                                        <SelectedTopicResult
+                                            result={selectedResult}
+                                            onClose={() => setIsModalOpen(false)}
+                                        />
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-gray-500">

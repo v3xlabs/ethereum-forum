@@ -134,7 +134,6 @@ impl Post {
                 })?;
         }
 
-
         if let Some(meili) = &state.meili {
             let forum = meili.index("forum");
             let search_doc = ForumSearchDocument {
@@ -187,13 +186,17 @@ impl Post {
         Ok((posts, has_more))
     }
 
+    pub async fn find_by_post_id(post_id: i32, state: &AppState) -> Result<Self, sqlx::Error> {
+        let post = query_as!(Self, "SELECT * FROM posts WHERE post_id = $1", post_id)
+            .fetch_one(&state.database.pool)
+            .await?;
+        Ok(post)
+    }
+
     pub async fn count_by_topic_id(topic_id: i32, state: &AppState) -> Result<i32, sqlx::Error> {
-        let count = query_scalar!(
-            "SELECT COUNT(*) FROM posts WHERE topic_id = $1",
-            topic_id
-        )
-        .fetch_one(&state.database.pool)
-        .await?;
+        let count = query_scalar!("SELECT COUNT(*) FROM posts WHERE topic_id = $1", topic_id)
+            .fetch_one(&state.database.pool)
+            .await?;
 
         Ok(count.unwrap_or_default() as i32)
     }
@@ -279,7 +282,6 @@ impl Topic {
                 })?;
             info!("Indexed topic {} in Meilisearch", self.topic_id);
         }
-
 
         if let Some(meili) = &state.meili {
             let forum = meili.index("forum");

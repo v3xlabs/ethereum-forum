@@ -8,21 +8,7 @@ import { decodeCategory } from '@/util/category';
 import { formatBigNumber } from '@/util/numbers';
 
 import { TimeAgo } from '../TimeAgo';
-
-type Participant = {
-    id: number;
-    name: string;
-    username: string;
-    flair_url: string | null;
-    flair_name: string | null;
-    post_count: number;
-    flair_color: string | null;
-    trust_level: number;
-    flair_bg_color: string | null;
-    flair_group_id: string | null;
-    avatar_template: string;
-    primary_group_name: string | null;
-};
+import { Participant } from '@/types/topics';
 
 export const TopicPreview: FC<{ topic: Topic }> = ({ topic }) => {
     const extra = (topic.extra || {}) as Record<string, unknown>;
