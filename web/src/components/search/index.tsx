@@ -5,55 +5,23 @@ import { MeiliSearch } from 'meilisearch';
 import { useEffect, useState } from 'react';
 
 import { usePost, useTopic } from '@/api/topics';
+import { SearchResult, TopicSearchResult } from '@/types/search';
 
 import { TopicPost } from '../topic/TopicPost';
 import { TopicPreview } from '../topic/TopicPreview';
 
+if (!import.meta.env.VITE_MEILI_HOST || !import.meta.env.VITE_MEILI_API_KEY) {
+    console.warn(
+        'MeiliSearch env vars (VITE_MEILI_HOST, VITE_MEILI_API_KEY) are not set. Defaulting to localhost with masterKey'
+    );
+}
+
 const client = new MeiliSearch({
-    host: 'http://localhost:7700',
-    apiKey: 'masterKey',
+    host: import.meta.env.VITE_MEILI_HOST || 'http://localhost:7700',
+    apiKey: import.meta.env.VITE_MEILI_API_KEY || 'masterKey',
 });
 
 const MEILISEARCH_INDEX_NAME = 'forum';
-
-type ForumSearchDocument = {
-    id: string;
-    type_field: string;
-    topic_id?: number;
-    post_id?: number;
-    post_number?: number;
-    user_id?: number;
-    title?: string;
-    slug?: string;
-    pm_issue?: number;
-    cooked?: string;
-};
-
-type TopicSearchResult = ForumSearchDocument & {
-    type_field: 'topic';
-    topic_id: number;
-    title: string;
-    slug: string;
-    pm_issue?: number;
-    post_id?: never;
-    post_number?: never;
-    user_id?: never;
-    cooked?: never;
-};
-
-type PostSearchResult = ForumSearchDocument & {
-    type_field: 'post';
-    topic_id: number;
-    post_id: number;
-    post_number: number;
-    user_id: number;
-    cooked?: string;
-    title?: never;
-    slug?: never;
-    pm_issue?: never;
-};
-
-type SearchResult = TopicSearchResult | PostSearchResult;
 
 const SelectedPostResult = ({ result, onClose }: { result: SearchResult; onClose: () => void }) => {
     const { data: post, isLoading } = usePost((result.post_id || 0).toString());

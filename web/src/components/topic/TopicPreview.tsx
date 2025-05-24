@@ -4,11 +4,11 @@ import { FC } from 'react';
 import { FiEye, FiHeart, FiMessageSquare } from 'react-icons/fi';
 
 import { Topic } from '@/api/topics';
+import { Participant } from '@/types/topics';
 import { decodeCategory } from '@/util/category';
 import { formatBigNumber } from '@/util/numbers';
 
 import { TimeAgo } from '../TimeAgo';
-import { Participant } from '@/types/topics';
 
 export const TopicPreview: FC<{ topic: Topic }> = ({ topic }) => {
     const extra = (topic.extra || {}) as Record<string, unknown>;
