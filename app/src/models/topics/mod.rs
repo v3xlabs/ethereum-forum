@@ -27,6 +27,14 @@ pub struct Topic {
     pub extra: Option<serde_json::Value>,
 }
 
+#[derive(Debug, Serialize, Deserialize, FromRow, Object)]
+pub struct Summary {
+    pub summary_id: String,
+    pub topic_id: i32,
+    pub freshness_score: i32,
+    pub summary_text: String,
+}
+
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct User {
     pub user_id: i32,
@@ -105,12 +113,9 @@ impl Post {
     }
 
     pub async fn count_by_topic_id(topic_id: i32, state: &AppState) -> Result<i32, sqlx::Error> {
-        let count = query_scalar!(
-            "SELECT COUNT(*) FROM posts WHERE topic_id = $1",
-            topic_id
-        )
-        .fetch_one(&state.database.pool)
-        .await?;
+        let count = query_scalar!("SELECT COUNT(*) FROM posts WHERE topic_id = $1", topic_id)
+            .fetch_one(&state.database.pool)
+            .await?;
 
         Ok(count.unwrap_or_default() as i32)
     }
@@ -212,6 +217,57 @@ impl Topic {
         .fetch_one(&state.database.pool)
         .await?;
         Ok(post)
+    }
+
+    pub async fn get_summary_by_topic_id(
+        topic_id: i32,
+        state: &AppState,
+    ) -> Result<Summary, sqlx::Error> {
+        let summary = query_as!(
+            Summary,
+            "SELECT * FROM topic_summaries WHERE topic_id = $1",
+            topic_id
+        )
+        .fetch_optional(&state.database.pool)
+        .await?;
+
+        if let Some(summary) = summary {
+            Ok(summary)
+        } else {
+            let summary = "This is a mock summary".to_string();
+
+            let topic = Topic::get_by_topic_id(topic_id, state).await?;
+
+            let freshness_score = if let Some(last_posted_at) = topic.last_post_at {
+                if let Some(bumped_at) = topic.bumped_at {
+                    ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
+                } else {
+                    last_posted_at.timestamp() as i32
+                }
+            } else {
+                Utc::now().timestamp() as i32
+            };
+
+            let new_summary = Summary {
+                summary_id: uuidv7::create(),
+                topic_id,
+                freshness_score,
+                summary_text: summary,
+            };
+
+            query!(
+                "INSERT INTO topic_summaries (summary_id, topic_id, freshness_score, summary_text) VALUES ($1, $2, $3, $4)",
+                new_summary.summary_id,
+                new_summary.topic_id,
+                new_summary.freshness_score,
+                new_summary.summary_text
+            )
+            .execute(&state.database.pool)
+            .await?;
+            info!("Created new summary for topic_id: {}", topic_id);
+
+            Ok(new_summary)
+        }
     }
 }
 
