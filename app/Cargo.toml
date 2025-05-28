@@ -6,60 +6,63 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0"
 async-std = { version = "1.13", features = ["attributes", "tokio1"] }
-serde = { version = "1.0", features = ["serde_derive"] }
-serde_json = "1.0"
-reqwest = { version = "0.12.5", features = [
-    "rustls-tls",
-    "charset",
-    "http2",
-    "json",
-    "macos-system-configuration",
-], default-features = false }
+async-trait = "0.1"
+chrono = { version = "0.4.39", features = ["clock", "now", "serde"] }
+dotenvy = "0.15.0"
 figment = { version = "0.10.19", features = ["env", "serde_json", "toml"] }
-sqlx = { version = "0.8.3", features = [
-    "runtime-async-std",
-    "tls-rustls",
-    "postgres",
-    "chrono",
-    "json",
-    "ipnetwork",
+futures = "0.3.31"
+governor = "0.8.1"
+icalendar = { version = "0.16.13", features = [
+  "chrono-tz",
+  "serde",
+  "serde_json",
 ] }
+moka = { version = "0.12.10", features = ["future"] }
+opentelemetry = { version = "0.28.0", features = ["trace"] }
+opentelemetry-http = "0.28.0"
+opentelemetry-otlp = { version = "0.28.0", features = [
+  "grpc-tonic",
+  "metrics",
+  "trace",
+] }
+opentelemetry-prometheus = "0.28.0"
+opentelemetry-semantic-conventions = "0.28.0"
+opentelemetry-stdout = "0.28.0"
+opentelemetry_sdk = { version = "0.28.0", features = ["rt-async-std", "trace"] }
 poem = { version = "3.1.7", features = [
-    "rustls",
-    "sse",
-    "opentelemetry",
+  "opentelemetry",
+  "rustls",
+  "sse",
 ] }
 poem-openapi = { version = "5.1.7", features = [
-    "chrono",
-    "sqlx",
-    "url",
-    "email",
-    "email_address",
-    "redoc",
-    "static-files",
+  "chrono",
+  "email",
+  "email_address",
+  "redoc",
+  "sqlx",
+  "static-files",
+  "url",
 ] }
-chrono = { version = "0.4.39", features = ["serde", "now", "clock"] }
-rustls = "0.23.19"
-
-tracing = { version = "0.1.40", features = ["attributes"] }
-tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
-tracing-opentelemetry = { version = "0.29.0" }
-opentelemetry-otlp = { version = "0.28.0", features = [
-    "trace",
-    "metrics",
-    "grpc-tonic",
-] }
-opentelemetry_sdk = { version = "0.28.0", features = ["trace", "rt-async-std"] }
-opentelemetry = { version = "0.28.0", features = ["trace"] }
-opentelemetry-stdout = "0.28.0"
-opentelemetry-http = "0.28.0"
-opentelemetry-semantic-conventions = "0.28.0"
-opentelemetry-prometheus = "0.28.0"
-governor = "0.8.1"
-async-trait = "0.1"
-dotenvy = "0.15.0"
-icalendar = { version = "0.16.13", features = ["chrono-tz", "serde", "serde_json"] }
-rrule = { version = "0.14.0", features = ["serde"] }
-moka = { version = "0.12.10", features = ["future"] }
 regex = "1.11.1"
-futures = "0.3.31"
+reqwest = { version = "0.12.5", default-features = false, features = [
+  "charset",
+  "http2",
+  "json",
+  "macos-system-configuration",
+  "rustls-tls",
+] }
+rrule = { version = "0.14.0", features = ["serde"] }
+rustls = "0.23.19"
+serde = { version = "1.0", features = ["serde_derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8.3", features = [
+  "chrono",
+  "ipnetwork",
+  "json",
+  "postgres",
+  "runtime-async-std",
+  "tls-rustls",
+] }
+tracing = { version = "0.1.40", features = ["attributes"] }
+tracing-opentelemetry = { version = "0.29.0" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
