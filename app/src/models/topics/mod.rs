@@ -232,26 +232,27 @@ impl Topic {
         .await?;
 
         if let Some(summary) = summary {
-            Ok(summary)
-        } else {
-            let summary = "This is a mock summary".to_string();
+            return Ok(summary);
+        }
 
-            let topic = Topic::get_by_topic_id(topic_id, state).await?;
+        let summary = "This is a mock summary".to_string();
 
-            let based_on = if let Some(last_posted_at) = topic.last_post_at {
-                if let Some(bumped_at) = topic.bumped_at {
-                    ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
-                } else {
-                    last_posted_at.timestamp() as i32
-                }
+        let topic = Topic::get_by_topic_id(topic_id, state).await?;
+
+        let based_on = if let Some(last_posted_at) = topic.last_post_at {
+            if let Some(bumped_at) = topic.bumped_at {
+                ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
             } else {
-                Utc::now().timestamp() as i32
-            };
+                last_posted_at.timestamp() as i32
+            }
+        } else {
+            Utc::now().timestamp() as i32
+        };
 
-            let based_on_datetime =
-                DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
+        let based_on_datetime =
+            DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
 
-            let summary_id = query_scalar!(
+        let summary_id = query_scalar!(
                 "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING summary_id",
                 topic_id,
                 based_on_datetime,
@@ -260,20 +261,19 @@ impl Topic {
             .fetch_one(&state.database.pool)
             .await?;
 
-            let new_summary = Summary {
-                summary_id,
-                topic_id,
-                based_on: based_on_datetime,
-                summary_text: summary,
-            };
+        let new_summary = Summary {
+            summary_id,
+            topic_id,
+            based_on: based_on_datetime,
+            summary_text: summary,
+        };
 
-            info!(
-                "Created new summary for topic_id: {} with summary_id: {}",
-                topic_id, summary_id
-            );
+        info!(
+            "Created new summary for topic_id: {} with summary_id: {}",
+            topic_id, summary_id
+        );
 
-            Ok(new_summary)
-        }
+        Ok(new_summary)
     }
 }
 

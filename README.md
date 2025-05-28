@@ -12,3 +12,6 @@
 - [ ] github/ethereum/ercs (TODO)
   - data & prs
 - [ ] blog.ethereum.org (TODO)
+
+## Features
+- [x] LLM Summaries
