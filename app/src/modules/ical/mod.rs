@@ -1,6 +1,6 @@
 use anyhow::Error;
 use chrono::{Duration, Utc};
-use figment::{Figment, providers::Env};
+use figment::{providers::Env, Figment};
 use icalendar::{Calendar, CalendarComponent};
 use serde::Deserialize;
 use tracing::info;
@@ -12,10 +12,11 @@ pub struct ICalConfig {
     pub url: String,
 }
 
-pub async fn init_ical(figment: Figment) -> Option<ICalConfig> {
+pub fn init_ical(figment: Figment) -> Option<ICalConfig> {
     let config = figment
         .merge(Env::prefixed("ICAL_"))
         .extract::<ICalConfig>();
+
     match config {
         Ok(config) => Some(config),
         Err(e) => {
@@ -37,10 +38,10 @@ impl ICalConfig {
         let now = Utc::now() - Duration::days(365);
         for calendar in cal.components {
             if let CalendarComponent::Event(event) = calendar {
-                let parsed_events = match CalendarEvent::from_event(event) {
+                let parsed_events = match CalendarEvent::from_event(&event) {
                     Ok(events) => events,
                     Err(e) => {
-                        println!("Error parsing event: {}", e);
+                        println!("Error parsing event: {e}");
                         continue;
                     }
                 };
@@ -62,12 +63,12 @@ impl ICalConfig {
         let x = match state
             .cache
             .ical_cache
-            .try_get_with(self.url.clone(), ICalConfig::fetch(self))
+            .try_get_with(self.url.clone(), Self::fetch(self))
             .await
         {
             Ok(x) => x,
             Err(e) => {
-                println!("Error fetching cached ical: {}", e);
+                println!("Error fetching cached ical: {e}");
                 return Err(anyhow::anyhow!("Error fetching cached ical: {}", e));
             }
         };
@@ -76,7 +77,11 @@ impl ICalConfig {
 
     pub async fn fetch_upcoming(&self, state: &AppState) -> Result<Vec<CalendarEvent>, Error> {
         let events = self.fetch_cached(state).await?;
-        let now = Utc::now().date_naive().and_hms_opt(0, 0, 0).unwrap().and_utc();
+        let now = Utc::now()
+            .date_naive()
+            .and_hms_opt(0, 0, 0)
+            .unwrap()
+            .and_utc();
         let upcoming = events
             .iter()
             .filter(|event| event.start.unwrap() >= now)
@@ -107,11 +112,9 @@ mod tests {
     #[async_std::test]
     async fn test_fetch_ical() {
         dotenvy::dotenv().ok();
-        let config = init_ical(Figment::new().merge(Env::prefixed("ICAL_")))
-            .await
-            .unwrap();
+        let config = init_ical(Figment::new().merge(Env::prefixed("ICAL_"))).unwrap();
         let events = config.fetch().await.unwrap();
 
-        println!("{:?}", events);
+        println!("{events:?}");
     }
 }

@@ -28,11 +28,11 @@ pub enum EventOccurrence {
 }
 
 impl CalendarEvent {
-    pub fn from_event(event: Event) -> Result<Vec<Self>, anyhow::Error> {
+    pub fn from_event(event: &Event) -> Result<Vec<Self>, anyhow::Error> {
         let x = event.to_string();
         let mut events = vec![];
         let mut body: String = event.get_description().unwrap_or_default().to_string();
-        let meetings: Vec<Meeting> = match try_parse_meeting(&event, &body) {
+        let meetings: Vec<Meeting> = match try_parse_meeting(event, &body) {
             Ok((new_body, meetings)) => {
                 body = new_body;
                 meetings
@@ -59,7 +59,7 @@ impl CalendarEvent {
                 // println!("{:?}", event);
                 let start = start.with_timezone(&Utc);
 
-                events.push(CalendarEvent {
+                events.push(Self {
                     summary: event.get_summary().map(String::from),
                     description: Some(body.clone()),
                     uid: event.get_uid().map(String::from),
@@ -74,9 +74,9 @@ impl CalendarEvent {
         } else {
             let start = event.get_start().and_then(date_perhaps_time_to_datetime);
             // let end = event.get_end().and_then(date_perhaps_time_to_datetime);
-            events.push(CalendarEvent {
+            events.push(Self {
                 summary: event.get_summary().map(String::from),
-                description: Some(body.clone()),
+                description: Some(body),
                 uid: event.get_uid().map(String::from),
                 last_modified: event.get_last_modified(),
                 created: event.get_created(),
@@ -93,16 +93,18 @@ impl CalendarEvent {
 fn date_perhaps_time_to_datetime(date_perhaps_time: DatePerhapsTime) -> Option<DateTime<Utc>> {
     match date_perhaps_time {
         DatePerhapsTime::DateTime(calendar_dt) => match calendar_dt {
-            CalendarDateTime::Floating(naive_dt) => Some(DateTime::<Utc>::from_utc(naive_dt, Utc)),
-            CalendarDateTime::Utc(dt) => Some(dt.into()),
+            CalendarDateTime::Floating(naive_dt) => {
+                Some(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc))
+            }
+            CalendarDateTime::Utc(dt) => Some(dt),
             CalendarDateTime::WithTimezone {
                 date_time: naive_dt,
                 tzid: _,
-            } => Some(DateTime::<Utc>::from_utc(naive_dt, Utc)),
+            } => Some(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc)),
         },
         DatePerhapsTime::Date(naive_date) => {
-            let naive_dt = naive_date.and_hms(0, 0, 0);
-            Some(DateTime::<Utc>::from_utc(naive_dt, Utc))
+            let naive_dt = naive_date.and_hms_opt(0, 0, 0)?;
+            Some(DateTime::<Utc>::from_naive_utc_and_offset(naive_dt, Utc))
         }
     }
 }

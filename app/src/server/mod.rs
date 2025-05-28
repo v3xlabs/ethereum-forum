@@ -3,13 +3,13 @@ use governor::Quota;
 use opengraph::OpenGraph;
 use pm::PMApi;
 use poem::{
-    EndpointExt, Route, Server,
     endpoint::StaticFilesEndpoint,
     get, handler,
     listener::TcpListener,
     middleware::{Cors, OpenTelemetryMetrics},
+    EndpointExt, Route, Server,
 };
-use poem_openapi::{OpenApi, OpenApiService, Tags, payload::Html};
+use poem_openapi::{payload::Html, OpenApi, OpenApiService, Tags};
 use ratelimit::GovRateLimitMiddleware;
 use std::num::NonZero;
 use topic::TopicApi;
@@ -21,10 +21,10 @@ use crate::state::AppState;
 
 pub mod events;
 pub mod opengraph;
+pub mod pm;
 pub mod ratelimit;
 pub mod topic;
 pub mod user;
-pub mod pm;
 
 #[derive(Tags)]
 pub enum ApiTags {
@@ -83,6 +83,6 @@ pub async fn start_http(state: AppState) {
 }
 
 #[handler]
-async fn get_openapi_docs() -> Html<&'static str> {
+const fn get_openapi_docs() -> Html<&'static str> {
     Html(include_str!("./index.html"))
 }

@@ -17,7 +17,8 @@ pub struct MeetingDataQuery {
 }
 
 impl PMModule {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {}
     }
 
@@ -34,12 +35,12 @@ impl PMModule {
         let x = match state
             .cache
             .pm_data_cache
-            .try_get_with("pm_data".to_string(), PMModule::get_pm_data(self))
+            .try_get_with("pm_data".to_string(), Self::get_pm_data(self))
             .await
         {
             Ok(x) => x,
             Err(e) => {
-                println!("Error fetching cached pm data: {}", e);
+                println!("Error fetching cached pm data: {e}");
                 return Err(anyhow::anyhow!("Error fetching cached pm data: {}", e));
             }
         };
@@ -53,14 +54,15 @@ impl PMModule {
             x.contains(&issue_id)
         });
 
-        if let Some(meeting_data) = meeting_data {
-            Ok(meeting_data.clone())
-        } else {
-            Err(anyhow::anyhow!(
-                "No meeting data found for issue id: {}",
-                issue_id
-            ))
-        }
+        meeting_data.map_or_else(
+            || {
+                Err(anyhow::anyhow!(
+                    "No meeting data found for issue id: {}",
+                    issue_id
+                ))
+            },
+            |meeting_data| Ok(meeting_data.clone()),
+        )
     }
 }
 
@@ -71,6 +73,6 @@ mod tests {
     #[async_std::test]
     async fn test_get_pm_data() {
         let pm_data = PMModule::new().get_pm_data().await.unwrap();
-        println!("{:?}", pm_data);
+        println!("{pm_data:?}");
     }
 }
