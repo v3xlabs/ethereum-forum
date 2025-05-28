@@ -29,9 +29,9 @@ pub struct Topic {
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Object)]
 pub struct Summary {
-    pub summary_id: String,
+    pub summary_id: i32,
     pub topic_id: i32,
-    pub freshness_score: i32,
+    pub based_on: DateTime<Utc>,
     pub summary_text: String,
 }
 
@@ -238,7 +238,7 @@ impl Topic {
 
             let topic = Topic::get_by_topic_id(topic_id, state).await?;
 
-            let freshness_score = if let Some(last_posted_at) = topic.last_post_at {
+            let based_on = if let Some(last_posted_at) = topic.last_post_at {
                 if let Some(bumped_at) = topic.bumped_at {
                     ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
                 } else {
@@ -248,23 +248,29 @@ impl Topic {
                 Utc::now().timestamp() as i32
             };
 
-            let new_summary = Summary {
-                summary_id: uuidv7::create(),
+            let based_on_datetime =
+                DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
+
+            let summary_id = query_scalar!(
+                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING summary_id",
                 topic_id,
-                freshness_score,
+                based_on_datetime,
+                summary
+            )
+            .fetch_one(&state.database.pool)
+            .await?;
+
+            let new_summary = Summary {
+                summary_id,
+                topic_id,
+                based_on: based_on_datetime,
                 summary_text: summary,
             };
 
-            query!(
-                "INSERT INTO topic_summaries (summary_id, topic_id, freshness_score, summary_text) VALUES ($1, $2, $3, $4)",
-                new_summary.summary_id,
-                new_summary.topic_id,
-                new_summary.freshness_score,
-                new_summary.summary_text
-            )
-            .execute(&state.database.pool)
-            .await?;
-            info!("Created new summary for topic_id: {}", topic_id);
+            info!(
+                "Created new summary for topic_id: {} with summary_id: {}",
+                topic_id, summary_id
+            );
 
             Ok(new_summary)
         }

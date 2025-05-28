@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS topic_summaries (
-    summary_id TEXT PRIMARY KEY,
+    summary_id SERIAL PRIMARY KEY,
     topic_id INT NOT NULL,
-    freshness_score INT NOT NULL,
+    based_on TIMESTAMP WITH TIME ZONE NOT NULL,
     summary_text TEXT NOT NULL
 );
 
