@@ -5,7 +5,7 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use crate::models::topics::{Post, Summary, Topic};
+use crate::models::topics::{Post, Topic, TopicSummary};
 use crate::server::ApiTags;
 use crate::state::AppState;
 
@@ -133,7 +133,7 @@ impl TopicApi {
         &self,
         state: Data<&AppState>,
         #[oai(style = "simple")] topic_id: Path<i32>,
-    ) -> Result<Json<Summary>> {
+    ) -> Result<Json<TopicSummary>> {
         let topic_id = topic_id.0;
 
         let summary = Topic::get_summary_by_topic_id(topic_id, &state)

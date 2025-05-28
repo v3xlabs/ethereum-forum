@@ -28,7 +28,7 @@ pub struct Topic {
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Object)]
-pub struct Summary {
+pub struct TopicSummary {
     pub summary_id: i32,
     pub topic_id: i32,
     pub based_on: DateTime<Utc>,
@@ -222,9 +222,9 @@ impl Topic {
     pub async fn get_summary_by_topic_id(
         topic_id: i32,
         state: &AppState,
-    ) -> Result<Summary, sqlx::Error> {
+    ) -> Result<TopicSummary, sqlx::Error> {
         let summary = query_as!(
-            Summary,
+            TopicSummary,
             "SELECT * FROM topic_summaries WHERE topic_id = $1",
             topic_id
         )
@@ -252,8 +252,9 @@ impl Topic {
         let based_on_datetime =
             DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
 
-        let summary_id = query_scalar!(
-                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING summary_id",
+        let summary = query_as!(
+                TopicSummary,
+                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING *",
                 topic_id,
                 based_on_datetime,
                 summary
@@ -261,19 +262,12 @@ impl Topic {
             .fetch_one(&state.database.pool)
             .await?;
 
-        let new_summary = Summary {
-            summary_id,
-            topic_id,
-            based_on: based_on_datetime,
-            summary_text: summary,
-        };
-
         info!(
             "Created new summary for topic_id: {} with summary_id: {}",
-            topic_id, summary_id
+            topic_id, summary.summary_id
         );
 
-        Ok(new_summary)
+        Ok(summary)
     }
 }
 
