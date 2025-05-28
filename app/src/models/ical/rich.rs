@@ -6,7 +6,7 @@ use anyhow::Error;
 use poem_openapi::Object;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
+use tracing::debug;
 
 use super::CalendarEvent;
 
@@ -62,28 +62,15 @@ impl CalendarEvent {
                         let found_pm_data: Option<&PMMeetingData> =
                             all_pm_data.values().find(|pm_data| match pm_data {
                                 PMMeetingData::OneOff(one_off) => {
-                                    if let Some(issue_number) = one_off.issue_number {
-                                        issue_number == issue_id
-                                    } else {
-                                        false
-                                    }
+                                    one_off.issue_number == Some(issue_id)
                                 }
-                                PMMeetingData::Recurring(recurring) => match &recurring.occurrences
-                                {
-                                    Some(x) => {
-                                        let xz = x.iter().find(|occurrence| {
-                                            if let Some(issue_number) = occurrence.issue_number {
-                                                issue_number == issue_id
-                                            } else {
-                                                false
-                                            }
-                                        });
-
-                                        xz.is_some()
-                                    }
-                                    None => false,
-                                },
-                                _ => false,
+                                PMMeetingData::Recurring(recurring) => {
+                                    recurring.occurrences.as_ref().is_some_and(|x| {
+                                        x.iter().any(|occurrence| {
+                                            occurrence.issue_number == Some(issue_id)
+                                        })
+                                    })
+                                }
                             });
 
                         if let Some(found_pm_data) = found_pm_data {

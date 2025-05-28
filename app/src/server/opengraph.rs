@@ -1,7 +1,7 @@
 use async_trait::async_trait;
-use poem::IntoResponse;
 use poem::web::Html;
-use poem::{Endpoint, Request, Response, middleware::Middleware};
+use poem::IntoResponse;
+use poem::{middleware::Middleware, Endpoint, Request, Response};
 use regex::Regex;
 use tracing::info;
 
@@ -14,6 +14,7 @@ pub struct OpenGraph {
 }
 
 impl OpenGraph {
+    #[must_use]
     pub fn new(state: &AppState) -> Self {
         Self {
             state: state.clone(),
@@ -38,10 +39,7 @@ pub struct OpenGraphMiddlewareImpl<E> {
     state: AppState,
 }
 
-impl<E: Endpoint> Endpoint for OpenGraphMiddlewareImpl<E>
-where
-    E: Endpoint,
-{
+impl<E: Endpoint> Endpoint for OpenGraphMiddlewareImpl<E> {
     type Output = Response;
 
     async fn call(&self, req: Request) -> poem::Result<Self::Output> {
@@ -54,7 +52,7 @@ where
         let mut opengraph_image: Option<String> = None;
 
         if route.starts_with("/t/") {
-            let topic_id = route.split("/").nth(2).unwrap_or_default();
+            let topic_id = route.split('/').nth(2).unwrap_or_default();
             let topic_id = topic_id.parse::<i32>().ok();
             info!("Topic ID: {:?}", topic_id);
             if let Some(topic_id) = topic_id {
@@ -67,7 +65,7 @@ where
                     info!("OpenGraph request to topic: {}", topic.title);
                     opengraph_title = Some(topic.title);
                     opengraph_description = first_post.and_then(|post| post.cooked).map(|cooked| {
-                        let regex = Regex::new(r#"<[^>]*?>"#).unwrap();
+                        let regex = Regex::new(r"<[^>]*?>").unwrap();
                         regex.replace_all(&cooked, "").to_string()
                     });
                     opengraph_image = topic.image_url;
@@ -89,37 +87,43 @@ where
             if let Some(title) = opengraph_title {
                 body = Regex::new(r#"property="og:title" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("property=\"og:title\" content=\"{}\"", title))
+                    .replace(&body, format!("property=\"og:title\" content=\"{title}\""))
                     .to_string();
                 body = Regex::new(r#"name="twitter:title" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("name=\"twitter:title\" content=\"{}\"", title))
+                    .replace(&body, format!("name=\"twitter:title\" content=\"{title}\""))
                     .to_string();
-                body = Regex::new(r#"<title>[^<]*?</title>"#)
+                body = Regex::new(r"<title>[^<]*?</title>")
                     .unwrap()
-                    .replace(&body, format!("<title>{}</title>", title))
+                    .replace(&body, format!("<title>{title}</title>"))
                     .to_string();
             }
 
             if let Some(description) = opengraph_description {
                 body = Regex::new(r#"property="og:description" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("property=\"og:description\" content=\"{}\"", description))
+                    .replace(
+                        &body,
+                        format!("property=\"og:description\" content=\"{description}\""),
+                    )
                     .to_string();
                 body = Regex::new(r#"name="twitter:description" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("name=\"twitter:description\" content=\"{}\"", description))
+                    .replace(
+                        &body,
+                        format!("name=\"twitter:description\" content=\"{description}\""),
+                    )
                     .to_string();
             }
 
             if let Some(image) = opengraph_image {
                 body = Regex::new(r#"property="og:image" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("property=\"og:image\" content=\"{}\"", image))
+                    .replace(&body, format!("property=\"og:image\" content=\"{image}\""))
                     .to_string();
                 body = Regex::new(r#"name="twitter:image" content="[^"]*?""#)
                     .unwrap()
-                    .replace(&body, format!("name=\"twitter:image\" content=\"{}\"", image))
+                    .replace(&body, format!("name=\"twitter:image\" content=\"{image}\""))
                     .to_string();
             }
 

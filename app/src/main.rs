@@ -24,7 +24,11 @@ pub async fn main() -> Result<(), Error> {
     });
     let discourse2_state = state.clone();
     let discourse2_handle = async_std::task::spawn(async move {
-        discourse2_state.clone().discourse.fetch_periodically().await;
+        discourse2_state
+            .clone()
+            .discourse
+            .fetch_periodically()
+            .await;
     });
     let server_handle = async_std::task::spawn(server::start_http(state.clone()));
 

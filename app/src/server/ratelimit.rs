@@ -1,11 +1,10 @@
-
 use async_trait::async_trait;
 use governor::clock::DefaultClock;
 use governor::state::keyed::DashMapStateStore;
 use governor::{Quota, RateLimiter};
 use poem::web::RealIp;
-use poem::{FromRequest, IntoResponse};
 use poem::{http::StatusCode, middleware::Middleware, Endpoint, Request, Response};
+use poem::{FromRequest, IntoResponse};
 use std::net::IpAddr;
 use std::sync::Arc;
 use tracing::{info, warn};
@@ -24,6 +23,7 @@ impl GovRateLimitMiddleware {
     /// Create a new middleware.
     /// `ip_quota` is the site-wide quota per IP.
     /// `endpoint_ip_quota` is the quota per (endpoint, IP) pair.
+    #[must_use]
     pub fn new(ip_quota: Quota, endpoint_ip_quota: Quota) -> Self {
         let ip_limiter = RateLimiter::keyed(ip_quota);
         let endpoint_ip_limiter = RateLimiter::keyed(endpoint_ip_quota);
@@ -53,10 +53,7 @@ pub struct GovRateLimitMiddlewareImpl<E> {
     endpoint_ip_limiter: Arc<EndpointIpRateLimiter>,
 }
 
-impl<E: Endpoint> Endpoint for GovRateLimitMiddlewareImpl<E>
-where
-    E: Endpoint,
-{
+impl<E: Endpoint> Endpoint for GovRateLimitMiddlewareImpl<E> {
     type Output = Response;
 
     async fn call(&self, req: Request) -> poem::Result<Self::Output> {

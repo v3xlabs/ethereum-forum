@@ -50,6 +50,7 @@ pub struct Post {
 }
 
 impl Post {
+    #[must_use]
     pub fn from_discourse(post: DiscourseTopicPost) -> Self {
         Self {
             post_id: post.id,
@@ -92,8 +93,8 @@ impl Post {
             Self,
             "SELECT * FROM posts WHERE topic_id = $1 ORDER BY post_number ASC LIMIT $2 OFFSET $3",
             topic_id,
-            (size + 1) as i64,
-            offset as i64
+            i64::from(size + 1),
+            i64::from(offset)
         )
         .fetch_all(&state.database.pool)
         .await?;
@@ -105,12 +106,9 @@ impl Post {
     }
 
     pub async fn count_by_topic_id(topic_id: i32, state: &AppState) -> Result<i32, sqlx::Error> {
-        let count = query_scalar!(
-            "SELECT COUNT(*) FROM posts WHERE topic_id = $1",
-            topic_id
-        )
-        .fetch_one(&state.database.pool)
-        .await?;
+        let count = query_scalar!("SELECT COUNT(*) FROM posts WHERE topic_id = $1", topic_id)
+            .fetch_one(&state.database.pool)
+            .await?;
 
         Ok(count.unwrap_or_default() as i32)
     }
@@ -217,7 +215,7 @@ impl Topic {
 
 // Match for <a href=\"https://github.com/ethereum/pm/issues/1518\">GitHub Issue</a>
 fn try_extract_pm_issue(cooked: &str) -> Option<i32> {
-    let re = Regex::new(r#"https://github\.com/ethereum/pm/issues/(\d+)"#).unwrap();
+    let re = Regex::new(r"https://github\.com/ethereum/pm/issues/(\d+)").unwrap();
     let caps = re.captures(cooked);
 
     caps.map(|caps| caps.get(1).unwrap().as_str().parse().unwrap())

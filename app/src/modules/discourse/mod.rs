@@ -24,10 +24,7 @@ pub async fn fetch_latest_topics() -> Result<DiscourseLatestResponse, Error> {
 }
 
 pub async fn fetch_topic(topic_id: TopicId, page: u32) -> Result<DiscourseTopicResponse, Error> {
-    let url = format!(
-        "https://ethereum-magicians.org/t/{}.json?page={}",
-        topic_id, page
-    );
+    let url = format!("https://ethereum-magicians.org/t/{topic_id}.json?page={page}");
     let response = reqwest::get(url).await?;
     let body = response.text().await?;
     let parsed: DiscourseTopicResponse = serde_json::from_str(&body)?;
@@ -68,7 +65,9 @@ impl DiscourseService {
             if let Ok(topic) = fetch_topic(request.topic_id, request.page).await {
                 let existing_topic = Topic::get_by_topic_id(topic.id, &state).await.ok();
                 let existing_messages = if let Some(existing) = &existing_topic {
-                    Post::count_by_topic_id(existing.topic_id, &state).await.unwrap_or(0)
+                    Post::count_by_topic_id(existing.topic_id, &state)
+                        .await
+                        .unwrap_or(0)
                 } else {
                     0
                 };
@@ -83,15 +82,21 @@ impl DiscourseService {
                         || existing_messages < topic.posts_count
                 };
 
-                if !worth_fetching_more {
-                    info!("Topic {:?} is up to date ({} -> {}) skipping", topic.id, existing_messages, topic.posts_count);
+                if worth_fetching_more {
+                    info!(
+                        "Topic {:?} ({} -> {}) is worth fetching more, fetching",
+                        topic.id, existing_messages, topic.posts_count
+                    );
+                } else {
+                    info!(
+                        "Topic {:?} is up to date ({} -> {}) skipping",
+                        topic.id, existing_messages, topic.posts_count
+                    );
                     self.topic_lock
                         .lock()
                         .await
                         .remove(&(request.topic_id, request.page));
                     continue;
-                } else {
-                    info!("Topic {:?} ({} -> {}) is worth fetching more, fetching", topic.id, existing_messages, topic.posts_count);
                 }
 
                 if !topic.post_stream.posts.is_empty() {
@@ -105,7 +110,7 @@ impl DiscourseService {
                     let topic = Topic::from_discourse(&topic);
 
                     match topic.upsert(&state).await {
-                        Ok(_) => {
+                        Ok(()) => {
                             info!("Upserted topic: {:?}", topic.topic_id);
                         }
                         Err(e) => error!("Error upserting topic: {:?}", e),
@@ -116,7 +121,7 @@ impl DiscourseService {
                 for post in topic.post_stream.posts {
                     let post = Post::from_discourse(post);
                     match post.upsert(&state).await {
-                        Ok(_) => {
+                        Ok(()) => {
                             info!("Upserted post: {:?}", post.post_id);
                         }
                         Err(e) => error!("Error upserting post: {:?}", e),
@@ -162,7 +167,7 @@ impl DiscourseService {
     pub async fn fetch_periodically(&self) {
         loop {
             match self.fetch_latest().await {
-                Ok(_) => {
+                Ok(()) => {
                     info!("Fetched latest topics");
                 }
                 Err(e) => {
