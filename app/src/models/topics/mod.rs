@@ -33,6 +33,7 @@ pub struct TopicSummary {
     pub topic_id: i32,
     pub based_on: DateTime<Utc>,
     pub summary_text: String,
+    pub created_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -225,7 +226,7 @@ impl Topic {
     ) -> Result<TopicSummary, sqlx::Error> {
         let summary = query_as!(
             TopicSummary,
-            "SELECT * FROM topic_summaries WHERE topic_id = $1",
+            "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
             topic_id
         )
         .fetch_optional(&state.database.pool)
