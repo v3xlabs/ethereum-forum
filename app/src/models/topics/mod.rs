@@ -150,7 +150,7 @@ impl Topic {
             post_count: topic.posts_count,
             image_url: topic.image_url.clone(),
             last_post_at: Some(topic.last_posted_at),
-            bumped_at: topic.bumped_at,
+            bumped_at: None,
             extra: Some(topic.extra.clone()),
             created_at: topic.created_at,
             view_count: topic.views,
