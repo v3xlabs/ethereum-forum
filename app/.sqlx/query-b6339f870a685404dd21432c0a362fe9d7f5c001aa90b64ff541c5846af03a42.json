@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "summary_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "based_on",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "summary_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b6339f870a685404dd21432c0a362fe9d7f5c001aa90b64ff541c5846af03a42"
+}

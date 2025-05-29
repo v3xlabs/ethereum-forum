@@ -274,11 +274,11 @@ impl Topic {
             DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
 
         let summary = query_as!(
-                TopicSummary,
-                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING *",
-                topic_id,
-                based_on_datetime,
-                summary
+            TopicSummary,
+            "INSERT INTO topic_summaries (topic_id, based_on, summary_text, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *",
+            topic_id,
+            based_on_datetime,
+            summary
             )
             .fetch_one(&state.database.pool)
             .await?;

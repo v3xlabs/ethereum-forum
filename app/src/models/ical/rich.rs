@@ -6,7 +6,7 @@ use anyhow::Error;
 use poem_openapi::Object;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
+use tracing::{debug};
 
 use super::CalendarEvent;
 
@@ -82,8 +82,7 @@ impl CalendarEvent {
                                         xz.is_some()
                                     }
                                     None => false,
-                                },
-                                _ => false,
+                                }
                             });
 
                         if let Some(found_pm_data) = found_pm_data {
