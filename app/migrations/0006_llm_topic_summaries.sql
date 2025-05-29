@@ -5,4 +5,4 @@ CREATE TABLE IF NOT EXISTS topic_summaries (
     summary_text TEXT NOT NULL
 );
 
-ALTER TABLE topic_summaries ADD CONSTRAINT unique_topic_summaries_topic_id UNIQUE (topic_id);
+CREATE INDEX IF NOT EXISTS idx_topic_summaries_topic_id ON topic_summaries (topic_id);

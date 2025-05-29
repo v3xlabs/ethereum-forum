@@ -150,7 +150,7 @@ impl Topic {
             post_count: topic.posts_count,
             image_url: topic.image_url.clone(),
             last_post_at: Some(topic.last_posted_at),
-            bumped_at: None,
+            bumped_at: topic.bumped_at,
             extra: Some(topic.extra.clone()),
             created_at: topic.created_at,
             view_count: topic.views,
@@ -231,13 +231,6 @@ impl Topic {
         .fetch_optional(&state.database.pool)
         .await?;
 
-        let summary = match summary {
-            Some(s) => s,
-            None => {
-                return Self::create_new_summary(topic_id, state).await;
-            }
-        };
-
         let topic = match Topic::get_by_topic_id(topic_id, state).await {
             Ok(topic) => topic,
             Err(_) => {
@@ -245,56 +238,43 @@ impl Topic {
             }
         };
 
+        let summary = match summary {
+            Some(s) => s,
+            None => {
+                return Self::create_new_summary(topic_id, state, &topic).await;
+            }
+        };
+
         let based_on = topic
             .last_post_at
-            .map(|last_posted_at| {
-                topic
-                    .bumped_at
-                    .map(|bumped_at| {
-                        ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
-                    })
-                    .unwrap_or_else(|| last_posted_at.timestamp() as i32)
-            })
-            .unwrap_or_else(|| Utc::now().timestamp() as i32);
+            .map(|dt| dt.timestamp())
+            .unwrap_or_else(|| Utc::now().timestamp());
 
-        println!(
-            "Bumped at: {:?}, Last post at: {:?}, Based on: {}",
-            topic.bumped_at, topic.last_post_at, based_on,
-        );
-
-        if summary.based_on.timestamp() >= based_on as i64 {
+        if summary.based_on.timestamp() == based_on as i64 {
             return Ok(summary);
         }
 
-        Self::create_new_summary(topic_id, state).await
+        Self::create_new_summary(topic_id, state, &topic).await
     }
 
     async fn create_new_summary(
         topic_id: i32,
         state: &AppState,
+        topic: &Topic,
     ) -> Result<TopicSummary, sqlx::Error> {
         let summary = "This is a mock summary".to_string();
 
-        let topic = Topic::get_by_topic_id(topic_id, state).await?;
-
         let based_on = topic
             .last_post_at
-            .map(|last_posted_at| {
-                topic
-                    .bumped_at
-                    .map(|bumped_at| {
-                        ((last_posted_at.timestamp() + bumped_at.timestamp()) / 2) as i32
-                    })
-                    .unwrap_or_else(|| last_posted_at.timestamp() as i32)
-            })
-            .unwrap_or_else(|| Utc::now().timestamp() as i32);
+            .map(|dt| dt.timestamp())
+            .unwrap_or_else(|| Utc::now().timestamp());
 
         let based_on_datetime =
             DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
 
         let summary = query_as!(
                 TopicSummary,
-                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) ON CONFLICT (topic_id) DO UPDATE SET based_on = $2, summary_text = $3 RETURNING *",
+                "INSERT INTO topic_summaries (topic_id, based_on, summary_text) VALUES ($1, $2, $3) RETURNING *",
                 topic_id,
                 based_on_datetime,
                 summary
