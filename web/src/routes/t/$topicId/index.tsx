@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { parseISO } from 'date-fns';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 import { FiEye, FiHeart, FiMessageSquare } from 'react-icons/fi';
 import {
@@ -18,7 +18,13 @@ import {
 import { PiReceipt } from 'react-icons/pi';
 import { SiEthereum, SiOpenai, SiReddit } from 'react-icons/si';
 
-import { getTopic, usePostsInfinite, useTopic, useTopicRefresh } from '@/api/topics';
+import {
+    getTopic,
+    usePostsInfinite,
+    useTopic,
+    useTopicRefresh,
+    useTopicSummary,
+} from '@/api/topics';
 import { ExpandableList } from '@/components/list/ExpandableList';
 import { TimeAgo } from '@/components/TimeAgo';
 import { TopicPost } from '@/components/topic/TopicPost';
@@ -67,6 +73,8 @@ function RouteComponent() {
 
     const extra = topic?.extra as Record<string, unknown>;
     const tags = decodeCategory(extra?.['category_id'] as number);
+
+    const [showSummary, setShowSummary] = useState(false);
 
     const all_links = ((extra?.details?.links || []) as RelevantLink[]).sort(
         (a, b) => b.clicks - a.clicks
@@ -150,6 +158,27 @@ function RouteComponent() {
                         </li>
                     </ul>
                 </div>
+                {topic?.topic_id && (
+                    <div className="space-y-1.5">
+                        <div className="px-1.5">
+                            <h3 className="font-bold w-full border-b border-b-primary pb-1">
+                                Summary
+                            </h3>
+                        </div>
+                        {!showSummary && (
+                            <button
+                                onClick={() => {
+                                    setShowSummary(true);
+                                }}
+                                className="text-sm px-1.5 py-1 rounded w-full text-left"
+                            >
+                                Show summary
+                            </button>
+                        )}
+                        {showSummary && <Summary topicId={topic?.topic_id} />}
+                    </div>
+                )}
+                {/* Links */}
                 {standards_links.length > 0 && (
                     <ExpandableList title="Standards Links" maxItems={4}>
                         {standards_links.map((link) => (
@@ -243,6 +272,35 @@ function RouteComponent() {
         </>
     );
 }
+
+const Summary = ({ topicId }: { topicId: number }) => {
+    const { data: summary, isPending } = useTopicSummary(topicId);
+
+    if (isPending) {
+        return (
+            <div className="flex items-center gap-2 py-3 px-1.5">
+                <div className="animate-spin">
+                    <LuRefreshCcw className="size-4" />
+                </div>
+                <span className="text-sm">Generating summary...</span>
+            </div>
+        );
+    }
+
+    if (!summary) {
+        return (
+            <div className="text-primary text-sm py-2 px-1.5 italic">
+                No summary available for this topic
+            </div>
+        );
+    }
+
+    return (
+        <div className="text-sm leading-relaxed py-2 px-1.5 text-primary border-l-2">
+            {summary.summary_text}
+        </div>
+    );
+};
 
 const RelevantLink = ({ link }: { link: RelevantLink }) => {
     let icon = undefined;

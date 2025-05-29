@@ -6,9 +6,10 @@ import {
     useQuery,
 } from '@tanstack/react-query';
 
+import { GithubIssueComment } from '@/types/github';
+
 import { useApi } from './api';
 import { components } from './schema.gen';
-import { GithubIssueComment } from '@/types/github';
 
 // Get the Post type from schema
 export type Post = components['schemas']['Post'];
@@ -84,6 +85,20 @@ export const getPosts = (topicId: string, page: number) =>
         },
     });
 
+export const getTopicSummary = (topicId: number) =>
+    queryOptions({
+        queryKey: ['summary', topicId],
+        queryFn: async () => {
+            const response = await useApi('/t/{topic_id}/summary', 'get', {
+                path: {
+                    topic_id: topicId,
+                },
+            });
+
+            return response.data;
+        },
+    });
+
 export const getPostsInfinite = (topicId: string) =>
     infiniteQueryOptions({
         queryKey: ['posts', topicId, 'infinite'],
@@ -119,5 +134,7 @@ export const useGithubIssueComments = (issueId: number) =>
     });
 
 export const usePosts = (topicId: string, page: number) => useQuery(getPosts(topicId, page));
+
+export const useTopicSummary = (topicId: number) => useQuery(getTopicSummary(topicId));
 
 export const usePostsInfinite = (topicId: string) => useInfiniteQuery(getPostsInfinite(topicId));
