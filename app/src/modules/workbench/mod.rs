@@ -1,5 +1,4 @@
 use openai::chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole};
-use opentelemetry_http::HttpError;
 use serde_json::json;
 
 use crate::{
@@ -14,7 +13,7 @@ impl Workbench {
     pub async fn create_workshop_summary(
         topic: &Topic,
         state: &AppState,
-    ) -> Result<String, HttpError> {
+    ) -> Result<String, WorkbenchError> {
         let posts = Post::find_by_topic_id(topic.topic_id, 1, Some(512), state);
 
         let messages = vec![
@@ -45,4 +44,10 @@ impl Workbench {
 
         Ok(response.content.unwrap_or_default())
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum WorkbenchError {
+    #[error("Failed to create workshop summary: {0}")]
+    OpenAIError(#[from] openai::OpenAiError),
 }

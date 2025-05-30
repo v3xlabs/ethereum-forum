@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, query, query_as, query_scalar};
 use tracing::info;
 
-use crate::modules::workbench::Workbench;
+use crate::modules::workbench::{Workbench, WorkbenchError};
 use crate::state::AppState;
 
 use super::discourse::topic::{DiscourseTopicPost, DiscourseTopicResponse};
@@ -225,7 +225,7 @@ impl Topic {
     pub async fn get_summary_by_topic_id(
         topic_id: i32,
         state: &AppState,
-    ) -> Result<TopicSummary, HttpError> {
+    ) -> Result<TopicSummary, TopicSummaryError> {
         let summary = query_as!(
             TopicSummary,
             "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
@@ -264,7 +264,7 @@ impl Topic {
         topic_id: i32,
         state: &AppState,
         topic: &Topic,
-    ) -> Result<TopicSummary, HttpError> {
+    ) -> Result<TopicSummary, TopicSummaryError> {
         let summary = Workbench::create_workshop_summary(topic, &state).await?;
 
         let based_on = topic
@@ -292,6 +292,14 @@ impl Topic {
 
         Ok(summary)
     }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum TopicSummaryError {
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+    #[error("Failed to create workshop summary: {0}")]
+    WorkbenchError(#[from] WorkbenchError),
 }
 
 // Match for <a href=\"https://github.com/ethereum/pm/issues/1518\">GitHub Issue</a>
