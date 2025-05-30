@@ -1,4 +1,6 @@
-use sqlx::{query_as, types::Uuid};
+use governor::state;
+use sqlx::{query_as};
+use uuid::Uuid;
 use chrono::{DateTime, Utc};
 use crate::state::AppState;
 
@@ -58,19 +60,33 @@ impl WorkshopMessage {
             }
         };
 
-        query_as("INSERT INTO workshop_messages (chat_id, user_id, sender_role, message, parent_message_id) VALUES ($1, $2, $3, $4, $5) RETURNING *")
-            .bind(chat_id)
-            .bind(user_id)
-            .bind("user")
-            .bind(message)
-            .bind(parent_message_id)
+        query_as!(Self, "INSERT INTO workshop_messages (chat_id, sender_role, message, parent_message_id) VALUES ($1, $2, $3, $4) RETURNING *",
+            chat_id,
+            "user",
+            message,
+            parent_message_id
+        )
             .fetch_one(&state.database.pool)
             .await
     }
 
     pub async fn get_messages_by_chat_id(chat_id: Uuid, state: &AppState) -> Result<Vec<Self>, sqlx::Error> {
-        query_as("SELECT * FROM workshop_messages WHERE chat_id = $1")
-            .bind(chat_id)
+        query_as!(Self, "SELECT * FROM workshop_messages WHERE chat_id = $1", chat_id)
+            .fetch_all(&state.database.pool)
+            .await
+    }
+
+    /// Gets all messages (for use with snapshots) upwards
+    /// As such only returning the singular branch up until parent_message_id = NULL
+    /// Starts querying at chat_id message_id and works its way up to the root message
+    pub async fn get_messages_upwards(snapshot: &WorkshopSnapshot, state: &AppState) -> Result<Vec<Self>, sqlx::Error>  {
+        query_as!(Self, "WITH RECURSIVE message_tree AS (
+            SELECT * FROM workshop_messages WHERE message_id = $1
+            UNION ALL
+            SELECT m.* FROM workshop_messages m
+            INNER JOIN message_tree mt ON m.message_id = mt.parent_message_id
+        )
+        SELECT * FROM message_tree", snapshot.message_id)
             .fetch_all(&state.database.pool)
             .await
     }
