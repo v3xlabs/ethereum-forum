@@ -45,7 +45,7 @@ export const ProtocolAgendaUpcoming = () => {
             startTime: event.start || new Date().toISOString(),
             // Assume 30 minutes duration for each event
             duration: 30,
-            color: 'var(--theme-bg-primary)',
+            color: 'rgb(var(--theme-bg-primary))',
         })) || [];
 
     const showCalendar = calendarEvents.length > 0;
@@ -109,7 +109,7 @@ export const ProtocolAgendaUpcoming = () => {
                                             width: '90%',
                                             left: '5%',
                                             backgroundColor:
-                                                event.color || 'var(--theme-bg-secondary)',
+                                                event.color || 'rgb(var(--theme-bg-secondary))',
                                         }}
                                     >
                                         <div className="font-medium truncate text-sm">

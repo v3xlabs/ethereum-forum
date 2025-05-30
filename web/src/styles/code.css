@@ -25,7 +25,7 @@ pre[class*="language-"] {
 	-moz-hyphens: none;
 	-ms-hyphens: none;
 	hyphens: none;
-	background: var(--theme-bg-secondary);
+	background: rgb(var(--theme-bg-secondary));
 	color: #767693;
 }
 
@@ -62,7 +62,7 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-	color: var(--theme-text-primary);
+	color: rgb(var(--theme-text-primary));
 }
 
 .token.punctuation {
@@ -82,8 +82,8 @@ pre[class*="language-"] {
 .token.property,
 .token.function {
 	/* color: #767693; */
-	color: var(--theme-text-secondary);
-    text-shadow: 0 0 var(--theme-code-shadow) var(--theme-text-secondary);
+	color: rgb(var(--theme-text-secondary));
+    text-shadow: 0 0 var(--theme-code-shadow) rgb(var(--theme-text-secondary));
 }
 
 .token.tag-id,
@@ -120,7 +120,7 @@ code.language-scss,
 
 .token.placeholder,
 .token.variable {
-	color: var(--theme-text-secondary);
+	color: rgb(var(--theme-text-secondary));
 }
 
 .token.deleted {

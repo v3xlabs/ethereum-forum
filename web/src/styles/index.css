@@ -14,24 +14,24 @@
 }
 
 html.light {
-    --theme-bg-primary: #FDF6E3;
-    --theme-bg-secondary: #EEE8D5;
-    --theme-bg-tertiary: #ccc09d;
-    --theme-text-primary: #657B83;
-    --theme-text-secondary: #268BD2;
-    --theme-border: #657B83;
-    --theme-border-secondary: #EEE8D5;
+    --theme-bg-primary: 253 246 227;
+    --theme-bg-secondary: 238 232 213;
+    --theme-bg-tertiary: 204 192 157;
+    --theme-text-primary: 101 123 131;
+    --theme-text-secondary: 38 139 210;
+    --theme-border: 101 123 131;
+    --theme-border-secondary: 238 232 213;
     --theme-code-shadow: 1px;
 }
 
 html.dark {
-    --theme-bg-primary: #000000;
-    --theme-bg-secondary: #0D0D0D;
-    --theme-bg-tertiary: #242424;
-    --theme-text-primary: #747474;
-    --theme-text-secondary: #268BD2;
-    --theme-border: #242424;
-    --theme-border-secondary: #242424;
+    --theme-bg-primary: 0 0 0;
+    --theme-bg-secondary: 13 13 13;
+    --theme-bg-tertiary: 36 36 36;
+    --theme-text-primary: 116 116 116;
+    --theme-text-secondary: 38 139 210;
+    --theme-border: 36 36 36;
+    --theme-border-secondary: 36 36 36;
     --theme-code-shadow: 6px;
     .github-icon {
         /* filter: invert(1); */
@@ -41,25 +41,25 @@ html.dark {
 
 @media (prefers-color-scheme: light) {
     html.system {
-        --theme-bg-primary: #FDF6E3;
-        --theme-bg-secondary: #EEE8D5;
-        --theme-bg-tertiary: #ccc09d;
-        --theme-text-primary: #657B83;
-        --theme-text-secondary: #268BD2;
-        --theme-border: #657B83;
-        --theme-border-secondary: #EEE8D5;
+        --theme-bg-primary: 253 246 227;
+        --theme-bg-secondary: 238 232 213;
+        --theme-bg-tertiary: 204 192 157;
+        --theme-text-primary: 101 123 131;
+        --theme-text-secondary: 38 139 210;
+        --theme-border: 101 123 131;
+        --theme-border-secondary: 238 232 213;
         --theme-code-shadow: 1px;
     }
 }
 @media (prefers-color-scheme: dark) {
     html.system {
-        --theme-bg-primary: #000000;
-        --theme-bg-secondary: #0D0D0D;
-        --theme-bg-tertiary: #242424;
-        --theme-text-primary: #747474;
-        --theme-text-secondary: #268BD2;
-        --theme-border: #242424;
-        --theme-border-secondary: #242424;
+        --theme-bg-primary: 0 0 0;
+        --theme-bg-secondary: 13 13 13;
+        --theme-bg-tertiary: 36 36 36;
+        --theme-text-primary: 116 116 116;
+        --theme-text-secondary: 38 139 210;
+        --theme-border: 36 36 36;
+        --theme-border-secondary: 36 36 36;
         --theme-code-shadow: 6px;
         .github-icon {
             fill: #efefef;

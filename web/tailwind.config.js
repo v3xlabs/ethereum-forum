@@ -4,21 +4,21 @@ export default {
     theme: {
         extend: {
             backgroundColor: {
-                primary: 'var(--theme-bg-primary)',
-                secondary: 'var(--theme-bg-secondary)',
-                tertiary: 'var(--theme-bg-tertiary)',
+                primary: 'rgb(var(--theme-bg-primary))',
+                secondary: 'rgb(var(--theme-bg-secondary))',
+                tertiary: 'rgb(var(--theme-bg-tertiary))',
             },
             textColor: {
-                primary: 'var(--theme-text-primary)',
-                secondary: 'var(--theme-text-secondary)',
+                primary: 'rgb(var(--theme-text-primary))',
+                secondary: 'rgb(var(--theme-text-secondary))',
             },
             borderColor: {
-                primary: 'var(--theme-border)',
-                secondary: 'var(--theme-border-secondary)',
+                primary: 'rgb(var(--theme-border))',
+                secondary: 'rgb(var(--theme-border-secondary))',
             },
             outlineColor: {
-                primary: 'var(--theme-border)',
-                secondary: 'var(--theme-border-secondary)',
+                primary: 'rgb(var(--theme-border))',
+                secondary: 'rgb(var(--theme-border-secondary))',
             },
             colors: {
                 // background: 'var(--theme-bg-color)',
