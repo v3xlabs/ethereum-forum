@@ -15,7 +15,7 @@ impl Workbench {
         topic: &Topic,
         state: &AppState,
     ) -> Result<String, HttpError> {
-        let posts = Post::find_by_topic_id(topic.topic_id, 1, Some(50), state);
+        let posts = Post::find_by_topic_id(topic.topic_id, 1, Some(512), state);
 
         let messages = vec![
             state.workshop.prompts.summerize.clone(),
