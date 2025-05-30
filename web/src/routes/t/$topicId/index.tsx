@@ -1,7 +1,8 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import { createFileRoute } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { parseISO } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 import { FiEye, FiHeart, FiMessageSquare } from 'react-icons/fi';
 import {
@@ -13,6 +14,7 @@ import {
     LuNotebook,
     LuPaperclip,
     LuRefreshCcw,
+    LuX,
     LuYoutube,
 } from 'react-icons/lu';
 import { PiReceipt } from 'react-icons/pi';
@@ -73,8 +75,6 @@ function RouteComponent() {
 
     const extra = topic?.extra as Record<string, unknown>;
     const tags = decodeCategory(extra?.['category_id'] as number);
-
-    const [showSummary, setShowSummary] = useState(false);
 
     const all_links = ((extra?.details?.links || []) as RelevantLink[]).sort(
         (a, b) => b.clicks - a.clicks
@@ -165,17 +165,30 @@ function RouteComponent() {
                                 Summary
                             </h3>
                         </div>
-                        {!showSummary && (
-                            <button
-                                onClick={() => {
-                                    setShowSummary(true);
-                                }}
-                                className="text-sm px-1.5 py-1 rounded w-full text-left"
+                        <Dialog.Root>
+                            <Dialog.Trigger
+                                className="text-sm text-primary hover:bg-secondary p-1.5 w-full text-left"
+                                asChild
                             >
-                                Show summary
-                            </button>
-                        )}
-                        {showSummary && <Summary topicId={topic?.topic_id} />}
+                                <button className="w-full text-left flex items-center gap-2">
+                                    View Summary
+                                </button>
+                            </Dialog.Trigger>
+                            <Dialog.Portal>
+                                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+                                <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                                    <div className="w-full max-w-3xl rounded-lg p-6 relative bg-secondary">
+                                        <Dialog.Title className="text-xl font-bold mb-4">
+                                            Topic Summary
+                                        </Dialog.Title>
+                                        <Summary topicId={topic.topic_id} />
+                                        <Dialog.Close className="absolute top-2 right-2">
+                                            <LuX className="size-5" />
+                                        </Dialog.Close>
+                                    </div>
+                                </Dialog.Content>
+                            </Dialog.Portal>
+                        </Dialog.Root>
                     </div>
                 )}
                 {/* Links */}
@@ -296,7 +309,7 @@ const Summary = ({ topicId }: { topicId: number }) => {
     }
 
     return (
-        <div className="text-sm leading-relaxed py-2 px-1.5 text-primary border-l-2">
+        <div className="text-sm leading-relaxed text-primary">
             {summary.summary_text}
         </div>
     );
