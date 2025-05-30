@@ -19,6 +19,7 @@ import {
 } from 'react-icons/lu';
 import { PiReceipt } from 'react-icons/pi';
 import { SiEthereum, SiOpenai, SiReddit } from 'react-icons/si';
+import Markdown from 'react-markdown';
 
 import {
     getTopic,
@@ -176,8 +177,8 @@ function RouteComponent() {
                             </Dialog.Trigger>
                             <Dialog.Portal>
                                 <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-                                <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                                    <div className="w-full max-w-3xl rounded-lg p-6 relative bg-secondary">
+                                <Dialog.Content className="fixed inset-0 z-50 flex items-center justify-center p-6 rounded-lg">
+                                    <div className="w-full max-w-3xl p-6 relative bg-secondary">
                                         <Dialog.Title className="text-xl font-bold mb-4">
                                             Topic Summary
                                         </Dialog.Title>
@@ -309,9 +310,17 @@ const Summary = ({ topicId }: { topicId: number }) => {
     }
 
     return (
-        <div className="text-sm leading-relaxed text-primary">
-            {summary.summary_text}
-        </div>
+        <>
+            <div className="text-sm leading-relaxed text-primary prose">
+                <div className='max-h-[80vh] overflow-scroll'>
+                <Markdown>{summary.summary_text.replace(/\\n/g, '\n')}</Markdown>
+                </div>
+            </div>
+            <Dialog.Close>
+                <button className="button">Close</button>
+            </Dialog.Close>
+            <button className="button">Open in chat</button>
+        </>
     );
 };
 
