@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 
 import { paths } from './schema.gen';
 
-export const baseUrl = new URL('/api/', window.location.origin);
+export const baseUrl = new URL('/api/', import.meta.env.VITE_API_URL ?? window.location.origin);
 
 export const useApi = createFetch<paths>({
     baseUrl,
