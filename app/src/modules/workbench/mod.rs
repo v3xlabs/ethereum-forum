@@ -1,4 +1,5 @@
 use openai::chat::{ChatCompletion, ChatCompletionMessage, ChatCompletionMessageRole};
+use opentelemetry_http::HttpError;
 use serde_json::json;
 
 use crate::{
@@ -10,7 +11,10 @@ use crate::{
 pub struct Workbench;
 
 impl Workbench {
-    pub async fn create_workshop_summary(topic: &Topic, state: &AppState) -> String {
+    pub async fn create_workshop_summary(
+        topic: &Topic,
+        state: &AppState,
+    ) -> Result<String, HttpError> {
         let posts = Post::find_by_topic_id(topic.topic_id, 1, Some(50), state);
 
         let messages = vec![
@@ -35,9 +39,10 @@ impl Workbench {
             ChatCompletion::builder("meta-llama/llama-3.3-8b-instruct:free", messages.clone())
                 .credentials(state.workshop.crendentials.clone())
                 .create()
-                .await
-                .unwrap();
+                .await?;
+
         let response = chat_completion.choices.first().unwrap().message.clone();
-        return response.content.unwrap().trim().to_string();
+
+        Ok(response.content.unwrap_or_default())
     }
 }

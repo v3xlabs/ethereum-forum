@@ -1,4 +1,5 @@
 use chrono::{DateTime, Utc};
+use opentelemetry_http::HttpError;
 use poem_openapi::Object;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -224,7 +225,7 @@ impl Topic {
     pub async fn get_summary_by_topic_id(
         topic_id: i32,
         state: &AppState,
-    ) -> Result<TopicSummary, sqlx::Error> {
+    ) -> Result<TopicSummary, HttpError> {
         let summary = query_as!(
             TopicSummary,
             "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
@@ -236,7 +237,7 @@ impl Topic {
         let topic = match Topic::get_by_topic_id(topic_id, state).await {
             Ok(topic) => topic,
             Err(_) => {
-                return Err(sqlx::Error::RowNotFound);
+                return Err(sqlx::Error::RowNotFound)?;
             }
         };
 
@@ -263,8 +264,8 @@ impl Topic {
         topic_id: i32,
         state: &AppState,
         topic: &Topic,
-    ) -> Result<TopicSummary, sqlx::Error> {
-        let summary = Workbench::create_workshop_summary(topic, &state).await;
+    ) -> Result<TopicSummary, HttpError> {
+        let summary = Workbench::create_workshop_summary(topic, &state).await?;
 
         let based_on = topic
             .last_post_at

@@ -40,6 +40,9 @@ pub struct AppStateInner {
 }
 
 impl AppStateInner {
+    /// # Panics
+    /// Panics if the environment variables for the database configuration are not set.
+    /// Panics if the OpenAI-compatible API key or base URL for the intelligence is not set.
     pub async fn init() -> Self {
         // Load configuration from environment variables
         let database_config = Figment::new()
@@ -50,7 +53,10 @@ impl AppStateInner {
         let database = Database::init(&database_config).await;
 
         let workshop = WorkshopState {
-            crendentials: Credentials::from_env(),
+            crendentials: Credentials::new(
+                Env::var("WORKSHOP_INTELLIGENCE_KEY").expect("WORKSHOP_INTELLIGENCE_API_KEY not set"),
+                Env::var("WORKSHOP_INTELLIGENCE_BASE_URL").expect("WORKSHOP_INTELLIGENCE_BASE_URL not set"),
+            ),
             prompts: WorkshopPrompts {
                 summerize: ChatCompletionMessage {
                     role: ChatCompletionMessageRole::System,
