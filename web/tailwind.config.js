@@ -4,21 +4,25 @@ export default {
     theme: {
         extend: {
             backgroundColor: {
-                primary: 'rgb(var(--theme-bg-primary))',
-                secondary: 'rgb(var(--theme-bg-secondary))',
-                tertiary: 'rgb(var(--theme-bg-tertiary))',
+                primary: 'rgb(var(--theme-bg-primary) / <alpha-value>) /* rgb(253, 246, 227) */',
+                secondary:
+                    'rgb(var(--theme-bg-secondary) / <alpha-value>) /* rgb(238, 232, 213) */',
+                tertiary: 'rgb(var(--theme-bg-tertiary) / <alpha-value>) /* rgb(204, 192, 157) */',
             },
             textColor: {
-                primary: 'rgb(var(--theme-text-primary))',
-                secondary: 'rgb(var(--theme-text-secondary))',
+                primary: 'rgb(var(--theme-text-primary) / <alpha-value>) /* rgb(101, 123, 131) */',
+                secondary:
+                    'rgb(var(--theme-text-secondary) / <alpha-value>) /* rgb(38, 139, 210) */',
             },
             borderColor: {
-                primary: 'rgb(var(--theme-border))',
-                secondary: 'rgb(var(--theme-border-secondary))',
+                primary: 'rgb(var(--theme-border) / <alpha-value>) /* rgb(101, 123, 131) */',
+                secondary:
+                    'rgb(var(--theme-border-secondary) / <alpha-value>) /* rgb(238, 232, 213) */',
             },
             outlineColor: {
-                primary: 'rgb(var(--theme-border))',
-                secondary: 'rgb(var(--theme-border-secondary))',
+                primary: 'rgb(var(--theme-border) / <alpha-value>) /* rgb(101, 123, 131) */',
+                secondary:
+                    'rgb(var(--theme-border-secondary) / <alpha-value>) /* rgb(238, 232, 213) */',
             },
             colors: {
                 // background: 'var(--theme-bg-color)',
