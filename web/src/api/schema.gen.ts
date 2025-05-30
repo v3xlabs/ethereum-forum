@@ -125,6 +125,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/t/{topic_id}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /t/:topic_id/summary
+         * @description Get summaries from topic
+         */
+        get: operations["get_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users": {
         parameters: {
             query?: never;
@@ -448,6 +468,18 @@ export interface components {
             pm_issue?: number;
             extra?: unknown;
         };
+        /** TopicSummary */
+        TopicSummary: {
+            /** Format: int32 */
+            summary_id: number;
+            /** Format: int32 */
+            topic_id: number;
+            /** Format: date-time */
+            based_on: string;
+            summary_text: string;
+            /** Format: date-time */
+            created_at: string;
+        };
         /** YoutubeMeetingData */
         YoutubeMeetingData: {
             link: string;
@@ -529,6 +561,27 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["PostsResponse"];
+                };
+            };
+        };
+    };
+    get_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TopicSummary"];
                 };
             };
         };
