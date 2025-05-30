@@ -1,14 +1,11 @@
 use chrono::{DateTime, Utc};
-use openai::chat::ChatCompletion;
-use openai::chat::ChatCompletionMessage;
-use openai::chat::ChatCompletionMessageRole;
 use poem_openapi::Object;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use sqlx::{prelude::FromRow, query, query_as, query_scalar};
 use tracing::info;
 
+use crate::modules::workbench::Workbench;
 use crate::state::AppState;
 
 use super::discourse::topic::{DiscourseTopicPost, DiscourseTopicResponse};
@@ -262,43 +259,12 @@ impl Topic {
         Self::create_new_summary(topic_id, state, &topic).await
     }
 
-    async fn create_workshop_summary(topic: &Self, state: &AppState) -> String {
-        let posts = Post::find_by_topic_id(topic.topic_id, 1, Some(50), state);
-
-        let messages = vec![
-            state.workshop.prompts.summerize.clone(),
-            ChatCompletionMessage {
-                role: ChatCompletionMessageRole::User,
-                content: Some(
-                    serde_json::to_string(&json!({
-                        "topic_info": topic,
-                        "posts": posts.await.map(|(posts, _)| posts).unwrap_or_else(|_| vec![]),
-                    }))
-                    .unwrap(),
-                ),
-                name: None,
-                function_call: None,
-                tool_call_id: None,
-                tool_calls: None,
-            },
-        ];
-
-        let chat_completion =
-            ChatCompletion::builder("meta-llama/llama-3.3-8b-instruct:free", messages.clone())
-                .credentials(state.workshop.crendentials.clone())
-                .create()
-                .await
-                .unwrap();
-        let response = chat_completion.choices.first().unwrap().message.clone();
-        return response.content.unwrap().trim().to_string();
-    }
-
     async fn create_new_summary(
         topic_id: i32,
         state: &AppState,
         topic: &Topic,
     ) -> Result<TopicSummary, sqlx::Error> {
-        let summary = Self::create_workshop_summary(topic, &state).await;
+        let summary = Workbench::create_workshop_summary(topic, &state).await;
 
         let based_on = topic
             .last_post_at
