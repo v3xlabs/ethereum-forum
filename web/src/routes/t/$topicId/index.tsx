@@ -19,18 +19,12 @@ import {
 } from 'react-icons/lu';
 import { PiReceipt } from 'react-icons/pi';
 import { SiEthereum, SiOpenai, SiReddit } from 'react-icons/si';
-import Markdown from 'react-markdown';
 
-import {
-    getTopic,
-    usePostsInfinite,
-    useTopic,
-    useTopicRefresh,
-    useTopicSummary,
-} from '@/api/topics';
+import { getTopic, usePostsInfinite, useTopic, useTopicRefresh } from '@/api/topics';
 import { ExpandableList } from '@/components/list/ExpandableList';
 import { TimeAgo } from '@/components/TimeAgo';
 import { TopicPost } from '@/components/topic/TopicPost';
+import { TopicSummary } from '@/components/topic/TopicSummary';
 import { decodeCategory } from '@/util/category';
 import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/links';
 import { formatBigNumber } from '@/util/numbers';
@@ -182,7 +176,7 @@ function RouteComponent() {
                                         <Dialog.Title className="text-xl font-bold">
                                             Topic Summary
                                         </Dialog.Title>
-                                        <Summary topicId={topic.topic_id} />
+                                        <TopicSummary topicId={topic.topic_id} />
                                         <Dialog.Close className="absolute top-2 right-2">
                                             <LuX className="size-5" />
                                         </Dialog.Close>
@@ -286,43 +280,6 @@ function RouteComponent() {
         </>
     );
 }
-
-const Summary = ({ topicId }: { topicId: number }) => {
-    const { data: summary, isPending } = useTopicSummary(topicId);
-
-    if (isPending) {
-        return (
-            <div className="flex items-center gap-2 py-3 px-1.5">
-                <div className="animate-spin">
-                    <LuRefreshCcw className="size-4" />
-                </div>
-                <span className="text-sm">Generating summary...</span>
-            </div>
-        );
-    }
-
-    if (!summary) {
-        return (
-            <div className="text-primary text-sm py-2 px-1.5 italic">
-                No summary available for this topic
-            </div>
-        );
-    }
-
-    return (
-        <>
-            <div className="text-sm leading-relaxed text-primary prose">
-                <div className='max-h-[80vh] overflow-scroll'>
-                <Markdown>{summary.summary_text.replace(/\\n/g, '\n')}</Markdown>
-                </div>
-            </div>
-            <Dialog.Close>
-                <button className="button">Close</button>
-            </Dialog.Close>
-            <button className="button">Open in chat</button>
-        </>
-    );
-};
 
 const RelevantLink = ({ link }: { link: RelevantLink }) => {
     let icon = undefined;
