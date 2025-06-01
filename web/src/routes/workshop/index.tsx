@@ -108,7 +108,7 @@ function RouteComponent() {
 
     return (
         <>
-            <div className="mx-auto max-w-screen-lg w-full pt-4 px-2 space-y-4 relative">
+            <div className="mx-auto max-w-screen-lg w-full pt-4 px-2 space-y-4 relative pb-12">
                 {/* <Header /> */}
 
                 <div className="text-lg font-bold border-b border-b-primary">{data.title}</div>
@@ -120,7 +120,6 @@ function RouteComponent() {
                 </div>
             </div>
 
-            {/*             fixed bottom-0 left-1/2 w-full -translate-x-1/2 max-w-screen-lg bg-secondary/95 backdrop-blur-sm border-t border-primary/10 p-4 */}
             <div className="fixed bottom-0 left-1/2 w-full -translate-x-1/2 max-w-screen-lg bg-primary border-t border-primary/10 p-4">
                 <div className="flex items-center gap-3">
                     <input
