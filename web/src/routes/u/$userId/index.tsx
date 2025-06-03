@@ -1,14 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { FC } from 'react';
 
-import { useUser } from '@/api/user';
+import { useUser, useUserSummary } from '@/api/user';
 
 const RouteComponent: FC = () => {
     const { userId } = Route.useParams();
 
-    const { data: userData, isLoading } = useUser(userId);
+    const { data: userData, isLoading: userLoading } = useUser(userId);
+    const { data: userSummary, isLoading: summaryLoading } = useUserSummary(userId);
 
-    if (isLoading) {
+    if (userLoading || summaryLoading) {
         return (
             <div className="mx-auto w-full max-w-screen-lg pt-8 px-2">
                 <h1 className="text-3xl">Loading...</h1>
@@ -60,7 +61,7 @@ const RouteComponent: FC = () => {
                 </span>
             </div>
 
-            <pre>{JSON.stringify(userData, undefined, 2)}</pre>
+            <pre>{JSON.stringify(userSummary, undefined, 2)}</pre>
         </div>
     );
 };

@@ -12,10 +12,13 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
+import { Route as SIndexImport } from './routes/s/index'
+import { Route as RIndexImport } from './routes/r/index'
+import { Route as CIndexImport } from './routes/c/index'
 import { Route as ChatChatIdImport } from './routes/chat/$chatId'
+import { Route as UUserIdIndexImport } from './routes/u/$userId/index'
 import { Route as TTopicIdIndexImport } from './routes/t/$topicId/index'
 import { Route as PmIssueIdIndexImport } from './routes/pm/$issueId/index'
-import { Route as CChannelIdIndexImport } from './routes/c/$channelId/index'
 
 // Create/Update Routes
 
@@ -25,9 +28,33 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const SIndexRoute = SIndexImport.update({
+  id: '/s/',
+  path: '/s/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RIndexRoute = RIndexImport.update({
+  id: '/r/',
+  path: '/r/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CIndexRoute = CIndexImport.update({
+  id: '/c/',
+  path: '/c/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const ChatChatIdRoute = ChatChatIdImport.update({
   id: '/chat/$chatId',
   path: '/chat/$chatId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const UUserIdIndexRoute = UUserIdIndexImport.update({
+  id: '/u/$userId/',
+  path: '/u/$userId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -40,12 +67,6 @@ const TTopicIdIndexRoute = TTopicIdIndexImport.update({
 const PmIssueIdIndexRoute = PmIssueIdIndexImport.update({
   id: '/pm/$issueId/',
   path: '/pm/$issueId/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const CChannelIdIndexRoute = CChannelIdIndexImport.update({
-  id: '/c/$channelId/',
-  path: '/c/$channelId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,11 +88,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatChatIdImport
       parentRoute: typeof rootRoute
     }
-    '/c/$channelId/': {
-      id: '/c/$channelId/'
-      path: '/c/$channelId'
-      fullPath: '/c/$channelId'
-      preLoaderRoute: typeof CChannelIdIndexImport
+    '/c/': {
+      id: '/c/'
+      path: '/c'
+      fullPath: '/c'
+      preLoaderRoute: typeof CIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/r/': {
+      id: '/r/'
+      path: '/r'
+      fullPath: '/r'
+      preLoaderRoute: typeof RIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/s/': {
+      id: '/s/'
+      path: '/s'
+      fullPath: '/s'
+      preLoaderRoute: typeof SIndexImport
       parentRoute: typeof rootRoute
     }
     '/pm/$issueId/': {
@@ -103,7 +138,9 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat/$chatId': typeof ChatChatIdRoute
-  '/c/$channelId': typeof CChannelIdIndexRoute
+  '/c': typeof CIndexRoute
+  '/r': typeof RIndexRoute
+  '/s': typeof SIndexRoute
   '/pm/$issueId': typeof PmIssueIdIndexRoute
   '/t/$topicId': typeof TTopicIdIndexRoute
   '/u/$userId': typeof UUserIdIndexRoute
@@ -112,7 +149,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat/$chatId': typeof ChatChatIdRoute
-  '/c/$channelId': typeof CChannelIdIndexRoute
+  '/c': typeof CIndexRoute
+  '/r': typeof RIndexRoute
+  '/s': typeof SIndexRoute
   '/pm/$issueId': typeof PmIssueIdIndexRoute
   '/t/$topicId': typeof TTopicIdIndexRoute
   '/u/$userId': typeof UUserIdIndexRoute
@@ -122,7 +161,9 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/chat/$chatId': typeof ChatChatIdRoute
-  '/c/$channelId/': typeof CChannelIdIndexRoute
+  '/c/': typeof CIndexRoute
+  '/r/': typeof RIndexRoute
+  '/s/': typeof SIndexRoute
   '/pm/$issueId/': typeof PmIssueIdIndexRoute
   '/t/$topicId/': typeof TTopicIdIndexRoute
   '/u/$userId/': typeof UUserIdIndexRoute
@@ -133,25 +174,41 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat/$chatId'
-    | '/c/$channelId'
+    | '/c'
+    | '/r'
+    | '/s'
     | '/pm/$issueId'
     | '/t/$topicId'
+    | '/u/$userId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat/$chatId' | '/c/$channelId' | '/pm/$issueId' | '/t/$topicId'
+  to:
+    | '/'
+    | '/chat/$chatId'
+    | '/c'
+    | '/r'
+    | '/s'
+    | '/pm/$issueId'
+    | '/t/$topicId'
+    | '/u/$userId'
   id:
     | '__root__'
     | '/'
     | '/chat/$chatId'
-    | '/c/$channelId/'
+    | '/c/'
+    | '/r/'
+    | '/s/'
     | '/pm/$issueId/'
     | '/t/$topicId/'
+    | '/u/$userId/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatChatIdRoute: typeof ChatChatIdRoute
-  CChannelIdIndexRoute: typeof CChannelIdIndexRoute
+  CIndexRoute: typeof CIndexRoute
+  RIndexRoute: typeof RIndexRoute
+  SIndexRoute: typeof SIndexRoute
   PmIssueIdIndexRoute: typeof PmIssueIdIndexRoute
   TTopicIdIndexRoute: typeof TTopicIdIndexRoute
   UUserIdIndexRoute: typeof UUserIdIndexRoute
@@ -160,7 +217,9 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatChatIdRoute: ChatChatIdRoute,
-  CChannelIdIndexRoute: CChannelIdIndexRoute,
+  CIndexRoute: CIndexRoute,
+  RIndexRoute: RIndexRoute,
+  SIndexRoute: SIndexRoute,
   PmIssueIdIndexRoute: PmIssueIdIndexRoute,
   TTopicIdIndexRoute: TTopicIdIndexRoute,
   UUserIdIndexRoute: UUserIdIndexRoute,
@@ -178,7 +237,9 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/chat/$chatId",
-        "/c/$channelId/",
+        "/c/",
+        "/r/",
+        "/s/",
         "/pm/$issueId/",
         "/t/$topicId/",
         "/u/$userId/"
@@ -190,8 +251,14 @@ export const routeTree = rootRoute
     "/chat/$chatId": {
       "filePath": "chat/$chatId.tsx"
     },
-    "/c/$channelId/": {
-      "filePath": "c/$channelId/index.tsx"
+    "/c/": {
+      "filePath": "c/index.tsx"
+    },
+    "/r/": {
+      "filePath": "r/index.tsx"
+    },
+    "/s/": {
+      "filePath": "s/index.tsx"
     },
     "/pm/$issueId/": {
       "filePath": "pm/$issueId/index.tsx"

@@ -1,7 +1,6 @@
 use poem_openapi::Object;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Serialize, Deserialize, Object, Clone)]
 pub struct DiscourseUser {
     // i32 because system user is `-1`
@@ -158,7 +157,7 @@ pub struct DiscourseReply {
 #[derive(Debug, Serialize, Deserialize, Object, Clone)]
 pub struct DiscourseLink {
     url: String,
-    title: String,
+    title: Option<String>,
     clicks: u32,
     post_number: u32,
     topic_id: u32,
