@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { parseISO } from 'date-fns';
 import { FC } from 'react';
@@ -37,7 +38,13 @@ export const TopicPost: FC<{ post: Post }> = ({ post }) => {
             className={classNames('post space-y-2', hidden && 'opacity-50')}
         >
             <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <Link
+                    to={'/u/$userId'}
+                    params={{
+                        userId: username,
+                    }}
+                    className="flex items-center gap-2"
+                >
                     {avatar && (
                         <img
                             src={'https://ethereum-magicians.org' + avatar.replace('{size}', '40')}
@@ -77,7 +84,7 @@ export const TopicPost: FC<{ post: Post }> = ({ post }) => {
                             </Tooltip>
                         )}
                     </div>
-                </div>
+                </Link>
                 <div className="text-end font-bold text-sm">
                     {post.updated_at ? <TimeAgo date={parseISO(post.updated_at)} /> : ''}
                 </div>
