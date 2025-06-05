@@ -666,7 +666,7 @@ export interface components {
         /** DiscourseLink */
         DiscourseLink: {
             url: string;
-            title: string;
+            title?: string;
             /** Format: uint32 */
             clicks: number;
             /** Format: uint32 */
