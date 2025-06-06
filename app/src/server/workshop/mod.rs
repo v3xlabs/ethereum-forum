@@ -1,9 +1,11 @@
 use crate::models::topics::Topic;
 use crate::models::workshop::{WorkshopChat, WorkshopMessage};
+use crate::modules::workshop::prompts::SUMMARY_MODEL;
 use crate::modules::workshop::WorkshopService;
 use crate::server::ApiTags;
 use crate::server::auth::AuthUser;
 use crate::state::AppState;
+use crate::metrics;
 use async_std::task;
 use futures::{StreamExt, stream::BoxStream};
 use poem::Request;
@@ -452,6 +454,9 @@ impl WorkshopApi {
             {
                 match ongoing_prompt.await_completion().await {
                     Ok(content) => {
+                        if let Some(u) = ongoing_prompt.get_usage().await {
+                            metrics::record_openai_usage(None, SUMMARY_MODEL, &u);
+                        }
                         // Update the topic summary in the database
                         let based_on = topic_clone
                             .last_post_at

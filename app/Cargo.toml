@@ -19,17 +19,16 @@ icalendar = { version = "0.16.13", features = [
 ] }
 moka = { version = "0.12.10", features = ["future"] }
 openai = { version = "1.1.0", default-features = false, features = ["rustls"] }
-opentelemetry = { version = "0.28.0", features = ["trace"] }
+opentelemetry = { version = "0.28.0", features = ["trace", "metrics"] }
 opentelemetry-http = "0.28.0"
 opentelemetry-otlp = { version = "0.28.0", features = [
   "grpc-tonic",
   "metrics",
   "trace",
 ] }
-opentelemetry-prometheus = "0.28.0"
 opentelemetry-semantic-conventions = "0.28.0"
 opentelemetry-stdout = "0.28.0"
-opentelemetry_sdk = { version = "0.28.0", features = ["rt-async-std", "trace"] }
+opentelemetry_sdk = { version = "0.28.0", features = ["rt-async-std", "trace", "metrics"] }
 poem = { version = "3.1.7", features = [
   "opentelemetry",
   "rustls",
@@ -72,6 +71,7 @@ tracing = { version = "0.1.40", features = ["attributes"] }
 tracing-opentelemetry = { version = "0.29.0" }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
+once_cell = "1.19.0"
 jsonwebtoken = "9.3.0"
 urlencoding = "2.1.3"
 url = "2.5.4"

@@ -4,16 +4,29 @@ use anyhow::Error;
 use futures::join;
 
 pub mod database;
+pub mod metrics;
 pub mod models;
 pub mod modules;
 pub mod server;
 pub mod state;
+pub mod telemetry;
 pub mod tmp;
 
 #[async_std::main]
 pub async fn main() -> Result<(), Error> {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
+
+    // Initialize OpenTelemetry metrics
+    if let Err(e) = telemetry::init_telemetry() {
+        tracing::warn!("Failed to initialize OpenTelemetry: {}. Metrics will not be exported.", e);
+    }
+
+    // Test metrics system
+    metrics::test_metrics();
+
+    // Start background metrics export task
+    metrics::start_metrics_export_task();
 
     let state = state::AppStateInner::init().await;
     let state = Arc::new(state);
