@@ -19,6 +19,8 @@ use async_std::{
 use chrono::{DateTime, DurationRound, TimeDelta, Utc};
 use moka::future::Cache;
 use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
+use serde::{Deserialize, Serialize};
+use strip_tags::strip_tags;
 use tracing::{error, info};
 
 pub async fn fetch_latest_topics() -> Result<DiscourseLatestResponse, Error> {
@@ -41,6 +43,20 @@ pub async fn fetch_topic(topic_id: TopicId, page: u32) -> Result<DiscourseTopicR
 }
 
 pub type TopicId = i32;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ForumSearchDocument {
+    pub entity_type: String,
+    pub topic_id: Option<i32>,
+    pub post_id: Option<i32>,
+    pub post_number: Option<i32>,
+    pub user_id: Option<i32>,
+    pub title: Option<String>,
+    pub slug: Option<String>,
+    pub pm_issue: Option<i32>,
+    pub cooked: Option<String>,
+    pub entity_id: String,
+}
 
 #[derive(Debug)]
 pub struct DiscourseTopicIndexRequest {
@@ -143,19 +159,83 @@ impl DiscourseService {
                     match topic.upsert(&state).await {
                         Ok(_) => {
                             info!("Upserted topic: {:?}", topic.topic_id);
+
+                            if let Some(meili) = &state.meili {
+                                let meili_doc = ForumSearchDocument {
+                                    entity_type: "topic".to_string(),
+                                    topic_id: Some(topic.topic_id),
+                                    post_id: None,
+                                    post_number: None,
+                                    user_id: None,
+                                    title: Some(topic.title.clone()),
+                                    slug: Some(topic.slug.clone()),
+                                    pm_issue: topic.pm_issue,
+                                    cooked: None,
+                                    entity_id: format!("topic_{}", topic.topic_id),
+                                };
+
+                                let forum = meili.index("forum");
+
+                                if let Err(e) = forum
+                                    .add_documents(&[meili_doc], Some("entity_id"))
+                                    .await
+                                    .map_err(|e| {
+                                        sqlx::Error::Io(std::io::Error::new(
+                                            std::io::ErrorKind::Other,
+                                            e.to_string(),
+                                        ))
+                                    })
+                                {
+                                    error!("Error upserting topic to Meilisearch: {:?}", e);
+                                }
+                            }
                         }
                         Err(e) => error!("Error upserting topic: {:?}", e),
                     }
                 }
 
                 // found topic
+                let mut meili_docs = Vec::new();
                 for post in topic.post_stream.posts {
                     let post = Post::from_discourse(post);
                     match post.upsert(&state).await {
                         Ok(_) => {
                             info!("Upserted post: {:?}", post.post_id);
+
+                            if state.meili.is_some() {
+                                meili_docs.push(ForumSearchDocument {
+                                    entity_type: "post".to_string(),
+                                    topic_id: Some(post.topic_id),
+                                    post_id: Some(post.post_id),
+                                    post_number: Some(post.post_number),
+                                    user_id: Some(post.user_id),
+                                    title: None,
+                                    slug: None,
+                                    pm_issue: None,
+                                    cooked: post.cooked.as_deref().map(strip_tags),
+                                    entity_id: format!("post_{}", post.post_id),
+                                });
+                            }
                         }
                         Err(e) => error!("Error upserting post: {:?}", e),
+                    }
+                }
+
+                if let Some(meili) = &state.meili {
+                    if !meili_docs.is_empty() {
+                        let forum = meili.index("forum");
+                        if let Err(e) = forum
+                            .add_documents(&meili_docs, Some("entity_id"))
+                            .await
+                            .map_err(|e| {
+                                sqlx::Error::Io(std::io::Error::new(
+                                    std::io::ErrorKind::Other,
+                                    e.to_string(),
+                                ))
+                            })
+                        {
+                            error!("Error bulk upserting posts to Meilisearch: {:?}", e);
+                        }
                     }
                 }
             }

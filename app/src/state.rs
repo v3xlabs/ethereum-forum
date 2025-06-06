@@ -10,8 +10,9 @@ use crate::{
     tmp::CacheService,
 };
 use figment::{Figment, providers::Env};
+use meilisearch_sdk::client::Client;
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
+use std::{env, sync::Arc};
 
 pub type AppState = Arc<AppStateInner>;
 
@@ -28,6 +29,7 @@ pub struct AppStateInner {
     pub sso: Option<SSOService>,
     pub workshop: WorkshopService,
     pub cache: CacheService,
+    pub meili: Option<Client>,
 }
 
 impl AppStateInner {
@@ -53,13 +55,34 @@ impl AppStateInner {
 
         let pm = PMModule::default();
 
+        let meili = match (env::var("MEILI_HOST"), env::var("MEILI_KEY")) {
+            (Ok(meili_url), Ok(meili_key)) => {
+                let client = Client::new(&meili_url, Some(meili_key.as_str()))
+                    .expect("Failed to create MeiliSearch client");
+                match client.get_version().await {
+                    Ok(version) => {
+                        tracing::info!("Connected to MeiliSearch: version {}", version.commit_sha);
+                        Some(client)
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to connect to MeiliSearch: {}", e);
+                        None
+                    }
+                }
+            }
+            _ => None,
+        };
+
         let sso = match SSOService::new(Figment::new().merge(Env::raw())).await {
             Ok(service) => {
                 tracing::info!("SSO service initialized successfully");
                 Some(service)
             }
             Err(e) => {
-                tracing::info!("SSO service initialization failed: {}. SSO will be disabled.", e);
+                tracing::info!(
+                    "SSO service initialization failed: {}. SSO will be disabled.",
+                    e
+                );
                 None
             }
         };
@@ -72,6 +95,7 @@ impl AppStateInner {
             pm,
             workshop,
             sso,
+            meili,
         }
     }
 }
