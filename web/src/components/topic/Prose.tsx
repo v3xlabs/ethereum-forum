@@ -1,7 +1,10 @@
 // import 'prismjs/themes/prism.css';
 import '../../styles/code.css';
+import 'yet-another-react-lightbox/styles.css';
 
 import * as Prism from 'prismjs';
+import Lightbox from 'yet-another-react-lightbox';
+import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 
 // This ensures prism is loaded first
 // @ts-ignore
@@ -11,7 +14,7 @@ const data = Prism.util;
 import 'prismjs/components/prism-solidity';
 import 'prismjs/components/prism-go';
 
-import { FC, useEffect, useRef } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 
 const trackLinkClick = async (url: string, topicId: number, postId: number) => {
     const formData = new FormData();
@@ -28,6 +31,42 @@ const trackLinkClick = async (url: string, topicId: number, postId: number) => {
     });
 };
 
+export function ImageLightbox() {
+    const [open, setOpen] = useState(false);
+    const [src, setSrc] = useState<string | null>(null);
+
+    useEffect(() => {
+        const handler = (e: Event) => {
+            const customEvent = e as CustomEvent<{ src: string }>;
+
+            if (!customEvent.detail || !customEvent.detail.src) {
+                return;
+            }
+
+            setSrc(customEvent.detail.src);
+            setOpen(true);
+        };
+
+        window.addEventListener('open-image-lightbox', handler);
+
+        return () => window.removeEventListener('open-image-lightbox', handler);
+    }, []);
+
+    return (
+        <Lightbox
+            open={open}
+            close={() => setOpen(false)}
+            slides={src ? [{ src }] : []}
+            plugins={[Zoom]}
+            zoom={{ maxZoomPixelRatio: 8 }}
+            render={{
+                buttonPrev: () => null,
+                buttonNext: () => null,
+            }}
+        />
+    );
+}
+
 export const Prose: FC<{ content: string; topicId: number; postId: number }> = ({
     content,
     topicId,
@@ -40,24 +79,35 @@ export const Prose: FC<{ content: string; topicId: number; postId: number }> = (
 
         if (!container) return;
 
-        // grab all links
         const anchors = Array.from(container.querySelectorAll('a'));
         // store handlers so we can clean up
         const handlers = anchors.map((a) => {
-            const onClick = (e: MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
+            const img = a.querySelector('img');
+            let onClick: (e: MouseEvent) => void;
 
-                (async () => {
-                    await trackLinkClick(a.href, topicId, postId);
+            if (
+                img &&
+                a.href.startsWith('https://ethereum-magicians.org/uploads/default/original/')
+            ) {
+                onClick = (e: MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.dispatchEvent(
+                        new CustomEvent('open-image-lightbox', { detail: { src: a.href } })
+                    );
+                };
+            } else {
+                onClick = (e: MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
 
-                    window.open(a.href, '_blank', 'noopener,noreferrer');
-                })();
-            };
+                    (async () => {
+                        await trackLinkClick(a.href, topicId, postId);
+                        window.open(a.href, '_blank', 'noopener,noreferrer');
+                    })();
+                };
+            }
 
-            // TODO: Replace / ethmag links with https://ethereum-magicians.org/
-
-            // force new-tab attrs
             a.setAttribute('target', '_blank');
             a.setAttribute('rel', 'noopener noreferrer');
             a.addEventListener('click', onClick);

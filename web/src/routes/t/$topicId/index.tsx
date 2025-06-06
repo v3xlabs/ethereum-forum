@@ -35,6 +35,7 @@ import { decodeCategory } from '@/util/category';
 import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/links';
 import { formatBigNumber } from '@/util/numbers';
 import { queryClient } from '@/util/query';
+import { ImageLightbox } from '@/components/topic/Prose';
 
 interface DiscourseUser {
     id: number;
@@ -98,6 +99,7 @@ function RouteComponent() {
 
     return (
         <>
+            <ImageLightbox />
             <div className="right-bar p-4 space-y-4">
                 <div className="space-y-1.5">
                     <div className="px-1.5">

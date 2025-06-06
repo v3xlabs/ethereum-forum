@@ -183,6 +183,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/user/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /user/profile
+         * @description Get authenticated user's profile
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/user/{username}": {
         parameters: {
             query?: never;
@@ -698,11 +736,13 @@ export interface paths {
         };
         /**
          * /ws/chat/:chat_id/:message_id/stream
-         * @description Get SSE stream for a specific message response
+         * @description Get SSE stream for message generation
          */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    token?: string;
+                };
                 header?: never;
                 path: {
                     chat_id: string;
@@ -740,6 +780,7 @@ export interface paths {
         /**
          * /ws/t/:topic_id/summary/stream
          * @description Get SSE stream for topic summary generation
+         *     Endpoint does not require authentication
          */
         get: {
             parameters: {
@@ -766,6 +807,7 @@ export interface paths {
         /**
          * /ws/t/:topic_id/summary/stream
          * @description Trigger summary generation and start streaming (or coalesce if already running)
+         *     Endpoint does not require authentication
          */
         post: {
             parameters: {
@@ -1264,12 +1306,24 @@ export interface components {
             email: string;
             name: string;
         };
+        /** UserProfileResponse */
+        UserProfileResponse: {
+            user_id: string;
+            email: string;
+            display_name?: string;
+            avatar_url?: string;
+            created_at: string;
+            provider: string;
+            /** Format: int64 */
+            expires_at: number;
+            token_expiring_soon: boolean;
+        };
         /** WorkshopChat */
         WorkshopChat: {
             /** Format: uuid */
             chat_id: string;
-            /** Format: int32 */
-            user_id: number;
+            /** Format: uuid */
+            user_id: string;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
