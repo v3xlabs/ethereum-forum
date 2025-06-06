@@ -288,14 +288,14 @@ function RouteComponent() {
                                         Loading more...
                                     </span>
                                 ) : hasNextPage ? (
-                                    <span
+                                    <button
                                         className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
                                         onClick={() => fetchNextPage()}
                                         role="button"
                                         tabIndex={0}
                                     >
                                         Load More
-                                    </span>
+                                    </button>
                                 ) : (
                                     <span className="text-base text-gray-400 select-none">
                                         No more posts
