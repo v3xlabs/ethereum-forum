@@ -30,7 +30,7 @@ impl ForumTools {
         }
     }
 
-    /// Get posts for a topic. Page is 1-based.
+    /// Get posts for a topic. Page starts at 1.
     async fn get_posts(
         &self,
         topic_id: i32,
