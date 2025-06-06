@@ -1,0 +1,315 @@
+{
+  "id": null,
+  "title": "OpenAI Usage Metrics",
+  "tags": ["openai", "tokens", "ai"],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Tokens Rate Over Time",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(openai_tokens_total[5m])",
+          "format": "time_series",
+          "legendFormat": "{{model}} - {{user_id}}"
+        }
+      ],
+      "yAxes": [
+        {
+          "label": "Tokens per second",
+          "show": true
+        }
+      ],
+      "xAxes": [
+        {
+          "show": true
+        }
+      ],
+      "legend": {
+        "show": true,
+        "alignAsTable": true,
+        "rightSide": false
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": 2,
+      "title": "Token Usage by Type (Rate)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "rate(openai_prompt_tokens_total[5m])",
+          "format": "time_series",
+          "legendFormat": "Prompt Tokens/sec"
+        },
+        {
+          "expr": "rate(openai_completion_tokens_total[5m])",
+          "format": "time_series",
+          "legendFormat": "Completion Tokens/sec"
+        }
+      ],
+      "yAxes": [
+        {
+          "label": "Tokens per second",
+          "show": true
+        }
+      ],
+      "legend": {
+        "show": true
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "id": 3,
+      "title": "Token Usage by User (Rate)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum by (user_id) (rate(openai_tokens_total[5m]))",
+          "format": "time_series",
+          "legendFormat": "{{user_id}}"
+        }
+      ],
+      "legend": {
+        "show": true
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      }
+    },
+    {
+      "id": 7,
+      "title": "Token Usage by Model (Rate)",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(openai_tokens_total[5m]))",
+          "format": "time_series",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "legend": {
+        "show": true
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      }
+    },
+    {
+      "id": 4,
+      "title": "Total Cumulative Tokens",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(openai_tokens_total)",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "Total Tokens"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 17
+      }
+    },
+    {
+      "id": 9,
+      "title": "Total Prompt Tokens",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(openai_prompt_tokens_total)",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "Prompt Tokens"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 17
+      }
+    },
+    {
+      "id": 10,
+      "title": "Total Completion Tokens",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(openai_completion_tokens_total)",
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "Completion Tokens"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 21
+      }
+    },
+    {
+      "id": 6,
+      "title": "Recent Token Usage Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rate(openai_tokens_total[1m]) * 60",
+          "legendFormat": "Tokens/minute"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "displayName": "Tokens/min"
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 21
+      }
+    },
+    {
+      "id": 5,
+      "title": "Prompt vs Completion Token Distribution",
+      "type": "piechart",
+      "targets": [
+        {
+          "expr": "sum(openai_prompt_tokens_total)",
+          "legendFormat": "Prompt Tokens"
+        },
+        {
+          "expr": "sum(openai_completion_tokens_total)",
+          "legendFormat": "Completion Tokens"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      }
+    },
+    {
+      "id": 8,
+      "title": "Token Usage by Model and User (Current Values)",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "openai_tokens_total",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "service": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value": "Total Tokens",
+              "model": "Model",
+              "user_id": "User ID"
+            }
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 25
+      }
+    },
+    {
+      "id": 11,
+      "title": "Token Breakdown by Type and Model",
+      "type": "table",
+      "targets": [
+        {
+          "expr": "openai_prompt_tokens_total",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Prompt"
+        },
+        {
+          "expr": "openai_completion_tokens_total",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Completion"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "job": true,
+              "service": true
+            },
+            "renameByName": {
+              "Value": "Tokens",
+              "model": "Model",
+              "user_id": "User ID"
+            }
+          }
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "10s"
+} 
