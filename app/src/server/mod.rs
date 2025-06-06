@@ -27,6 +27,7 @@ pub mod user;
 pub mod pm;
 pub mod workshop;
 pub mod auth;
+pub mod mcp;
 
 #[derive(Tags)]
 pub enum ApiTags {
@@ -78,6 +79,7 @@ pub async fn start_http(state: AppState) {
         .nest("/openapi.json", spec)
         .nest("/docs", get(get_openapi_docs))
         .nest("/api", api_service)
+        .nest("/mcp", mcp::endpoint(state.clone()))
         .data(state)
         .with(Cors::new());
 
