@@ -13,6 +13,7 @@ import { WorkshopAuthGuard } from '@/components/AuthGuard';
 import { UpDownScroller } from '@/components/UpDown';
 import { ChatMessage } from '@/components/workshop/ChatMessage';
 import { ConversationGraph } from '@/components/workshop/ConversationGraph';
+import { RightbarHamburger } from '@/components/layout/RightbarHamburger';
 import { queryClient } from '@/util/query';
 import {
     buildMessageTree,
@@ -127,13 +128,22 @@ const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
         <>
             {/* Right Sidebar */}
             {chat?.messages && chat.messages.length > 0 && useTreeView && (
-                <div className="right-bar p-4">
-                    <ConversationGraph
-                        rootNodes={rootNodes}
-                        visibleMessages={visibleMessages}
-                        messageMap={messageMap}
-                    />
-                </div>
+                <>
+                    <RightbarHamburger>
+                        <ConversationGraph
+                            rootNodes={rootNodes}
+                            visibleMessages={visibleMessages}
+                            messageMap={messageMap}
+                        />
+                    </RightbarHamburger>
+                    <div className="right-bar p-4 hidden md:block">
+                        <ConversationGraph
+                            rootNodes={rootNodes}
+                            visibleMessages={visibleMessages}
+                            messageMap={messageMap}
+                        />
+                    </div>
+                </>
             )}
 
             {/* Main Chat */}
@@ -297,7 +307,7 @@ const Chat = ({
                                         editingMessage={editingMessage}
                                         onCancelEdit={cancelEdit}
                                     />
-                                    <div className="text-center text-sm py-1">
+                                    <div className="text-center text-sm py-1 hidden sm:block">
                                         This is a demo. Check important info.
                                     </div>
                                 </div>

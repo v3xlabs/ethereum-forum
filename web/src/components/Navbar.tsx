@@ -6,6 +6,7 @@ import { SiEthereum } from 'react-icons/si';
 
 import { useAuth, useLogout } from '../api/auth';
 import { LoginButton } from './LoginButton';
+import { SidebarHamburger } from './layout/SidebarHamburger';
 
 export const Navbar: FC = () => {
     const data = useMatches();
@@ -29,6 +30,7 @@ export const Navbar: FC = () => {
         <>
             <div className="w-full bg-secondary fixed top-0 grid grid-cols-[1fr_auto_1fr] h-8 z-10">
                 <div className="flex items-stretch gap-2 h-full px-3">
+                    <SidebarHamburger />
                     <Link
                         to="/"
                         className="text-primary font-bold text-base hover:underline py-1 flex items-center gap-1"

@@ -8,12 +8,14 @@ import { ProseWidthSwitcher } from './preferences/ProseWidthSwitcher';
 import { ThemeSwitcher } from './preferences/ThemeSwitcher';
 import { WorkshopChatsNav } from './workshop/WorkshopChatsNav';
 
-export const Sidebar = () => {
+import classNames from 'classnames';
+
+export const Sidebar = ({ className = '' }: { className?: string } = {}) => {
     const { pathname } = useRouterState({ select: (s) => s.location });
     const { isAuthenticated } = useAuth();
 
     return (
-        <div className="left-bar space-y-2">
+        <div className={classNames('left-bar space-y-2', className)}>
             <div className="flex flex-col justify-between h-full">
                 <nav className="w-full space-y-1.5 p-4">
                     <div className="px-1.5">
