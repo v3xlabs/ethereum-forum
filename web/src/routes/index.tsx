@@ -1,15 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { LuBook, LuGithub, LuWandSparkles } from 'react-icons/lu';
 
 import { ProtocolAgendaUpcoming } from '@/components/agenda/Upcoming';
 import { TopicList } from '@/components/topic/TopicList';
 import { TopicsTrending } from '@/components/topic/TopicsTrending';
+import { useMobileMenu } from '@/hooks/useMobileMenu';
 
 export const Route = createFileRoute('/')({
     component: RouteComponent,
 });
 
 function RouteComponent() {
+    const { setRightContent } = useMobileMenu();
+
+    useEffect(() => {
+        setRightContent(<ProtocolAgendaUpcoming />);
+        return () => setRightContent(null);
+    }, [setRightContent]);
+
     return (
         <>
             <div className="right-bar p-4">

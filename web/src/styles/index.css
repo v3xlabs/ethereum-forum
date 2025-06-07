@@ -195,37 +195,95 @@ input.input {
     @apply max-h-[calc(100vh-32px)];
 }
 
-html:not(.prose-page) {
-    .left-bar {
-        @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full;
-        @apply 3xl:overflow-y-auto;
-    }
-    .right-bar {
-        @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full;
-        @apply 3xl:overflow-y-auto;
+/* Hide sidebars on mobile, show on larger screens */
+html:not(.prose-page) .left-bar {
+    display: none;
+    @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full 3xl:overflow-y-auto;
+}
+
+@screen 3xl {
+    html:not(.prose-page) .left-bar {
+        display: block;
     }
 }
 
-html.prose-page {
-    &:not(.prose-wide) {
-        .left-bar {
-            @apply 2xl:fixed left-0 w-full 2xl:max-w-[340px] h-full;
-            @apply 2xl:overflow-y-auto;
-        }
-        .right-bar {
-            @apply 2xl:fixed right-0 w-full 2xl:max-w-[340px] h-full;
-            @apply 2xl:overflow-y-auto;
-        }
+html:not(.prose-page) .right-bar {
+    display: none;
+    @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full 3xl:overflow-y-auto;
+}
+
+@screen 3xl {
+    html:not(.prose-page) .right-bar {
+        display: block;
     }
-    &.prose-wide {
-        .left-bar {
-            @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full;
-            @apply 3xl:overflow-y-auto;
-        }
-        .right-bar {
-            @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full;
-            @apply 3xl:overflow-y-auto;
-        }
+}
+
+/* Prose page styling - not prose-wide */
+html.prose-page:not(.prose-wide) .left-bar {
+    display: none;
+    @apply 2xl:fixed left-0 w-full 2xl:max-w-[340px] h-full 2xl:overflow-y-auto;
+}
+
+@screen 2xl {
+    html.prose-page:not(.prose-wide) .left-bar {
+        display: block;
+    }
+}
+
+html.prose-page:not(.prose-wide) .right-bar {
+    display: none;
+    @apply 2xl:fixed right-0 w-full 2xl:max-w-[340px] h-full 2xl:overflow-y-auto;
+}
+
+@screen 2xl {
+    html.prose-page:not(.prose-wide) .right-bar {
+        display: block;
+    }
+}
+
+/* Prose page styling - prose-wide */
+html.prose-page.prose-wide .left-bar {
+    display: none;
+    @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full 3xl:overflow-y-auto;
+}
+
+@screen 3xl {
+    html.prose-page.prose-wide .left-bar {
+        display: block;
+    }
+}
+
+html.prose-page.prose-wide .right-bar {
+    display: none;
+    @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full 3xl:overflow-y-auto;
+}
+
+@screen 3xl {
+    html.prose-page.prose-wide .right-bar {
+        display: block;
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    /* Ensure content doesn't get cut off by navbar on mobile */
+    .prose-width {
+        @apply px-3;
+    }
+    
+    /* Improve button sizing on mobile */
+    .button {
+        @apply min-h-[44px] px-3 py-2;
+    }
+    
+    /* Better spacing for mobile */
+    .space-y-4 > * + * {
+        margin-top: 1rem;
+    }
+    
+    /* Improve card padding on mobile */
+    .card {
+        @apply mx-2;
     }
 }
 

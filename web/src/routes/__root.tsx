@@ -5,6 +5,7 @@ import { CommandMenu } from '@/components/command/CommandMenu';
 import { Navbar } from '@/components/Navbar';
 import { Sidebar } from '@/components/Sidebar';
 import { AppWrapper } from '@/hooks/context';
+import { MobileMenuProvider, useMobileMenu } from '@/hooks/useMobileMenu';
 
 export const Route = createRootRoute({
     component: RootComponent,
@@ -13,8 +14,20 @@ export const Route = createRootRoute({
 function RootComponent() {
     return (
         <AppWrapper>
-            <CommandMenu />
-            <Navbar />
+            <MobileMenuProvider>
+                <CommandMenu />
+                <RootLayout />
+            </MobileMenuProvider>
+        </AppWrapper>
+    );
+}
+
+function RootLayout() {
+    const { rightContent } = useMobileMenu();
+
+    return (
+        <>
+            <Navbar rightContent={rightContent} />
             <div className="flex flex-col gap-1 pb-16 max-w-screen">
                 <Sidebar />
                 <Outlet />
@@ -48,6 +61,6 @@ function RootComponent() {
                     },
                 }}
             />
-        </AppWrapper>
+        </>
     );
 }

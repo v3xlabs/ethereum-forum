@@ -13,6 +13,7 @@ import { WorkshopAuthGuard } from '@/components/AuthGuard';
 import { UpDownScroller } from '@/components/UpDown';
 import { ChatMessage } from '@/components/workshop/ChatMessage';
 import { ConversationGraph } from '@/components/workshop/ConversationGraph';
+import { useMobileMenu } from '@/hooks/useMobileMenu';
 import { queryClient } from '@/util/query';
 import {
     buildMessageTree,
@@ -68,6 +69,7 @@ function RouteComponent() {
 
 const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
     const { data: chat } = useWorkshopChat(chatId);
+    const { setRightContent } = useMobileMenu();
     const [messagePath, setMessagePath] = useState<MessagePath>({});
     const [useTreeView, setUseTreeView] = useState(true);
 
@@ -108,6 +110,22 @@ const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
     const visibleMessages = useMemo(() => {
         return getVisiblePath(rootNodes, messagePath);
     }, [rootNodes, messagePath]);
+
+    // Set mobile menu content for conversation graph
+    useEffect(() => {
+        if (chat?.messages && chat.messages.length > 0 && useTreeView) {
+            setRightContent(
+                <ConversationGraph
+                    rootNodes={rootNodes}
+                    visibleMessages={visibleMessages}
+                    messageMap={messageMap}
+                />
+            );
+        } else {
+            setRightContent(null);
+        }
+        return () => setRightContent(null);
+    }, [setRightContent, chat?.messages, useTreeView, rootNodes, visibleMessages, messageMap]);
 
     const handleNavigateToMessage = (message: WorkshopMessage) => {
         if (message.parent_message_id) {

@@ -1,16 +1,23 @@
 import { Link, useMatches } from '@tanstack/react-router';
 import classNames from 'classnames';
-import { FC, useEffect, useState } from 'react';
-import { FiLogOut, FiUser } from 'react-icons/fi';
+import { FC, ReactNode, useEffect, useState } from 'react';
+import { FiLogOut, FiMenu, FiUser } from 'react-icons/fi';
 import { SiEthereum } from 'react-icons/si';
 
 import { useAuth, useLogout } from '../api/auth';
 import { LoginButton } from './LoginButton';
+import { MobileMenu } from './MobileMenu';
 
-export const Navbar: FC = () => {
+interface NavbarProps {
+    rightContent?: ReactNode;
+}
+
+export const Navbar: FC<NavbarProps> = ({ rightContent }) => {
     const data = useMatches();
     const { isAuthenticated, user, isLoading } = useAuth();
     const logoutMutation = useLogout();
+    const [leftMenuOpen, setLeftMenuOpen] = useState(false);
+    const [rightMenuOpen, setRightMenuOpen] = useState(false);
 
     const title = findMapReverse(data, (m) => {
         if ('title' in m.context) {
@@ -27,8 +34,20 @@ export const Navbar: FC = () => {
 
     return (
         <>
-            <div className="w-full bg-secondary fixed top-0 grid grid-cols-[1fr_auto_1fr] h-8 z-10">
+            <div className="w-full bg-secondary fixed top-0 grid grid-cols-[auto_1fr_auto] md:grid-cols-[1fr_auto_1fr] h-8 z-10">
                 <div className="flex items-stretch gap-2 h-full px-3">
+                    {/* Mobile hamburger menu button */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setLeftMenuOpen(true);
+                        }}
+                        className="md:hidden flex items-center justify-center p-1 hover:bg-primary rounded-md transition-colors"
+                        aria-label="Open navigation menu"
+                    >
+                        <FiMenu size={16} />
+                    </button>
+                    
                     <Link
                         to="/"
                         className="text-primary font-bold text-base hover:underline py-1 flex items-center gap-1"
@@ -51,38 +70,85 @@ export const Navbar: FC = () => {
                         {title}
                     </div>
                 </div>
-                <div className="items-center h-full gap-2 flex-1 justify-end px-2 text-sm hidden md:flex">
-                    {isLoading ? (
-                        <div className="flex items-center gap-2 px-3 py-1 text-sm text-primary">
-                            <FiUser size={16} />
-                            Loading...
-                        </div>
-                    ) : isAuthenticated && user ? (
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 px-2 py-1 text-sm">
+                <div className="items-center h-full gap-2 flex-1 justify-end px-2 text-sm flex">
+                    {/* Desktop auth section */}
+                    <div className="hidden md:flex items-center gap-2">
+                        {isLoading ? (
+                            <div className="flex items-center gap-2 px-3 py-1 text-sm text-primary">
                                 <FiUser size={16} />
-                                <span>{user.display_name || user.username || user.email}</span>
+                                Loading...
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                disabled={logoutMutation.isPending}
-                                className="flex items-center gap-1 px-2 py-1 rounded-md text-sm hover:bg-secondary transition-colors disabled:opacity-50"
-                                title="Sign out"
-                            >
-                                <FiLogOut size={14} />
-                                <span className="hidden lg:inline">
-                                    {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
-                                </span>
-                            </button>
-                        </div>
-                    ) : (
-                        <LoginButton />
+                        ) : isAuthenticated && user ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 px-2 py-1 text-sm">
+                                    <FiUser size={16} />
+                                    <span>{user.display_name || user.username || user.email}</span>
+                                </div>
+                                <button
+                                    onClick={handleLogout}
+                                    disabled={logoutMutation.isPending}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md text-sm hover:bg-secondary transition-colors disabled:opacity-50"
+                                    title="Sign out"
+                                >
+                                    <FiLogOut size={14} />
+                                    <span className="hidden lg:inline">
+                                        {logoutMutation.isPending ? 'Signing out...' : 'Sign out'}
+                                    </span>
+                                </button>
+                            </div>
+                        ) : (
+                            <LoginButton />
+                        )}
+                    </div>
+
+                    {/* Mobile right menu button - only show if there's right content */}
+                    {rightContent && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setRightMenuOpen(true);
+                            }}
+                            className="md:hidden flex items-center justify-center p-1 hover:bg-primary rounded-md transition-colors"
+                            aria-label="Open menu"
+                        >
+                            <FiMenu size={16} />
+                        </button>
                     )}
-                    {/* Last refreshed 2 min ago */}
+
+                    {/* Mobile auth for when no right content */}
+                    {!rightContent && (
+                        <div className="md:hidden flex items-center gap-2">
+                            {isAuthenticated && user ? (
+                                <button
+                                    onClick={handleLogout}
+                                    disabled={logoutMutation.isPending}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-md text-sm hover:bg-secondary transition-colors disabled:opacity-50"
+                                    title="Sign out"
+                                >
+                                    <FiLogOut size={14} />
+                                </button>
+                            ) : (
+                                <LoginButton />
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="h-8 w-full" />
             <ScrollListener />
+            
+            {/* Mobile Menus */}
+            <MobileMenu
+                isOpen={leftMenuOpen}
+                onClose={() => setLeftMenuOpen(false)}
+                side="left"
+            />
+            <MobileMenu
+                isOpen={rightMenuOpen}
+                onClose={() => setRightMenuOpen(false)}
+                side="right"
+                rightContent={rightContent}
+            />
         </>
     );
 };

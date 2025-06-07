@@ -32,6 +32,7 @@ import { ImageLightbox } from '@/components/topic/Prose';
 import { TopicPost } from '@/components/topic/TopicPost';
 import { StreamingSummary } from '@/components/topics/StreamingSummary';
 import { UpDownScroller } from '@/components/UpDown';
+import { useMobileMenu } from '@/hooks/useMobileMenu';
 import { decodeCategory } from '@/util/category';
 import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/links';
 import { formatBigNumber } from '@/util/numbers';
@@ -71,6 +72,7 @@ type RelevantLink = {
 function RouteComponent() {
     const { topicId } = Route.useParams();
     const { data: topic } = useTopic(topicId);
+    const { setRightContent } = useMobileMenu();
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
         usePostsInfinite(topicId);
@@ -96,6 +98,105 @@ function RouteComponent() {
             document.documentElement.classList.remove('prose-page');
         };
     }, []);
+
+    // Set mobile menu content
+    useEffect(() => {
+        const rightBarContent = (
+            <div className="space-y-4">
+                <div className="space-y-1.5">
+                    <div className="px-1.5">
+                        <h3 className="font-bold w-full border-b border-b-primary pb-1">
+                            Thread Info
+                        </h3>
+                    </div>
+                    <ul>
+                        {creator && (
+                            <li className="flex items-center gap-1 mx-1.5 justify-between">
+                                <div className="text-base">Author</div>
+                                <a
+                                    href={'https://ethereum-magicians.org/u/' + creator.username}
+                                    className="flex items-center gap-1 hover:bg-secondary w-fit justify-end"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <div className="size-4 rounded-full overflow-hidden">
+                                        <img
+                                            src={
+                                                'https://ethereum-magicians.org' +
+                                                creator.avatar_template.replace('{size}', '48')
+                                            }
+                                            alt={creator.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <div className="text-base truncate">{creator.name}</div>
+                                </a>
+                            </li>
+                        )}
+                        <li className="flex items-center gap-1 px-1.5 justify-between">
+                            <div className="text-base">Created</div>
+                            <div className="text-base">
+                                {topic?.created_at && <TimeAgo date={parseISO(topic.created_at)} />}
+                            </div>
+                        </li>
+                        {topic?.last_post_at && (
+                            <li className="flex items-center gap-1 px-1.5 justify-between">
+                                <div className="text-base">Last Post</div>
+                                <div className="text-base flex items-center gap-1">
+                                    <TimeAgo date={parseISO(topic.last_post_at)} />
+                                    <SignalIndicator date={parseISO(topic.last_post_at)} />
+                                </div>
+                            </li>
+                        )}
+                        <li className="flex items-center gap-1 px-1.5 justify-between">
+                            <div className="text-base">Source</div>
+                            <div className="text-base flex items-center">
+                                <a
+                                    href={'https://ethereum-magicians.org/t/' + topic?.topic_id}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="hover:underline"
+                                >
+                                    ethmag/{topic?.topic_id}
+                                </a>
+                                <RefreshTopicButton topicId={topicId} />
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                {standards_links.length > 0 && (
+                    <ExpandableList title="Standards Links" maxItems={4}>
+                        {standards_links.map((link) => (
+                            <li key={link.url}>
+                                <RelevantLink link={link} />
+                            </li>
+                        ))}
+                    </ExpandableList>
+                )}
+                {github_links.length > 0 && (
+                    <ExpandableList title="Github Links" maxItems={4}>
+                        {github_links.map((link) => (
+                            <li key={link.url}>
+                                <RelevantLink link={link} />
+                            </li>
+                        ))}
+                    </ExpandableList>
+                )}
+                {relevant_links.length > 0 && (
+                    <ExpandableList title="Related Links" maxItems={4}>
+                        {relevant_links?.map((link) => (
+                            <li key={link.url}>
+                                <RelevantLink link={link} />
+                            </li>
+                        ))}
+                    </ExpandableList>
+                )}
+            </div>
+        );
+
+        setRightContent(rightBarContent);
+        return () => setRightContent(null);
+    }, [setRightContent, creator, topic, topicId, standards_links, github_links, relevant_links]);
 
     return (
         <>
