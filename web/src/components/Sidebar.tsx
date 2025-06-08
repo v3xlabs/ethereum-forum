@@ -1,4 +1,5 @@
 import { Link, useRouterState } from '@tanstack/react-router';
+import classNames from 'classnames';
 import { FiLock } from 'react-icons/fi';
 import { GrWorkshop } from 'react-icons/gr';
 import { SiOpenai } from 'react-icons/si';
@@ -7,8 +8,6 @@ import { useAuth } from '../api/auth';
 import { ProseWidthSwitcher } from './preferences/ProseWidthSwitcher';
 import { ThemeSwitcher } from './preferences/ThemeSwitcher';
 import { WorkshopChatsNav } from './workshop/WorkshopChatsNav';
-
-import classNames from 'classnames';
 
 export const Sidebar = ({ className = '' }: { className?: string } = {}) => {
     const { pathname } = useRouterState({ select: (s) => s.location });

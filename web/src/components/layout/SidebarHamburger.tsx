@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { FiMenu } from 'react-icons/fi';
 import { LuX } from 'react-icons/lu';
+
 import { Sidebar } from '../Sidebar';
 
 export const SidebarHamburger = () => {

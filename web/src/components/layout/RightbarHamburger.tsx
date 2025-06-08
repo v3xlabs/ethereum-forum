@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import { ReactNode } from 'react';
 import { FiMenu } from 'react-icons/fi';
 import { LuX } from 'react-icons/lu';
-import { ReactNode } from 'react';
 
 export const RightbarHamburger = ({ children }: { children: ReactNode }) => {
     return (

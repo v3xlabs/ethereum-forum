@@ -5,8 +5,8 @@ import { FiLogOut, FiUser } from 'react-icons/fi';
 import { SiEthereum } from 'react-icons/si';
 
 import { useAuth, useLogout } from '../api/auth';
-import { LoginButton } from './LoginButton';
 import { SidebarHamburger } from './layout/SidebarHamburger';
+import { LoginButton } from './LoginButton';
 
 export const Navbar: FC = () => {
     const data = useMatches();

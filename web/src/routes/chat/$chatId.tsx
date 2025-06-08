@@ -10,10 +10,10 @@ import {
     WorkshopMessage,
 } from '@/api/workshop';
 import { WorkshopAuthGuard } from '@/components/AuthGuard';
+import { ResponsiveRightbar } from '@/components/layout/ResponsiveRightbar';
 import { UpDownScroller } from '@/components/UpDown';
 import { ChatMessage } from '@/components/workshop/ChatMessage';
 import { ConversationGraph } from '@/components/workshop/ConversationGraph';
-import { RightbarHamburger } from '@/components/layout/RightbarHamburger';
 import { queryClient } from '@/util/query';
 import {
     buildMessageTree,
@@ -128,22 +128,13 @@ const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
         <>
             {/* Right Sidebar */}
             {chat?.messages && chat.messages.length > 0 && useTreeView && (
-                <>
-                    <RightbarHamburger>
-                        <ConversationGraph
-                            rootNodes={rootNodes}
-                            visibleMessages={visibleMessages}
-                            messageMap={messageMap}
-                        />
-                    </RightbarHamburger>
-                    <div className="right-bar p-4 hidden md:block">
-                        <ConversationGraph
-                            rootNodes={rootNodes}
-                            visibleMessages={visibleMessages}
-                            messageMap={messageMap}
-                        />
-                    </div>
-                </>
+                <ResponsiveRightbar>
+                    <ConversationGraph
+                        rootNodes={rootNodes}
+                        visibleMessages={visibleMessages}
+                        messageMap={messageMap}
+                    />
+                </ResponsiveRightbar>
             )}
 
             {/* Main Chat */}
