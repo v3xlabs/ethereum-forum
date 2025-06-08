@@ -13,8 +13,8 @@ export const SidebarHamburger = () => {
                 </button>
             </Dialog.Trigger>
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40 data-[state=open]:animate-overlayShow" />
-                <Dialog.Content className="fixed inset-y-0 left-0 w-64 max-w-full bg-primary p-4 overflow-y-auto z-50 data-[state=open]:animate-contentShow">
+                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40" />
+                <Dialog.Content className="fixed inset-y-0 left-0 w-full max-w-xl bg-primary overflow-y-auto z-50">
                     <Sidebar />
                     <Dialog.Close className="absolute top-2 right-2 rounded-md p-1 hover:bg-secondary">
                         <LuX className="size-5" />

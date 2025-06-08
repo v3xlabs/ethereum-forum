@@ -77,6 +77,14 @@ const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
         return buildMessageTree(chat?.messages || []);
     }, [chat?.messages]);
 
+    useEffect(() => {
+        document.documentElement.classList.add('prose-page');
+
+        return () => {
+            document.documentElement.classList.remove('prose-page');
+        };
+    }, []);
+
     // Initialize path based on last_message_id when chat data changes
     useEffect(() => {
         if (chat?.chat?.last_message_id && messageMap.size > 0) {
@@ -298,7 +306,7 @@ const Chat = ({
                                               />
                                           ))}
                                 </div>
-                                <div className="w-full fixed max-w-screen-lg bottom-0 inset-x-0 mx-auto">
+                                <div className="w-full fixed prose-width bottom-0 inset-x-0 mx-auto">
                                     <InputBox
                                         input={input}
                                         setInput={setInput}
@@ -332,7 +340,7 @@ const Chat = ({
                                             ))}
                                         </div>
                                     )}
-                                    <div className="w-full max-w-screen-md mx-auto">
+                                    <div className="prose-width mx-auto">
                                         <InputBox
                                             input={input}
                                             setInput={setInput}
