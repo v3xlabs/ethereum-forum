@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { LuBook, LuGithub, LuWandSparkles } from 'react-icons/lu';
 
 import { ProtocolAgendaUpcoming } from '@/components/agenda/Upcoming';
-import { ResponsiveRightbar } from '@/components/layout/ResponsiveRightbar';
+import { RightbarHamburger } from '@/components/layout/RightbarHamburger';
 import { TopicList } from '@/components/topic/TopicList';
 import { TopicsTrending } from '@/components/topic/TopicsTrending';
 
@@ -13,9 +13,12 @@ export const Route = createFileRoute('/')({
 function RouteComponent() {
     return (
         <>
-            <ResponsiveRightbar>
+            <div className="right-bar p-4 hidden md:block">
                 <ProtocolAgendaUpcoming />
-            </ResponsiveRightbar>
+            </div>
+            <RightbarHamburger triggerClassName="fixed top-10 right-2 z-10 md:hidden">
+                <ProtocolAgendaUpcoming />
+            </RightbarHamburger>
             <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-4">
                 <div className="space-y-4 mx-auto">
                     <div className="card flex-1 flex flex-col gap-1 h-fit col-span-full w-full">

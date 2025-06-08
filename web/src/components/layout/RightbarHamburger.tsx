@@ -1,13 +1,25 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import classNames from 'classnames';
 import { ReactNode } from 'react';
 import { FiMenu } from 'react-icons/fi';
 import { LuX } from 'react-icons/lu';
 
-export const RightbarHamburger = ({ children }: { children: ReactNode }) => {
+export const RightbarHamburger = ({
+    children,
+    triggerClassName = '',
+}: {
+    children: ReactNode;
+    triggerClassName?: string;
+}) => {
     return (
         <Dialog.Root>
             <Dialog.Trigger asChild>
-                <button className="md:hidden button aspect-square size-8 flex items-center justify-center">
+                <button
+                    className={classNames(
+                        'md:hidden button aspect-square size-8 flex items-center justify-center',
+                        triggerClassName
+                    )}
+                >
                     <FiMenu />
                 </button>
             </Dialog.Trigger>
