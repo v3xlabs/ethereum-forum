@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { FC, useEffect, useState } from 'react';
+import * as RadixPopover from '@radix-ui/react-popover';
+import * as RadixTooltip from '@radix-ui/react-tooltip';
 import { FiActivity } from 'react-icons/fi';
 
 import { UsageCost } from '@/api/openrouter';
+
+const formatNumber = (num: number) => num.toLocaleString();
 
 // Token Usage Bar Component
 const TokenUsageBar = ({
@@ -44,7 +48,7 @@ const TokenUsageBar = ({
     );
 };
 
-interface UsageTooltipProps {
+export interface UsageTooltipProps {
     inputTokens: number;
     outputTokens: number;
     reasoningTokens?: number;
@@ -53,7 +57,7 @@ interface UsageTooltipProps {
     modelUsed?: string;
 }
 
-export const UsageTooltip: React.FC<UsageTooltipProps> = ({
+export const UsageTooltipContent: FC<UsageTooltipProps> = ({
     inputTokens,
     outputTokens,
     reasoningTokens = 0,
@@ -61,8 +65,6 @@ export const UsageTooltip: React.FC<UsageTooltipProps> = ({
     usageCost,
     modelUsed,
 }) => {
-    const formatNumber = (num: number) => num.toLocaleString();
-
     return (
         <div className="px-4 py-1 space-y-3 max-w-sm">
             {/* Header with activity icon */}
@@ -163,5 +165,65 @@ export const UsageTooltip: React.FC<UsageTooltipProps> = ({
                 </div>
             )}
         </div>
+    );
+};
+
+export const UsageTooltip: FC<UsageTooltipProps> = (props) => {
+    const [isTouch, setIsTouch] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setIsTouch(window.matchMedia('(pointer: coarse)').matches);
+        }
+    }, []);
+
+    const trigger = (
+        <div className="inline-flex items-center gap-2 text-xs text-primary/60 bg-secondary/30 px-2 py-1 rounded-full border border-secondary/50 hover:bg-secondary/50 transition-colors">
+            <span className="font-medium">{formatNumber(props.totalTokens)} tokens</span>
+            {props.usageCost && (
+                <>
+                    <div className="w-px h-3 bg-primary/20" />
+                    <span className="text-green-700 font-medium text-xs">
+                        {props.usageCost.totalCost === 0n ? 'Free' : props.usageCost.formattedTotalCost}
+                    </span>
+                </>
+            )}
+        </div>
+    );
+
+    const content = <UsageTooltipContent {...props} />;
+
+    if (isTouch) {
+        return (
+            <RadixPopover.Root>
+                <RadixPopover.Trigger asChild>{trigger}</RadixPopover.Trigger>
+                <RadixPopover.Portal>
+                    <RadixPopover.Content
+                        sideOffset={5}
+                        className="bg-secondary border border-secondary text-primary p-2 rounded-md max-w-sm z-50 text-sm text"
+                    >
+                        {content}
+                        <RadixPopover.Arrow className="fill-secondary" />
+                    </RadixPopover.Content>
+                </RadixPopover.Portal>
+            </RadixPopover.Root>
+        );
+    }
+
+    return (
+        <RadixTooltip.Provider delayDuration={300}>
+            <RadixTooltip.Root>
+                <RadixTooltip.Trigger asChild>{trigger}</RadixTooltip.Trigger>
+                <RadixTooltip.Portal>
+                    <RadixTooltip.Content
+                        className="bg-secondary border border-secondary text-primary p-2 rounded-md max-w-sm z-50 text-sm text"
+                        sideOffset={5}
+                    >
+                        {content}
+                        <RadixTooltip.Arrow className="fill-secondary" />
+                    </RadixTooltip.Content>
+                </RadixTooltip.Portal>
+            </RadixTooltip.Root>
+        </RadixTooltip.Provider>
     );
 };

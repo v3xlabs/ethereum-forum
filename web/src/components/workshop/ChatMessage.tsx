@@ -10,9 +10,7 @@ import { match } from 'ts-pattern';
 import { extractModelId, useUsageCost } from '@/api/openrouter';
 import { components } from '@/api/schema.gen';
 import { useWorkshopStreamMessage, WorkshopMessage } from '@/api/workshop';
-import { Tooltip } from '@/components/tooltip/Tooltip';
 import { UsageTooltip } from '@/components/usage/UsageTooltip';
-import { formatCompact } from '@/util/format';
 
 import { MarkdownLink } from './components/MarkdownLink';
 import { ToolCallDisplay } from './ToolCallDisplay';
@@ -342,34 +340,13 @@ const TokenUsageDisplay = ({ message }: { message: WorkshopMessage }) => {
     const reasoningTokens = message.reasoning_tokens || 0;
 
     return (
-        <Tooltip
-            trigger={
-                <div className="inline-flex items-center gap-2 text-xs text-primary/60 bg-secondary/30 px-2 py-1 rounded-full border border-secondary/50 hover:bg-secondary/50 transition-colors">
-                    {/* Total tokens */}
-                    <span className="font-medium">
-                        {formatCompact(message.total_tokens)} tokens
-                    </span>
-
-                    {/* Cost with gap */}
-                    {usageCost && (
-                        <>
-                            <div className="w-px h-3 bg-primary/20"></div>
-                            <span className="text-green-700 font-medium text-xs">
-                                {usageCost.totalCost === 0n ? 'Free' : usageCost.formattedTotalCost}
-                            </span>
-                        </>
-                    )}
-                </div>
-            }
-        >
-            <UsageTooltip
-                inputTokens={inputTokens}
-                outputTokens={outputTokens}
-                reasoningTokens={reasoningTokens}
-                totalTokens={message.total_tokens}
-                usageCost={usageCost}
-                modelUsed={message.model_used}
-            />
-        </Tooltip>
+        <UsageTooltip
+            inputTokens={inputTokens}
+            outputTokens={outputTokens}
+            reasoningTokens={reasoningTokens}
+            totalTokens={message.total_tokens}
+            usageCost={usageCost}
+            modelUsed={message.model_used}
+        />
     );
 };
