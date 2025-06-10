@@ -12,49 +12,50 @@ export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement
         return <span {...otherProps}>{children}</span>;
     }
 
-    // Check if it's an internal link (starts with /)
     const isInternalLink = href.startsWith('/');
 
+    // Check if it's a user profile link (/u/username)
+    const userMatch = href.match(/^(?:https?:\/\/(?:www\.)?ethereum-magicians\.org)?\/u\/([^/]+)$/);
+    // Check if it's a topic link (/t/topic-id or /t/slug/topic-id)
+    const topicMatch = href.match(
+        /^(?:https?:\/\/(?:www\.)?ethereum-magicians\.org)?\/t\/(?:[^/]+\/)?(\d+)(?:\/\d+)?$/
+    );
+
+    if (userMatch) {
+        const [, username] = userMatch;
+
+        return (
+            <UserProfileTooltip username={username}>
+                <Link
+                    to="/u/$userId"
+                    params={{ userId: username }}
+                    className="text-blue-600 hover:text-blue-800 underline"
+                    {...otherProps}
+                >
+                    {children}
+                </Link>
+            </UserProfileTooltip>
+        );
+    }
+
+    if (topicMatch) {
+        const [, topicId] = topicMatch;
+
+        return (
+            <TopicPreviewTooltip topicId={topicId}>
+                <Link
+                    to="/t/$topicId"
+                    params={{ topicId }}
+                    className="text-blue-600 hover:text-blue-800 underline"
+                    {...otherProps}
+                >
+                    {children}
+                </Link>
+            </TopicPreviewTooltip>
+        );
+    }
+
     if (isInternalLink) {
-        // Check if it's a user profile link (/u/username)
-        const userMatch = href.match(/^\/u\/([^/]+)$/);
-        // Check if it's a topic link (/t/topic-id or /t/slug/topic-id)
-        const topicMatch = href.match(/^\/t\/(?:[^/]+\/)?(\d+)(?:\/\d+)?$/);
-
-        if (userMatch) {
-            const [, username] = userMatch;
-
-            return (
-                <UserProfileTooltip username={username}>
-                    <Link
-                        to="/u/$userId"
-                        params={{ userId: username }}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                        {...otherProps}
-                    >
-                        {children}
-                    </Link>
-                </UserProfileTooltip>
-            );
-        }
-
-        if (topicMatch) {
-            const [, topicId] = topicMatch;
-
-            return (
-                <TopicPreviewTooltip topicId={topicId}>
-                    <Link
-                        to="/t/$topicId"
-                        params={{ topicId }}
-                        className="text-blue-600 hover:text-blue-800 underline"
-                        {...otherProps}
-                    >
-                        {children}
-                    </Link>
-                </TopicPreviewTooltip>
-            );
-        }
-
         // For other internal links, use tanstack Link
         return (
             <Link
