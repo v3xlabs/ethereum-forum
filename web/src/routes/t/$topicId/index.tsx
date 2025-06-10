@@ -283,17 +283,24 @@ function RouteComponent() {
                                 </Fragment>
                             ))}
                             <div className="mt-4 flex justify-center">
-                                <button
-                                    onClick={() => fetchNextPage()}
-                                    disabled={!hasNextPage || isFetchingNextPage}
-                                    className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
-                                >
-                                    {isFetchingNextPage
-                                        ? 'Loading more...'
-                                        : hasNextPage
-                                          ? 'Load More'
-                                          : 'No more posts'}
-                                </button>
+                                {isFetchingNextPage ? (
+                                    <span className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50">
+                                        Loading more...
+                                    </span>
+                                ) : hasNextPage ? (
+                                    <button
+                                        className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+                                        onClick={() => fetchNextPage()}
+                                        role="button"
+                                        tabIndex={0}
+                                    >
+                                        Load More
+                                    </button>
+                                ) : (
+                                    <span className="text-base text-gray-400 select-none">
+                                        No more posts
+                                    </span>
+                                )}
                             </div>
                         </>
                     )}
