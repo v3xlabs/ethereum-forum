@@ -170,7 +170,13 @@ function RouteComponent() {
                             <li className="space-y-1.5">
                                 <Dialog.Root>
                                     <Dialog.Trigger asChild>
-                                        <button className="w-full text-left flex items-center gap-2 button bg-purple-100 hover:bg-purple-200 border-purple-300 text-purple-800 dark:bg-purple-900/30 dark:hover:bg-purple-900/50 dark:border-purple-700 dark:text-purple-200">
+                                        <button
+                                            className={classNames(
+                                                'w-full text-left flex items-center gap-2',
+                                                'button',
+                                                'theme-purple-summary-btn'
+                                            )}
+                                        >
                                             <LuWandSparkles />
                                             View Summary
                                         </button>
