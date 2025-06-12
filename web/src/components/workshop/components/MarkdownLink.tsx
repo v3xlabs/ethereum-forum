@@ -3,15 +3,7 @@ import React from 'react';
 
 import { TopicPreviewTooltip } from './TopicPreviewTooltip';
 import { UserProfileTooltip } from './UserProfileTooltip';
-
-const instanceURLToSlug = (instance: string) => {
-    switch (instance) {
-        case 'ethereum-magicians.org':
-            return 'magicians';
-        case 'ethresear.ch':
-            return 'research';
-    }
-};
+import { mapInstanceUrlDiscourse } from '@/util/discourse';
 
 export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
     const { href, children, ...otherProps } = props;
@@ -50,7 +42,7 @@ export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement
     if (topicMatch) {
         const [, instance, topicId] = topicMatch;
 
-        const slug = instanceURLToSlug(instance);
+        const slug = mapInstanceUrlDiscourse(instance);
 
         if (!instance || !topicId || !slug) {
             return <span {...otherProps}>{children}</span>;

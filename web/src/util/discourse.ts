@@ -6,3 +6,12 @@ export const mapDiscourseInstanceUrl = (discourseId: string) => {
             return 'https://ethresear.ch';
     }
 };
+
+export const mapInstanceUrlDiscourse = (url: string) => {
+    switch (url) {
+        case 'ethereum-magicians.org':
+            return 'magicians';
+        case 'ethresear.ch':
+            return 'research';
+    }
+};
