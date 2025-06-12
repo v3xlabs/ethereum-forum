@@ -172,8 +172,8 @@ function RouteComponent() {
                                     <Dialog.Trigger asChild>
                                         <button
                                             className={classNames(
-                                                'w-full text-left flex items-center gap-2 button',
-                                                'bg-purple-100 border-purple-300 text-purple-800 transition-colors duration-200 hover:bg-purple-200',
+                                                'w-full text-left flex items-center gap-2 px-2 py-1 rounded-md',
+                                                'bg-purple-100 border-purple-300 border text-purple-800 transition-colors duration-200 hover:bg-purple-200',
                                                 // html.dark
                                                 '[&:is(html.dark_&)]:bg-purple-900/30',
                                                 '[&:is(html.dark_&)]:border-purple-700',
