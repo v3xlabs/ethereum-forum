@@ -4,7 +4,15 @@ import React from 'react';
 import { TopicPreviewTooltip } from './TopicPreviewTooltip';
 import { UserProfileTooltip } from './UserProfileTooltip';
 
-// Custom Link Component for Markdown
+const instanceURLToSlug = (instance: string) => {
+    switch (instance) {
+        case 'ethereum-magicians.org':
+            return 'magicians';
+        case 'ethresear.ch':
+            return 'research';
+    }
+};
+
 export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
     const { href, children, ...otherProps } = props;
 
@@ -42,14 +50,18 @@ export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement
     if (topicMatch) {
         const [, instance, topicId] = topicMatch;
 
+        const slug = instanceURLToSlug(instance);
+
+        if (!instance || !topicId || !slug) {
+            return <span {...otherProps}>{children}</span>;
+        }
+
         return (
-            <TopicPreviewTooltip topicId={topicId}>
+            <TopicPreviewTooltip topicId={topicId} instance={slug}>
                 <Link
                     to="/t/$discourseId/$topicId"
                     params={{
-                        discourseId: instance
-                            .replace('ethereum-magicians.org', 'magicians')
-                            .replace('ethresear.ch', 'research'),
+                        discourseId: slug,
                         topicId,
                     }}
                     className="text-blue-600 hover:text-blue-800 underline"

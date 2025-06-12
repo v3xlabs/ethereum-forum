@@ -6,13 +6,15 @@ import { Tooltip } from '@/components/tooltip/Tooltip';
 
 // Topic Preview Tooltip Component
 export const TopicPreviewTooltip = ({
+    instance,
     topicId,
     children,
 }: {
+    instance: 'magicians' | 'research';
     topicId: string;
     children: React.ReactNode;
 }) => {
-    const { data: topic, isLoading, error } = useTopic(topicId);
+    const { data: topic, isLoading, error } = useTopic(instance, topicId);
 
     const tooltipContent = () => {
         if (isLoading) {
