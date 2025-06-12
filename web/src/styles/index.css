@@ -494,15 +494,3 @@ html.scrolled .only-after-scroll {
 [data-sonner-toast] button[data-close-button]:hover {
     background-color: rgb(var(--theme-bg-secondary));
 }
-
-.theme-purple-summary-btn {
-    @apply bg-purple-100 border-purple-300 text-purple-800 transition-colors duration-200 hover:bg-purple-200;
-}
-html.dark .theme-purple-summary-btn {
-    @apply bg-purple-900/30 border-purple-700 text-purple-200 hover:bg-purple-900/50;
-}
-@media (prefers-color-scheme: dark) {
-    html.system .theme-purple-summary-btn {
-        @apply bg-purple-900/30 border-purple-700 text-purple-200 hover:bg-purple-900/50;
-    }
-}

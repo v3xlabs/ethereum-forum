@@ -172,9 +172,18 @@ function RouteComponent() {
                                     <Dialog.Trigger asChild>
                                         <button
                                             className={classNames(
-                                                'w-full text-left flex items-center gap-2',
-                                                'button',
-                                                'theme-purple-summary-btn'
+                                                'w-full text-left flex items-center gap-2 button',
+                                                'bg-purple-100 border-purple-300 text-purple-800 transition-colors duration-200 hover:bg-purple-200',
+                                                // html.dark
+                                                '[&:is(html.dark_&)]:bg-purple-900/30',
+                                                '[&:is(html.dark_&)]:border-purple-700',
+                                                '[&:is(html.dark_&)]:text-purple-200',
+                                                '[&:is(html.dark_&)]:hover:bg-purple-900/50',
+                                                // html.system when dark mode is enabled
+                                                '[&:is(html.system_&)]:bg-purple-900/30',
+                                                '[&:is(html.system_&)]:border-purple-700',
+                                                '[&:is(html.system_&)]:text-purple-200',
+                                                '[&:is(html.system_&)]:hover:bg-purple-900/50'
                                             )}
                                         >
                                             <LuWandSparkles />
