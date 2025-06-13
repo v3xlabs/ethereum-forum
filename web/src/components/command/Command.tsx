@@ -39,7 +39,7 @@ const Command = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive
         ref={ref}
-        className="raycast-cmdk flex h-full w-full flex-col overflow-hidden rounded-2xl bg-primary text-primary shadow-2xl border border-primary max-w-2xl mx-auto my-8"
+        className="raycast-cmdk flex h-full w-full flex-col overflow-hidden rounded-2xl bg-primary text-primary shadow-2xl border border-primary max-w-2xl mx-auto my-4"
         {...props}
     />
 ));
@@ -51,13 +51,13 @@ const CommandInput = React.forwardRef<
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >((props, ref) => (
     <div
-        className="raycast-cmdk-input flex items-center border-b border-primary px-4 py-2 bg-secondary"
+        className="raycast-cmdk-input flex items-center border-b border-primary px-3 py-1 bg-secondary"
         // eslint-disable-next-line react/no-unknown-property
         cmdk-input-wrapper=""
     >
         <CommandPrimitive.Input
             ref={ref}
-            className="flex h-10 w-full rounded-md bg-transparent py-2 text-base outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 text-primary"
+            className="flex h-10 w-full rounded-md bg-transparent text-base outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 text-primary"
             {...props}
         />
     </div>
@@ -71,7 +71,7 @@ const CommandList = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.List
         ref={ref}
-        className="raycast-cmdk-list max-h-[350px] overflow-y-auto overflow-x-hidden py-2"
+        className="raycast-cmdk-list max-h-[350px] overflow-y-auto overflow-x-hidden py-1"
         {...props}
     />
 ));
@@ -97,7 +97,7 @@ const CommandGroup = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Group
         ref={ref}
-        className="overflow-hidden p-0 text-primary [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground"
+        className="overflow-hidden p-0 text-primary [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground"
         {...props}
     />
 ));
@@ -119,7 +119,7 @@ const CommandItem = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Item
         ref={ref}
-        className="raycast-cmdk-item relative flex w-full cursor-pointer gap-2 select-none items-center rounded-lg px-4 py-2 text-base outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-tertiary data-[selected=true]:text-primary data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0"
+        className="raycast-cmdk-item relative flex w-full cursor-pointer gap-2 select-none items-center rounded-lg px-3 py-1.5 text-base outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-tertiary data-[selected=true]:text-primary data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0"
         {...props}
     />
 ));

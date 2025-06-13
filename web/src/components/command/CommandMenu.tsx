@@ -89,7 +89,6 @@ export const CommandMenu: FC<{
                 />
                 <CommandList>
                     <UpcomingCalendarEvent />
-                    {/* <Suggested /> */}
                     <Navigation />
                     <WorkshopIdea />
                 </CommandList>

@@ -9,7 +9,6 @@ const navItems = [
     { title: 'Roadmap', href: '/r', short: 'Hardforks' },
     { title: 'Standards', href: '/s', short: 'EIPs & ERCs' },
     { title: 'Protocol Agenda', href: '/c', short: 'Calendar' },
-    { title: 'Workshop', href: '/chat/new' },
 ];
 
 export const Navigation: React.FC = () => {
@@ -21,7 +20,7 @@ export const Navigation: React.FC = () => {
                 <CommandItem
                     key={item.href}
                     onSelect={() => handleSelect(item)}
-                    className="flex justify-between"
+                    className="flex justify-between data-[selected=true]:bg-secondary data-[selected=true]:text-primary"
                 >
                     {item.title}
                     {item.short && (

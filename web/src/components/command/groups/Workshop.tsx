@@ -1,34 +1,50 @@
 import { useNavigate } from '@tanstack/react-router';
 import { LuWandSparkles } from 'react-icons/lu';
 
-import { CommandItem } from '../Command';
+import { useWorkshopSendMessage } from '@/api';
+
+import { CommandGroup, CommandItem, CommandSeparator } from '../Command';
 import { useCommand } from '../CommandMenu';
 
 export const WorkshopIdea = () => {
     const { search, onOpenChange } = useCommand();
     const navigate = useNavigate();
+    const { mutate } = useWorkshopSendMessage('new');
+
+    if (!search) return null;
 
     return (
-        <CommandItem
-            value={`Workshop idea: ${search} `}
-            keywords={['workshop idea', 'workshop', 'idea', 'ai', 'chat', ' ']}
-            onSelect={() => {
-                navigate({
-                    to: '/chat/$chatId',
-                    params: { chatId: 'new' },
-                    search: { q: search },
-                });
-                onOpenChange(false);
-            }}
-            className="flex flex-col items-start gap-1 px-4 py-3"
-        >
-            <div className="flex items-center gap-2 mb-1">
-                <LuWandSparkles className="size-5" />
-                <span className="font-semibold">Workshop idea</span>
-            </div>
-            <div className="text-base text-primary/80 pl-7 break-words w-full text-left">
-                {search}
-            </div>
-        </CommandItem>
+        <>
+            <CommandGroup heading="Workshop">
+                <CommandItem
+                    value={`Workshop idea: ${search}`}
+                    keywords={['workshop', 'idea', 'chat', 'ai']}
+                    onSelect={() => {
+                        mutate(
+                            {
+                                message: search,
+                            },
+                            {
+                                onSuccess: (data) => {
+                                    navigate({
+                                        to: '/chat/$chatId',
+                                        params: { chatId: data.chat_id },
+                                        search: { q: search },
+                                    });
+                                    onOpenChange(false);
+                                },
+                            }
+                        );
+                    }}
+                    className="flex flex-col items-start gap-2 px-3 py-1.5 data-[selected=true]:bg-secondary data-[selected=true]:text-primary"
+                >
+                    <div className="flex items-center gap-2 mb-1">
+                        <LuWandSparkles className="size-5" />
+                        {search}
+                    </div>
+                </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+        </>
     );
 };
