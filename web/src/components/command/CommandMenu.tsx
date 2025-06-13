@@ -88,7 +88,7 @@ export const CommandMenu: FC<{
                     value={search}
                     onValueChange={setSearch}
                 />
-                <CommandList>
+                <CommandList className="py-2">
                     <UpcomingCalendarEvent />
                     <Navigation />
                     <WorkshopIdea />

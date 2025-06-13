@@ -42,7 +42,6 @@ export const Navbar: FC<{
                             <span>forum</span>
                         </span>
                     </Link>
-                    {/* CMD + K open command menu */}
                     <button
                         className="flex gap-2 text-sm items-center px-2 rounded-2xl border shadow-sm text-primary bg-primary"
                         onClick={() => {

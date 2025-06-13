@@ -20,7 +20,7 @@ export const Navigation: React.FC = () => {
                 <CommandItem
                     key={item.href}
                     onSelect={() => handleSelect(item)}
-                    className="flex justify-between data-[selected=true]:bg-secondary data-[selected=true]:text-primary"
+                    className="flex justify-between data-[selected=true]:bg-secondary data-[selected=true]:text-primary rounded-md"
                 >
                     {item.title}
                     {item.short && (

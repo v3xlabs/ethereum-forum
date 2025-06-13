@@ -36,7 +36,7 @@ export const WorkshopIdea = () => {
                             }
                         );
                     }}
-                    className="flex flex-col items-start gap-2 px-3 py-1.5 data-[selected=true]:bg-secondary data-[selected=true]:text-primary"
+                    className="flex flex-col items-start gap-2 px-3 py-1.5 data-[selected=true]:bg-secondary data-[selected=true]:text-primary rounded-md"
                 >
                     <div className="flex items-center gap-2 mb-1">
                         <LuWandSparkles className="size-5" />
