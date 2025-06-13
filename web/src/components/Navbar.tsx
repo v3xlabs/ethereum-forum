@@ -1,13 +1,15 @@
 import { Link, useMatches } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { FC, useEffect, useState } from 'react';
-import { FiLogOut, FiUser } from 'react-icons/fi';
+import { FiLogOut, FiSearch, FiUser } from 'react-icons/fi';
 import { SiEthereum } from 'react-icons/si';
 
 import { useAuth, useLogout } from '../api/auth';
 import { LoginButton } from './LoginButton';
 
-export const Navbar: FC = () => {
+export const Navbar: FC<{
+    opencmdk: (open: boolean) => void;
+}> = ({ opencmdk }) => {
     const data = useMatches();
     const { isAuthenticated, user, isLoading } = useAuth();
     const logoutMutation = useLogout();
@@ -40,6 +42,16 @@ export const Navbar: FC = () => {
                             <span>forum</span>
                         </span>
                     </Link>
+                    {/* CMD + K open command menu */}
+                    <button
+                        className="flex gap-2 text-sm items-center px-2 rounded-2xl border shadow-sm text-primary bg-primary"
+                        onClick={() => {
+                            opencmdk(true);
+                        }}
+                    >
+                        <FiSearch />
+                        <span>Command Menu</span>
+                    </button>
                 </div>
                 <div
                     className={classNames(

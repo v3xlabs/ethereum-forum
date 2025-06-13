@@ -37,9 +37,10 @@ export function useCommand() {
 
 export const CommandMenu: FC<{
     onSelect?: (item: { title: string; href: string; short?: string }) => void;
-}> = ({ onSelect }) => {
+    cmdkOpen: [boolean, Dispatch<SetStateAction<boolean>>];
+}> = ({ onSelect, cmdkOpen }) => {
     const navigate = useNavigate();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = cmdkOpen;
     const [search, setSearch] = useState('');
 
     useEffect(() => {

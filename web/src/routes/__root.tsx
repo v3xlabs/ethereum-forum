@@ -1,4 +1,5 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
+import { useState } from 'react';
 import { Toaster } from 'sonner';
 
 import { CommandMenu } from '@/components/command/CommandMenu';
@@ -11,10 +12,12 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+    const cmdkOpen = useState(false);
+
     return (
         <AppWrapper>
-            <CommandMenu />
-            <Navbar />
+            <CommandMenu cmdkOpen={cmdkOpen} />
+            <Navbar opencmdk={cmdkOpen[1]} />
             <div className="flex flex-col gap-1 pb-16 max-w-screen">
                 <Sidebar />
                 <Outlet />
