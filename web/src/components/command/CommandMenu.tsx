@@ -13,6 +13,7 @@ import { CommandDialog, CommandInput, CommandList } from './Command';
 import { Navigation } from './groups/Navigation';
 // import { Suggested } from './groups/Suggested';
 import { UpcomingCalendarEvent } from './groups/Upcoming';
+import { Username } from './groups/Username';
 import { WorkshopIdea } from './groups/Workshop';
 
 interface CommandContextType {
@@ -90,6 +91,7 @@ export const CommandMenu: FC<{
                 />
                 <CommandList className="py-2">
                     <UpcomingCalendarEvent />
+                    <Username />
                     <Navigation />
                     <WorkshopIdea />
                 </CommandList>
