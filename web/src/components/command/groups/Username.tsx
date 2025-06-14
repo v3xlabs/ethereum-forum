@@ -27,19 +27,22 @@ const User: React.FC<{
             }}
         >
             <CommandItem
-                className="flex flex-col items-start gap-2 px-3 py-1.5 data-[selected=true]:bg-secondary data-[selected=true]:text-primary rounded-md"
+                className="flex flex-col items-start px-3 py-1.5 data-[selected=true]:bg-secondary data-[selected=true]:text-primary rounded-md"
                 key={user.id}
                 value={`${instance}/${user.username}`}
             >
-                <div className="flex items-center gap-2 mb-1">
-                    {user.avatar_template && (
-                        <img
-                            src={renderAvatarTemplate(user.avatar_template, 24, instance)}
-                            alt={user.username}
-                            className="w-6 h-6 rounded-full"
-                        />
-                    )}
-                    <span className="text-sm font-medium">{user.username}</span>
+                <div className="flex justify-between items-center w-full gap-2 mb-1">
+                    <div className="flex flex-row gap-2">
+                        {user.avatar_template && (
+                            <img
+                                src={renderAvatarTemplate(user.avatar_template, 24, instance)}
+                                alt={user.username}
+                                className="w-6 h-6 rounded-full"
+                            />
+                        )}
+                        <span className="text-sm font-medium">{user.username}</span>
+                    </div>
+                    <span className="ml-2 text-xs text-secondary">{instance}</span>
                 </div>
             </CommandItem>
         </Link>
