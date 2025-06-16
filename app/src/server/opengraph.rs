@@ -97,7 +97,8 @@ where
                         let regex = Regex::new(r#"<[^>]*?>"#).unwrap();
                         regex.replace_all(&cooked, "").to_string()
                     });
-                    opengraph_image = topic.image_url;
+                    opengraph_image =
+                        Some("/api/og/t/".to_string() + &discourse_id + "/" + &topic_id.to_string())
                 }
             }
         }
