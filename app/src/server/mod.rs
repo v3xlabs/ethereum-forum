@@ -2,6 +2,7 @@ use admin::AdminApi;
 use events::EventsApi;
 use governor::Quota;
 use opengraph::OpenGraph;
+use opengraph::OpenGraphApi;
 use pm::PMApi;
 use poem::{
     EndpointExt, Route, Server,
@@ -49,6 +50,8 @@ pub enum ApiTags {
     Search,
     /// Admin Related Operations
     Admin,
+    /// Opengraph Related Operations
+    OpenGraph,
 }
 
 fn get_api(_state: AppState) -> impl OpenApi {
@@ -59,6 +62,7 @@ fn get_api(_state: AppState) -> impl OpenApi {
         PMApi,
         WorkshopApi,
         SearchApi,
+        OpenGraphApi,
         AdminApi,
     )
 }

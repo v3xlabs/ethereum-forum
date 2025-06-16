@@ -1,0 +1,56 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="1200" height="630" fill="#FDF6E3"/>
+  <rect x="51.5" y="51.5" width="1097" height="527" rx="15.5" fill="#FDF6E3" stroke="#B1B9B3" stroke-width="3"/>
+  
+  <text fill="#657B83" xml:space="preserve" style="white-space: pre" font-family="Roboto Condensed" font-size="64" font-weight="600" letter-spacing="0em">
+    <tspan x="97" y="156.375">{{ topictitle }}</tspan>
+  </text>
+  
+  <text fill="#657B83" xml:space="preserve" style="white-space: pre" font-family="Roboto Condensed" font-size="36" letter-spacing="0em" text-anchor="end">
+    <tspan x="1136" y="537">{{ timeago }}</tspan>
+  </text>
+  
+  <text fill="#657B83" xml:space="preserve" style="white-space: pre" font-family="Roboto Condensed" font-size="52" letter-spacing="0em">
+    <tspan x="136" y="539.273">{{ views }}</tspan>
+  </text>
+  
+  <text fill="#657B83" xml:space="preserve" style="white-space: pre" font-family="Roboto Condensed" font-size="52" letter-spacing="0em">
+    <tspan x="322" y="537.273">{{ likes }}</tspan>
+  </text>
+
+  <!-- <rect x="97" y="203" width="302" height="46" fill="#CAF5E9" stroke="#657B83" stroke-width="2"/>
+  <rect x="420" y="203" width="302" height="46" fill="#EDF0D9" stroke="#657B83" stroke-width="2"/>
+  <rect x="753" y="203" width="168" height="46" fill="#D7E9D3" stroke="#657B83" stroke-width="2"/> -->
+
+  <path d="M77.3333 519C77.3333 519 86.6666 500.333 103 500.333C119.333 500.333 128.667 519 128.667 519C128.667 519 119.333 537.667 103 537.667C86.6666 537.667 77.3333 519 77.3333 519Z" stroke="#657B83" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M103 526C106.866 526 110 522.866 110 519C110 515.134 106.866 512 103 512C99.134 512 96 515.134 96 519C96 522.866 99.134 526 103 526Z" stroke="#657B83" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M308.627 501.757C307.435 500.564 306.02 499.619 304.462 498.973C302.905 498.328 301.236 497.996 299.55 497.996C297.864 497.996 296.195 498.328 294.637 498.973C293.08 499.619 291.665 500.564 290.473 501.757L288 504.23L285.527 501.757C283.119 499.349 279.854 497.997 276.45 497.997C273.046 497.997 269.781 499.349 267.373 501.757C264.966 504.164 263.614 507.429 263.614 510.833C263.614 514.238 264.966 517.503 267.373 519.91L269.847 522.383L288 540.537L306.153 522.383L308.627 519.91C309.819 518.718 310.765 517.303 311.41 515.746C312.055 514.188 312.388 512.519 312.388 510.833C312.388 509.148 312.055 507.478 311.41 505.921C310.765 504.363 309.819 502.948 308.627 501.757Z" stroke="#657B83" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  
+<defs>
+  {% for avatar in avatars %}
+  <pattern id="pattern{{ forloop.index }}_1_10" patternContentUnits="objectBoundingBox" width="1" height="1">
+    <use xlink:href="#image{{ forloop.index }}_1_10" transform="scale(0.01695)"/>
+  </pattern>
+  <image id="image{{ forloop.index }}_1_10" width="59" height="59" preserveAspectRatio="xMidYMid slice" xlink:href="{{ avatar }}" />
+  {% endfor %}
+</defs>
+
+  {% for avatar in avatars %}
+    {% assign x = 1050 %}
+    {% assign y = 440 %}
+    {% if forloop.index == 2 %}
+      {% assign x = 1000 %}
+    {% elsif forloop.index == 3 %}
+      {% assign x = 950 %}
+    {% elsif forloop.index == 4 %}
+      {% assign x = 900 %}
+    {% elsif forloop.index == 5 %}
+      {% assign x = 850 %}
+    {% elsif forloop.index == 6 %}
+      {% assign x = 800 %}
+    {% elsif forloop.index == 7 %}
+      {% assign x = 750 %}
+    {% endif %}
+    <rect x="{{ x }}" y="{{ y }}" width="64" height="64" fill="url(#pattern{{ forloop.index }}_1_10)"/>
+  {% endfor %}
+</svg>
