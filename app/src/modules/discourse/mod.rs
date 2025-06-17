@@ -47,15 +47,25 @@ pub type TopicId = i32;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ForumSearchDocument {
     pub entity_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub discourse_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub topic_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_number: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub user_id: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub slug: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pm_issue: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cooked: Option<String>,
     pub entity_id: String,
 }

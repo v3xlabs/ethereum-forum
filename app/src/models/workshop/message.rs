@@ -15,6 +15,7 @@ pub struct WorkshopMessage {
     pub sender_role: String, // "user", "assistant", or "system"
     pub message: String,
     pub created_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_message_id: Option<Uuid>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub streaming_events: Option<serde_json::Value>,

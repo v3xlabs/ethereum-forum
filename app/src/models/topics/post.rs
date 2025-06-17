@@ -15,10 +15,15 @@ pub struct Post {
     pub topic_id: i32,
     pub user_id: i32,
     pub post_number: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cooked: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub post_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<serde_json::Value>,
 }
 
@@ -27,9 +32,13 @@ pub struct WorkshopPost {
     pub discourse_id: String,
     pub post_id: i32,
     pub user_id: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cooked: Option<String>,
 }
 
