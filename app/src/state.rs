@@ -2,6 +2,7 @@ use crate::{
     database::Database,
     modules::{
         discourse::{self, DiscourseService},
+        github::GithubService,
         ical::{self, ICalConfig},
         meili,
         pm::PMModule,
@@ -30,6 +31,7 @@ pub struct AppStateInner {
     pub workshop: WorkshopService,
     pub cache: CacheService,
     pub meili: Option<meili::Client>,
+    pub github: GithubService,
 }
 
 impl AppStateInner {
@@ -58,6 +60,8 @@ impl AppStateInner {
 
         let meili = meili::init_meili().await;
 
+        let github = GithubService;
+
         let sso = match SSOService::new(Figment::new().merge(Env::raw())).await {
             Ok(service) => {
                 tracing::info!("SSO service initialized successfully");
@@ -81,6 +85,7 @@ impl AppStateInner {
             workshop,
             sso,
             meili,
+            github,
         }
     }
 }
