@@ -2,7 +2,7 @@ use crate::{
     database::Database,
     modules::{
         discourse::{self, DiscourseService},
-        github::GithubService,
+        github::{self, GithubService},
         ical::{self, ICalConfig},
         meili,
         pm::PMModule,
@@ -60,7 +60,8 @@ impl AppStateInner {
 
         let meili = meili::init_meili().await;
 
-        let github = GithubService;
+        let github_configs = github::create_github_configs();
+        let github = GithubService::new(github_configs);
 
         let sso = match SSOService::new(Figment::new().merge(Env::raw())).await {
             Ok(service) => {
