@@ -5,6 +5,7 @@ use async_std::{
     sync::Mutex,
 };
 use chrono::{DurationRound, TimeDelta, Utc};
+use octocrab::Octocrab;
 use tracing::{error, info};
 
 use crate::{
@@ -31,16 +32,48 @@ pub struct GithubService {
 }
 
 impl GithubService {
-    pub fn new(configs: Vec<GithubConfig>) -> Self {
+    pub async fn new(gh_key: Option<String>) -> Self {
         let mut indexers = HashMap::new();
 
-        for config in configs {
-            let repo_key = format!("{}/{}", config.owner, config.repo);
-            let indexer = Arc::new(GithubIndexer::new(config.clone()));
-            indexers.insert(repo_key, indexer);
+        if let Some(key) = gh_key {
+            let octocrab = Octocrab::builder()
+                .personal_token(key)
+                .build()
+                .expect("Failed to create Octocrab client");
+
+            octocrab::initialise(octocrab);
+
+            if let Err(e) = Self::validate_pat().await {
+                error!("GitHub PAT validation failed: {:?}", e);
+                panic!("Invalid GitHub Personal Access Token");
+            } else {
+                info!("GitHub Personal Access Token validated successfully");
+            }
         }
 
+        let repo_key = "https://github.com/ethereum/pm";
+        let indexer = Arc::new(GithubIndexer::new(GithubConfig {
+            owner: "ethereum".to_string(),
+            repo: "pm".to_string(),
+            scrape_interval: "5m".to_string(),
+        }));
+        indexers.insert(repo_key.to_string(), indexer);
+
         Self { indexers }
+    }
+
+    async fn validate_pat() -> Result<(), anyhow::Error> {
+        let octocrab = octocrab::instance();
+        match octocrab.current().user().await {
+            Ok(user) => {
+                info!("Authenticated as: {}", user.login);
+                Ok(())
+            }
+            Err(e) => {
+                error!("Failed to authenticate with GitHub: {:?}", e);
+                Err(anyhow::anyhow!("Invalid GitHub Personal Access Token"))
+            }
+        }
     }
 
     pub async fn start_all_indexers(&self, state: AppState) {
@@ -249,6 +282,10 @@ impl GithubIndexer {
                     }
 
                     for issue in issues_page.items {
+                        if issue.pull_request.is_some() {
+                            continue;
+                        }
+
                         let github_issue = GitHubIssue::from_octocrab(&repository_url, &issue);
 
                         let should_update = match GitHubIssue::get_by_number(
@@ -429,12 +466,4 @@ impl GithubIndexer {
 
         Ok(())
     }
-}
-
-pub fn create_github_configs() -> Vec<GithubConfig> {
-    vec![GithubConfig {
-        owner: "ethereum".to_string(),
-        repo: "pm".to_string(),
-        scrape_interval: "2m".to_string(),
-    }]
 }

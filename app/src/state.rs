@@ -60,8 +60,8 @@ impl AppStateInner {
 
         let meili = meili::init_meili().await;
 
-        let github_configs = github::create_github_configs();
-        let github = GithubService::new(github_configs);
+        let github_config = Env::var("GITHUB_TOKEN");
+        let github = GithubService::new(github_config).await;
 
         let sso = match SSOService::new(Figment::new().merge(Env::raw())).await {
             Ok(service) => {
