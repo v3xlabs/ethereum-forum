@@ -24,11 +24,16 @@ pub struct Topic {
     pub post_count: i32,
     pub view_count: i32,
     pub like_count: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub image_url: Option<String>,
     pub created_at: DateTime<Utc>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_post_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bumped_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub pm_issue: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<serde_json::Value>,
 }
 

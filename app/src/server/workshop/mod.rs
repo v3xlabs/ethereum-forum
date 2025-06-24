@@ -33,6 +33,7 @@ pub struct WorkshopApi;
 #[derive(Debug, Serialize, Deserialize, Object)]
 pub struct WorkshopChatInput {
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
 }
 
@@ -63,9 +64,11 @@ pub struct AdminUsageResponse {
 pub struct StreamingResponse {
     pub content: String,
     pub is_complete: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     #[serde(rename = "type")]
     pub entry_type: StreamingEntryType,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub tool_call: Option<ToolCallEntry>,
 }
 
@@ -82,7 +85,9 @@ pub enum StreamingEntryType {
 pub struct ToolCallEntry {
     pub tool_name: String,
     pub tool_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub arguments: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub result: Option<String>,
     pub status: ToolCallStatus,
 }
