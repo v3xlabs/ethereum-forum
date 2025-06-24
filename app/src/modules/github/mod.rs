@@ -55,8 +55,9 @@ impl GithubService {
         let indexer = Arc::new(GithubIndexer::new(GithubConfig {
             owner: "ethereum".to_string(),
             repo: "pm".to_string(),
-            scrape_interval: "5m".to_string(),
+            scrape_interval: "30m".to_string(),
         }));
+
         indexers.insert(repo_key.to_string(), indexer);
 
         Self { indexers }
@@ -120,6 +121,7 @@ pub struct GithubIndexer {
 impl GithubIndexer {
     pub fn new(config: GithubConfig) -> Self {
         let (request_tx, request_rx) = async_std::channel::unbounded();
+
         Self {
             config,
             request_tx,
