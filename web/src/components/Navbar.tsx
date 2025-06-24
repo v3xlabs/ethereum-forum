@@ -1,23 +1,23 @@
-import { Link, useMatches } from '@tanstack/react-router';
+import { useMatches } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { FC, useEffect, useState } from 'react';
-import { FiLogOut, FiUser } from 'react-icons/fi';
-import { SiEthereum } from 'react-icons/si';
+import { FiLogOut, FiSidebar, FiUser } from 'react-icons/fi';
 
 import { useAuth, useLogout } from '../api/auth';
+import { useApp } from '../hooks/context';
 import { LoginButton } from './LoginButton';
 
 export const Navbar: FC = () => {
     const data = useMatches();
     const { isAuthenticated, user, isLoading } = useAuth();
     const logoutMutation = useLogout();
+    const { isSidebarOpen, toggleSidebar } = useApp();
 
     const title = findMapReverse(data, (m) => {
         if ('title' in m.context) {
             if (m.context.title) return m.context.title as string;
         }
     });
-    const route = data[data.length - 1].routeId;
 
     document.title = title ?? 'Ethereum Forum';
 
@@ -27,28 +27,19 @@ export const Navbar: FC = () => {
 
     return (
         <>
-            <div className="w-full bg-secondary fixed top-0 grid grid-cols-[1fr_auto_1fr] h-8 z-10">
-                <div className="flex items-stretch gap-2 h-full px-3">
-                    <Link
-                        to="/"
-                        className="text-primary font-bold text-base hover:underline py-1 flex items-center gap-1"
+            <div className="w-full bg-primary sticky top-0 grid grid-cols-[1fr_auto_1fr] h-10 z-10 px-2 border-b border-b-secondary right-0 left-0">
+                <div className="flex items-center justify-start w-fit">
+                    <button
+                        className="button aspect-square border-none"
+                        onClick={toggleSidebar}
+                        aria-label={isSidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
                     >
-                        <SiEthereum />
-                        <span className="hidden lg:block">
-                            <span>ethereum</span>
-                            <span className="text-secondary">.</span>
-                            <span>forum</span>
-                        </span>
-                    </Link>
+                        {isSidebarOpen ? <FiSidebar /> : <FiSidebar />}
+                    </button>
                 </div>
-                <div
-                    className={classNames(
-                        'w-full h-full flex items-center',
-                        route.startsWith('/t/') ? 'prose-width' : 'max-w-[1032px]'
-                    )}
-                >
+                <div className={classNames('w-full h-full flex items-center')}>
                     <div className="px-2 truncate only-after-scroll font-bold transition-all duration-300">
-                        {title}
+                        {title || ''}
                     </div>
                 </div>
                 <div className="items-center h-full gap-2 flex-1 justify-end px-2 text-sm hidden md:flex">
@@ -86,14 +77,6 @@ export const Navbar: FC = () => {
         </>
     );
 };
-
-// function findMap<T, U>(data: T[], fn: (t: T) => U | undefined): U | undefined {
-//     for (const t of data) {
-//         const u = fn(t);
-
-//         if (u) return u;
-//     }
-// }
 
 function findMapReverse<T, U>(data: T[], fn: (t: T) => U | undefined): U | undefined {
     for (let i = data.length - 1; i >= 0; i--) {

@@ -314,7 +314,7 @@ const Chat = ({
                                               />
                                           ))}
                                 </div>
-                                <div className="w-full fixed prose-width px-4 bottom-2 inset-x-0 mx-auto">
+                                <div className="w-full sticky prose-width px-4 bottom-2 inset-x-0 mx-auto">
                                     <InputBox
                                         input={input}
                                         setInput={setInput}

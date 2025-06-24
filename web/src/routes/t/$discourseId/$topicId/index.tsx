@@ -103,7 +103,7 @@ function RouteComponent() {
     }, []);
 
     return (
-        <>
+        <div className="flex gap-1 flex-col xl:flex-row-reverse justify-between w-full">
             <ImageLightbox />
             <div className="right-bar p-4 space-y-4">
                 <div className="space-y-1.5">
@@ -308,7 +308,7 @@ function RouteComponent() {
                     )}
                 </div>
             </div>
-        </>
+        </div>
     );
 }
 

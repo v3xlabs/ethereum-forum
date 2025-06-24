@@ -13,74 +13,15 @@
     z-index: 0 !important;
 }
 
-html.light {
-    --theme-bg-primary: 253 246 227;
-    --theme-bg-secondary: 238 232 213;
-    --theme-bg-tertiary: 204 192 157;
-    --theme-bg-purple: 218 178 255;
-    --theme-text-primary: 101 123 131;
-    --theme-text-secondary: 38 139 210;
-    --theme-text-purple: 129 52 255;
-    --theme-border: 101 123 131;
-    --theme-border-secondary: 177 185 179;
-    --theme-code-shadow: 1px;
-    --theme-success: 16 185 129;
-    --theme-error: 239 68 68;
-    --theme-warning: 234 179 8;
-}
-
 html.dark {
-    --theme-bg-primary: 0 0 0;
-    --theme-bg-secondary: 13 13 13;
-    --theme-bg-tertiary: 36 36 36;
-    --theme-bg-purple: 129 52 255;
-    --theme-text-primary: 116 116 116;
-    --theme-text-secondary: 38 139 210;
-    --theme-text-purple: 233 212 255;
-    --theme-border: 36 36 36;
-    --theme-border-secondary: 36 36 36;
-    --theme-code-shadow: 6px;
-    --theme-success: 16 185 129;
-    --theme-error: 239 68 68;
-    --theme-warning: 234 179 8;
     .github-icon {
         /* filter: invert(1); */
         fill: #efefef;
     }
 }
 
-@media (prefers-color-scheme: light) {
-    html.system {
-        --theme-bg-primary: 253 246 227;
-        --theme-bg-secondary: 238 232 213;
-        --theme-bg-tertiary: 204 192 157;
-        --theme-bg-purple: 218 178 255;
-        --theme-text-primary: 101 123 131;
-        --theme-text-secondary: 38 139 210;
-        --theme-text-purple: 129 52 255;
-        --theme-border: 101 123 131;
-        --theme-border-secondary: 177 185 179;
-        --theme-code-shadow: 1px;
-        --theme-success: 16 185 129;
-        --theme-error: 239 68 68;
-        --theme-warning: 234 179 8;
-    }
-}
 @media (prefers-color-scheme: dark) {
     html.system {
-        --theme-bg-primary: 0 0 0;
-        --theme-bg-secondary: 13 13 13;
-        --theme-bg-tertiary: 36 36 36;
-        --theme-bg-purple: 129 52 255;
-        --theme-text-primary: 116 116 116;
-        --theme-text-secondary: 38 139 210;
-        --theme-text-purple: 233 212 255;
-        --theme-border: 36 36 36;
-        --theme-border-secondary: 36 36 36;
-        --theme-code-shadow: 6px;
-        --theme-success: 16 185 129;
-        --theme-error: 239 68 68;
-        --theme-warning: 234 179 8;
         .github-icon {
             fill: #efefef;
         }
@@ -165,10 +106,10 @@ body {
 }
 
 .button {
-    @apply px-2 py-1 bg-primary text-primary hover:bg-secondary hover:text-primary border border-secondary rounded-md;
+    @apply px-3 py-1.5 bg-primary text-primary hover:bg-secondary hover:text-primary border border-secondary rounded-md;
 }
 .button.aspect-square {
-    @apply px-1 py-1;
+    @apply px-2 py-2;
 }
 .button:disabled {
     @apply bg-primary text-secondary line-through cursor-not-allowed;
@@ -203,39 +144,39 @@ input.input {
 }
 
 .left-bar, .right-bar {
-    @apply max-h-[calc(100vh-32px)];
+    @apply max-h-screen;
 }
 
 html:not(.prose-page) {
     .left-bar {
-        @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full;
+        @apply w-full 3xl:max-w-[340px] h-full;
         @apply 3xl:overflow-y-auto;
     }
     .right-bar {
-        @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full;
-        @apply 3xl:overflow-y-auto;
+        @apply w-full xl:max-w-[340px] h-full;
+        @apply 2xl:overflow-y-auto;
     }
 }
 
 html.prose-page {
     &:not(.prose-wide) {
         .left-bar {
-            @apply 2xl:fixed left-0 w-full 2xl:max-w-[340px] h-full;
+            @apply w-full xl:max-w-[340px] h-full;
             @apply 2xl:overflow-y-auto;
         }
         .right-bar {
-            @apply 2xl:fixed right-0 w-full 2xl:max-w-[340px] h-full;
+            @apply w-full xl:max-w-[340px] h-full;
             @apply 2xl:overflow-y-auto;
         }
     }
     &.prose-wide {
         .left-bar {
-            @apply 3xl:fixed left-0 w-full 3xl:max-w-[340px] h-full;
+            @apply w-full 3xl:max-w-[340px] h-full;
             @apply 3xl:overflow-y-auto;
         }
         .right-bar {
-            @apply 3xl:fixed right-0 w-full 3xl:max-w-[340px] h-full;
-            @apply 3xl:overflow-y-auto;
+            @apply w-full 3xl:max-w-[340px] h-full;
+            @apply 2xl:overflow-y-auto;
         }
     }
 }

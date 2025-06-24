@@ -10,6 +10,7 @@ export const CategoryTag = ({ tag }: { tag: string }) => {
                 'text-sm text-white px-1 border border-primary relative bg-primary'
             )}
         >
+            <div className="relative z-0 text-primary">{tag}</div>
             <div
                 className="absolute top-0 left-0 w-full h-full"
                 style={{
@@ -18,9 +19,6 @@ export const CategoryTag = ({ tag }: { tag: string }) => {
                     backgroundBlendMode: 'soft-light',
                 }}
             ></div>
-            <div className="relative z-10 text-primary" style={{ mixBlendMode: 'difference' }}>
-                {tag}
-            </div>
         </div>
     );
 };

@@ -33,12 +33,12 @@
     <div id="root"></div>
     <script>
         /** Load Theme */
-        const themes = ['dark', 'light', 'system'];
+        const themes = ['dark', 'light', 'solarized', 'system'];
 
         function updateTheme() {
             const theme = localStorage.getItem('color-theme') || 'system';
             
-            document.documentElement.classList.remove('dark', 'light', 'system');
+            document.documentElement.classList.remove('dark', 'light', 'solarized', 'system');
             if (themes.includes(theme)) {
                 document.documentElement.classList.add(theme);
             } else {

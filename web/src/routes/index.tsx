@@ -12,9 +12,9 @@ export const Route = createFileRoute('/')({
 function RouteComponent() {
     return (
         <>
-            <div className="right-bar p-4">
-                <ProtocolAgendaUpcoming />
-            </div>
+            {/* <div className="right-bar p-4"> */}
+            {/* <ProtocolAgendaUpcoming /> */}
+            {/* </div> */}
             <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-4">
                 <div className="space-y-4 mx-auto">
                     {/* <div className="card flex-1 flex flex-col gap-1 h-fit col-span-full w-full">

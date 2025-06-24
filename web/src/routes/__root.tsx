@@ -14,10 +14,12 @@ function RootComponent() {
     return (
         <AppWrapper>
             <CommandMenu />
-            <Navbar />
-            <div className="flex flex-col gap-1 pb-16 max-w-screen">
+            <div className="flex">
                 <Sidebar />
-                <Outlet />
+                <div className="max-w-screen w-full relative">
+                    <Navbar />
+                    <Outlet />
+                </div>
             </div>
             <Toaster
                 expand={true}

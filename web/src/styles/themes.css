@@ -1,0 +1,124 @@
+/* Base color definitions */
+:root {
+    /* Light theme colors - proper light mode */
+    --light-bg-primary: 255 255 255;
+    --light-bg-secondary: 250 250 250;
+    --light-bg-tertiary: 241 245 249;
+    --light-text-primary: 15 23 42;
+    --light-text-secondary: 59 130 246;
+    --light-border: 203 213 225;
+    --light-border-secondary: 226 232 240;
+    --light-code-shadow: 1px;
+
+    /* Solarized theme colors - warm, cream-based palette */
+    --solarized-bg-primary: 253 246 227;
+    --solarized-bg-secondary: 238 232 213;
+    --solarized-bg-tertiary: 204 192 157;
+    --solarized-text-primary: 101 123 131;
+    --solarized-text-secondary: 38 139 210;
+    --solarized-border: 101 123 131;
+    --solarized-border-secondary: 177 185 179;
+    --solarized-code-shadow: 1px;
+
+    /* Dark theme colors */
+    --dark-bg-primary: 0 0 0;
+    --dark-bg-secondary: 13 13 13;
+    --dark-bg-tertiary: 36 36 36;
+    --dark-text-primary: 116 116 116;
+    --dark-text-secondary: 38 139 210;
+    --dark-border: 36 36 36;
+    --dark-border-secondary: 36 36 36;
+    --dark-code-shadow: 6px;
+
+    /* Shared colors across themes */
+    --shared-bg-purple: 218 178 255;
+    --shared-text-purple-light: 129 52 255;
+    --shared-text-purple-dark: 233 212 255;
+    --shared-success: 16 185 129;
+    --shared-error: 239 68 68;
+    --shared-warning: 234 179 8;
+}
+
+html.light {
+    --theme-bg-primary: var(--light-bg-primary);
+    --theme-bg-secondary: var(--light-bg-secondary);
+    --theme-bg-tertiary: var(--light-bg-tertiary);
+    --theme-bg-purple: var(--shared-bg-purple);
+    --theme-text-primary: var(--light-text-primary);
+    --theme-text-secondary: var(--light-text-secondary);
+    --theme-text-purple: var(--shared-text-purple-light);
+    --theme-border: var(--light-border);
+    --theme-border-secondary: var(--light-border-secondary);
+    --theme-code-shadow: var(--light-code-shadow);
+    --theme-success: var(--shared-success);
+    --theme-error: var(--shared-error);
+    --theme-warning: var(--shared-warning);
+}
+
+html.dark {
+    --theme-bg-primary: var(--dark-bg-primary);
+    --theme-bg-secondary: var(--dark-bg-secondary);
+    --theme-bg-tertiary: var(--dark-bg-tertiary);
+    --theme-bg-purple: var(--shared-bg-purple);
+    --theme-text-primary: var(--dark-text-primary);
+    --theme-text-secondary: var(--dark-text-secondary);
+    --theme-text-purple: var(--shared-text-purple-dark);
+    --theme-border: var(--dark-border);
+    --theme-border-secondary: var(--dark-border-secondary);
+    --theme-code-shadow: var(--dark-code-shadow);
+    --theme-success: var(--shared-success);
+    --theme-error: var(--shared-error);
+    --theme-warning: var(--shared-warning);
+}
+
+html.solarized {
+    --theme-bg-primary: var(--solarized-bg-primary);
+    --theme-bg-secondary: var(--solarized-bg-secondary);
+    --theme-bg-tertiary: var(--solarized-bg-tertiary);
+    --theme-bg-purple: var(--shared-bg-purple);
+    --theme-text-primary: var(--solarized-text-primary);
+    --theme-text-secondary: var(--solarized-text-secondary);
+    --theme-text-purple: var(--shared-text-purple-light);
+    --theme-border: var(--solarized-border);
+    --theme-border-secondary: var(--solarized-border-secondary);
+    --theme-code-shadow: var(--solarized-code-shadow);
+    --theme-success: var(--shared-success);
+    --theme-error: var(--shared-error);
+    --theme-warning: var(--shared-warning);
+}
+
+@media (prefers-color-scheme: light) {
+    html.system {
+        --theme-bg-primary: var(--light-bg-primary);
+        --theme-bg-secondary: var(--light-bg-secondary);
+        --theme-bg-tertiary: var(--light-bg-tertiary);
+        --theme-bg-purple: var(--shared-bg-purple);
+        --theme-text-primary: var(--light-text-primary);
+        --theme-text-secondary: var(--light-text-secondary);
+        --theme-text-purple: var(--shared-text-purple-light);
+        --theme-border: var(--light-border);
+        --theme-border-secondary: var(--light-border-secondary);
+        --theme-code-shadow: var(--light-code-shadow);
+        --theme-success: var(--shared-success);
+        --theme-error: var(--shared-error);
+        --theme-warning: var(--shared-warning);
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    html.system {
+        --theme-bg-primary: var(--dark-bg-primary);
+        --theme-bg-secondary: var(--dark-bg-secondary);
+        --theme-bg-tertiary: var(--dark-bg-tertiary);
+        --theme-bg-purple: var(--shared-bg-purple);
+        --theme-text-primary: var(--dark-text-primary);
+        --theme-text-secondary: var(--dark-text-secondary);
+        --theme-text-purple: var(--shared-text-purple-dark);
+        --theme-border: var(--dark-border);
+        --theme-border-secondary: var(--dark-border-secondary);
+        --theme-code-shadow: var(--dark-code-shadow);
+        --theme-success: var(--shared-success);
+        --theme-error: var(--shared-error);
+        --theme-warning: var(--shared-warning);
+    }
+}
