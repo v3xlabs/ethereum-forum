@@ -15,9 +15,6 @@ pub mod tmp;
 pub async fn main() -> Result<(), Error> {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
-    rustls::crypto::ring::default_provider()
-        .install_default()
-        .expect("Failed to install rustls crypto provider");
 
     let state = state::AppStateInner::init().await;
     let state = Arc::new(state);

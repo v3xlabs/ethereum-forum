@@ -36,6 +36,10 @@ impl GithubService {
         let mut indexers = HashMap::new();
 
         if let Some(key) = gh_key {
+            rustls::crypto::ring::default_provider()
+                .install_default()
+                .expect("Failed to install rustls crypto provider");
+
             let octocrab = Octocrab::builder()
                 .personal_token(key)
                 .build()
