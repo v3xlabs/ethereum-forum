@@ -72,7 +72,6 @@ export const Navbar: FC = () => {
                     {/* Last refreshed 2 min ago */}
                 </div>
             </div>
-            <div className="h-8 w-full" />
             <ScrollListener />
         </>
     );

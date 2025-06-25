@@ -18,7 +18,9 @@ function RootComponent() {
                 <Sidebar />
                 <div className="max-w-screen w-full relative">
                     <Navbar />
-                    <Outlet />
+                    <div className="px-2">
+                        <Outlet />
+                    </div>
                 </div>
             </div>
             <Toaster

@@ -30,12 +30,12 @@ html.dark {
 
 html {
     .prose-width {
-        @apply max-w-[690px] px-5 xl:px-0;
+        @apply max-w-[690px] px-5;
     }
 }
 html.prose-wide {
     .prose-width {
-        @apply max-w-[1032px] px-5 xl:px-0;
+        @apply max-w-[1032px] px-5;
     }
 }
 
@@ -149,7 +149,7 @@ input.input {
 
 html:not(.prose-page) {
     .left-bar {
-        @apply w-full 3xl:max-w-[340px] h-full;
+        @apply w-full md:max-w-[340px] h-full;
         @apply 3xl:overflow-y-auto;
     }
     .right-bar {
@@ -161,7 +161,7 @@ html:not(.prose-page) {
 html.prose-page {
     &:not(.prose-wide) {
         .left-bar {
-            @apply w-full xl:max-w-[340px] h-full;
+            @apply w-full md:max-w-[340px] h-full;
             @apply 2xl:overflow-y-auto;
         }
         .right-bar {
@@ -171,11 +171,11 @@ html.prose-page {
     }
     &.prose-wide {
         .left-bar {
-            @apply w-full 3xl:max-w-[340px] h-full;
+            @apply w-full md:max-w-[340px] h-full;
             @apply 3xl:overflow-y-auto;
         }
         .right-bar {
-            @apply w-full 3xl:max-w-[340px] h-full;
+            @apply w-full xl:max-w-[340px] h-full;
             @apply 2xl:overflow-y-auto;
         }
     }

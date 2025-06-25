@@ -69,7 +69,7 @@ export const Sidebar: FC = () => {
     return (
         <div className="left-bar space-y-2 bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0">
             <div className="flex flex-col justify-between h-screen">
-                <nav className="w-full space-y-6 p-2 h-8">
+                <nav className="w-full space-y-3 p-2 h-8">
                     <div>
                         <div className="flex items-stretch gap-2 h-full px-2">
                             <Link
@@ -90,7 +90,7 @@ export const Sidebar: FC = () => {
                             <li key={item.href} className="group">
                                 <Link
                                     to={item.href}
-                                    className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1 relative"
+                                    className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1.5 relative"
                                 >
                                     <div className="flex items-center gap-2">
                                         <div className="">{item.icon}</div>
