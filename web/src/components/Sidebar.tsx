@@ -1,4 +1,6 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useRouterState } from '@tanstack/react-router';
+import classNames from 'classnames';
 import { FC } from 'react';
 import { FiLock } from 'react-icons/fi';
 import { GrWorkshop } from 'react-icons/gr';
@@ -44,36 +46,20 @@ export const NAV_ITEMS = [
     },
 ];
 
-export const Sidebar: FC = () => {
-    const { pathname } = useRouterState({ select: (s) => s.location });
-    const { isAuthenticated } = useAuth();
-    const { isSidebarOpen } = useApp();
-
-    if (!isSidebarOpen) {
-        // Keep the sidebar width for layout, but hide content
-        return (
-            <div
-                className="left-bar w-[240px] min-w-[180px] max-w-xs bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0 transition-all duration-300"
-                style={{
-                    width: 0,
-                    minWidth: 0,
-                    maxWidth: 0,
-                    overflow: 'hidden',
-                    padding: 0,
-                    border: 'none',
-                }}
-            />
-        );
-    }
-
+const SidebarContent: FC<{
+    pathname: string;
+    isAuthenticated: boolean;
+    onNavigate?: () => void;
+}> = ({ pathname, isAuthenticated, onNavigate }) => {
     return (
-        <div className="left-bar space-y-2 bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0">
+        <div className="space-y-2 bg-secondary h-screen max-h-screen min-h-screen">
             <div className="flex flex-col justify-between h-screen">
                 <nav className="w-full space-y-6 p-2 h-8">
                     <div>
                         <div className="flex items-stretch gap-2 h-full px-2">
                             <Link
                                 to="/"
+                                onClick={onNavigate}
                                 className="text-primary font-bold text-base hover:underline py-1 flex items-center gap-1"
                             >
                                 <SiEthereum />
@@ -90,11 +76,12 @@ export const Sidebar: FC = () => {
                             <li key={item.href} className="group">
                                 <Link
                                     to={item.href}
+                                    onClick={onNavigate}
                                     className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1 relative"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <div className="">{item.icon}</div>
-                                        <span className="">{item.title}</span>
+                                        <div>{item.icon}</div>
+                                        <span>{item.title}</span>
                                         {item.requiresAuth && !isAuthenticated && (
                                             <FiLock size={12} className="text-primary opacity-60" />
                                         )}
@@ -123,6 +110,7 @@ export const Sidebar: FC = () => {
                             <Link
                                 to="/chat/$chatId"
                                 params={{ chatId: 'new' }}
+                                onClick={onNavigate}
                                 className="text-sm button flex items-center justify-center gap-1"
                             >
                                 <GrWorkshop />
@@ -134,6 +122,7 @@ export const Sidebar: FC = () => {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm button aspect-square size-8 flex items-center justify-center"
+                                onClick={onNavigate}
                             >
                                 <SiOpenai />
                             </a>
@@ -147,12 +136,51 @@ export const Sidebar: FC = () => {
                         <span className="text-sm">Text Width</span>
                         <ProseWidthSwitcher />
                     </div>
-                    {/* <div className="flex items-center justify-between gap-1 pr-1">
-                        <span className="text-sm">Last refreshed</span>
-                        <span className="text-sm">2 min ago</span>
-                    </div> */}
                 </div>
             </div>
         </div>
+    );
+};
+
+export const Sidebar: FC = () => {
+    const { pathname } = useRouterState({ select: (s) => s.location });
+    const { isAuthenticated } = useAuth();
+    const { isSidebarOpen, closeSidebar } = useApp();
+
+    return (
+        <>
+            {/* Desktop sidebar */}
+            <div
+                className={classNames(
+                    'left-bar hidden md:block bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0 transition-all duration-300',
+                    isSidebarOpen
+                        ? 'w-[240px] min-w-[180px] max-w-xs'
+                        : 'w-0 overflow-hidden !border-none'
+                )}
+            >
+                {isSidebarOpen && (
+                    <SidebarContent pathname={pathname} isAuthenticated={isAuthenticated} />
+                )}
+            </div>
+
+            {/* Mobile sidebar overlay */}
+            <Dialog.Root
+                open={isSidebarOpen}
+                onOpenChange={(v) => {
+                    if (!v) closeSidebar();
+                }}
+            >
+                <Dialog.Portal>
+                    <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40 md:hidden data-[state=open]:animate-overlayShow" />
+                    <Dialog.Content className="fixed inset-y-0 left-0 z-50 bg-secondary w-64 md:hidden outline-none data-[state=open]:animate-contentShow">
+                        <SidebarContent
+                            pathname={pathname}
+                            isAuthenticated={isAuthenticated}
+                            onNavigate={closeSidebar}
+                        />
+                    </Dialog.Content>
+                </Dialog.Portal>
+            </Dialog.Root>
+        </>
     );
 };
