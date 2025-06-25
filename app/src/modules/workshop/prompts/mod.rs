@@ -235,8 +235,7 @@ pub struct StreamingEntry {
     pub tool_call: Option<ToolCallEntry>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum StreamingEntryType {
     Content,
     ToolCallStart,
@@ -413,9 +412,9 @@ impl OngoingPrompt {
                 };
 
                 let mut turn_content = String::new();
-                let mut tool_calls: Vec<ChatCompletionMessageToolCall> = Vec::new();
                 let mut current_tool_call: Option<ChatCompletionMessageToolCall> = None;
                 let mut chunk_count = 0;
+                let mut tools_executed_this_turn = false;
 
                 // Process the stream for this conversation turn
                 while let Some(result) = stream.next().await {
@@ -466,16 +465,30 @@ impl OngoingPrompt {
                                     }
                                 }
 
-                                // Handle tool calls
+                                // Handle tool calls - process them immediately as they complete
                                 if let Some(ref tool_calls_chunk) = choice.delta.tool_calls {
                                     tracing::info!("🔧 TOOL CALL DETECTED in chunk #{}", chunk_count);
                                     for tool_call_chunk in tool_calls_chunk {
                                         if let Some(id) = &tool_call_chunk.id {
-                                            // Start of a new tool call
+                                            // If we have a previous tool call that was being built, execute it now
                                             if let Some(completed_call) = current_tool_call.take() {
-                                                tracing::info!("📋 COMPLETED TOOL CALL: {} with args: {}", 
+                                                tracing::info!("📋 EXECUTING COMPLETED TOOL CALL: {} with args: {}", 
                                                     completed_call.function.name, completed_call.function.arguments);
-                                                tool_calls.push(completed_call);
+                                                
+                                                // Execute the tool call immediately
+                                                let tool_execution_result = Self::execute_tool_call(
+                                                    &completed_call,
+                                                    &state_clone,
+                                                    &buffer_clone,
+                                                    &senders_clone,
+                                                    &conversation_history_clone
+                                                ).await;
+                                                
+                                                if let Err(e) = tool_execution_result {
+                                                    tracing::error!("❌ Tool execution failed: {}", e);
+                                                } else {
+                                                    tools_executed_this_turn = true;
+                                                }
                                             }
                                             
                                             tracing::info!("🆕 NEW TOOL CALL STARTED: ID={}", id);
@@ -508,11 +521,24 @@ impl OngoingPrompt {
                                 if let Some(finish_reason) = &choice.finish_reason {
                                     tracing::info!("🏁 Turn finished with reason: {:?}", finish_reason);
                                     
-                                    // Add any remaining tool call
+                                    // Execute any remaining tool call
                                     if let Some(completed_call) = current_tool_call.take() {
-                                        tracing::info!("📋 FINAL TOOL CALL: {} with args: {}", 
+                                        tracing::info!("📋 EXECUTING FINAL TOOL CALL: {} with args: {}", 
                                             completed_call.function.name, completed_call.function.arguments);
-                                        tool_calls.push(completed_call);
+                                        
+                                        let tool_execution_result = Self::execute_tool_call(
+                                            &completed_call,
+                                            &state_clone,
+                                            &buffer_clone,
+                                            &senders_clone,
+                                            &conversation_history_clone
+                                        ).await;
+                                        
+                                        if let Err(e) = tool_execution_result {
+                                            tracing::error!("❌ Final tool execution failed: {}", e);
+                                        } else {
+                                            tools_executed_this_turn = true;
+                                        }
                                     }
                                     break;
                                 }
@@ -530,9 +556,22 @@ impl OngoingPrompt {
                                     if !completed_call.function.name.is_empty() {
                                         tracing::info!("🔄 RECOVERING TOOL CALL: {} with args: {}", 
                                             completed_call.function.name, completed_call.function.arguments);
-                                        tool_calls.push(completed_call);
                                         
-                                        // Continue to tool execution instead of erroring out
+                                        let tool_execution_result = Self::execute_tool_call(
+                                            &completed_call,
+                                            &state_clone,
+                                            &buffer_clone,
+                                            &senders_clone,
+                                            &conversation_history_clone
+                                        ).await;
+                                        
+                                        if let Err(e) = tool_execution_result {
+                                            tracing::error!("❌ Recovery tool execution failed: {}", e);
+                                        } else {
+                                            tools_executed_this_turn = true;
+                                        }
+                                        
+                                        // Continue processing instead of erroring out
                                         break;
                                     }
                                 }
@@ -544,222 +583,30 @@ impl OngoingPrompt {
                     }
                 }
 
-                // Process any tool calls that were made
-                if !tool_calls.is_empty() {
-                    tracing::info!("🟡🟡🟡 TOOL EXECUTION PHASE STARTING 🟡🟡🟡");
-                    tracing::info!("🔧 Processing {} tool call(s)", tool_calls.len());
-                    
-                    // Add assistant message with tool calls to conversation
-                    {
-                        let mut history = conversation_history_clone.write().await;
-                        history.push(ChatCompletionRequestMessage::Assistant(
-                            ChatCompletionRequestAssistantMessage {
-                                content: if turn_content.is_empty() { 
-                                    None 
-                                } else { 
-                                    Some(ChatCompletionRequestAssistantMessageContent::Text(turn_content.clone()))
-                                },
-                                refusal: None,
-                                name: None,
-                                tool_calls: Some(tool_calls.clone()),
-                                function_call: None,
-                                audio: None,
-                            }
-                        ));
-                        tracing::info!("💾 Added assistant message with {} tool calls to conversation", tool_calls.len());
-                    }
-
-                    // Execute each tool call
-                    for (index, tool_call) in tool_calls.iter().enumerate() {
-                        let tool_name = &tool_call.function.name;
-                        let tool_args = &tool_call.function.arguments;
-                        
-                        tracing::info!("🟢🟢🟢 EXECUTING TOOL #{}/{} 🟢🟢🟢", index + 1, tool_calls.len());
-                        tracing::info!("🛠️  Tool: {}", tool_name);
-                        tracing::info!("📋 Args: {}", tool_args);
-                        tracing::info!("🆔 Call ID: {}", tool_call.id);
-                        
-                        // Stream tool call start to user
-                        let tool_start_entry = StreamingEntry {
-                            content: String::new(),
-                            entry_type: StreamingEntryType::ToolCallStart,
-                            tool_call: Some(ToolCallEntry {
-                                tool_name: tool_name.clone(),
-                                tool_id: tool_call.id.clone(),
-                                arguments: Some(tool_args.clone()),
-                                result: None,
-                                status: ToolCallStatus::Starting,
-                            }),
-                        };
-                        
-                        {
-                            let mut buffer = buffer_clone.write().await;
-                            buffer.push_back(tool_start_entry.clone());
+                // After processing the stream, check if we had any assistant content to add
+                if !turn_content.is_empty() {
+                    // Add assistant message with just content (tool calls are handled separately as they execute)
+                    let mut history = conversation_history_clone.write().await;
+                    history.push(ChatCompletionRequestMessage::Assistant(
+                        ChatCompletionRequestAssistantMessage {
+                            content: Some(ChatCompletionRequestAssistantMessageContent::Text(turn_content.clone())),
+                            refusal: None,
+                            name: None,
+                            tool_calls: None,
+                            function_call: None,
+                            audio: None,
                         }
-                        {
-                            let mut senders_lock = senders_clone.lock().await;
-                            senders_lock.retain(|sender| {
-                                sender.try_send(Ok(tool_start_entry.clone())).is_ok()
-                            });
-                        }
+                    ));
+                    tracing::info!("💾 Added assistant message with content to conversation");
+                }
 
-                        // Parse arguments and call the tool
-                        let tool_result = match serde_json::from_str(tool_args) {
-                            Ok(mut args_json) => {
-                                tracing::info!("✅ Tool arguments parsed successfully");
-                                
-                                // Normalize numeric arguments (convert string numbers to actual numbers)
-                                args_json = normalize_tool_arguments(tool_name, args_json);
-                                tracing::info!("🔢 Tool arguments after normalization: {}", args_json);
-                                
-                                // Send executing status
-                                let executing_entry = StreamingEntry {
-                                    content: String::new(),
-                                    entry_type: StreamingEntryType::ToolCallStart,
-                                    tool_call: Some(ToolCallEntry {
-                                        tool_name: tool_name.clone(),
-                                        tool_id: tool_call.id.clone(),
-                                        arguments: Some(tool_args.clone()),
-                                        result: None,
-                                        status: ToolCallStatus::Executing,
-                                    }),
-                                };
-                                
-                                {
-                                    let mut buffer = buffer_clone.write().await;
-                                    buffer.push_back(executing_entry.clone());
-                                }
-                                {
-                                    let mut senders_lock = senders_clone.lock().await;
-                                    senders_lock.retain(|sender| {
-                                        sender.try_send(Ok(executing_entry.clone())).is_ok()
-                                    });
-                                }
-                                
-                                match state_clone.workshop.mcp_client.write().await.call_tool(tool_name, args_json).await {
-                                    Ok(response) => {
-                                        let content: String = response.content
-                                            .into_iter()
-                                            .filter_map(|c| c.text)
-                                            .collect::<Vec<_>>()
-                                            .join("\n");
-                                        
-                                        tracing::info!("✅ TOOL EXECUTION SUCCESS: {}", tool_name);
-                                        tracing::info!("📤 Tool result length: {} characters", content.len());
-                                        tracing::info!("📄 Tool result preview: {}...", 
-                                            content.chars().take(200).collect::<String>());
-                                        
-                                        // Send success result
-                                        let success_entry = StreamingEntry {
-                                            content: String::new(),
-                                            entry_type: StreamingEntryType::ToolCallResult,
-                                            tool_call: Some(ToolCallEntry {
-                                                tool_name: tool_name.clone(),
-                                                tool_id: tool_call.id.clone(),
-                                                arguments: Some(tool_args.clone()),
-                                                result: Some(content.clone()),
-                                                status: ToolCallStatus::Success,
-                                            }),
-                                        };
-                                        
-                                        {
-                                            let mut buffer = buffer_clone.write().await;
-                                            buffer.push_back(success_entry.clone());
-                                        }
-                                        {
-                                            let mut senders_lock = senders_clone.lock().await;
-                                            senders_lock.retain(|sender| {
-                                                sender.try_send(Ok(success_entry.clone())).is_ok()
-                                            });
-                                        }
-                                        
-                                        content
-                                    }
-                                    Err(e) => {
-                                        tracing::error!("❌ TOOL EXECUTION FAILED: {} - Error: {}", tool_name, e);
-                                        let error_msg = format!("Error executing tool {}: {}", tool_name, e);
-                                        
-                                        // Send error result
-                                        let error_entry = StreamingEntry {
-                                            content: String::new(),
-                                            entry_type: StreamingEntryType::ToolCallError,
-                                            tool_call: Some(ToolCallEntry {
-                                                tool_name: tool_name.clone(),
-                                                tool_id: tool_call.id.clone(),
-                                                arguments: Some(tool_args.clone()),
-                                                result: Some(error_msg.clone()),
-                                                status: ToolCallStatus::Error,
-                                            }),
-                                        };
-                                        
-                                        {
-                                            let mut buffer = buffer_clone.write().await;
-                                            buffer.push_back(error_entry.clone());
-                                        }
-                                        {
-                                            let mut senders_lock = senders_clone.lock().await;
-                                            senders_lock.retain(|sender| {
-                                                sender.try_send(Ok(error_entry.clone())).is_ok()
-                                            });
-                                        }
-                                        
-                                        error_msg
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                tracing::error!("❌ TOOL ARGS PARSE FAILED: {}", e);
-                                let error_msg = format!("Error parsing tool arguments: {}", e);
-                                
-                                // Send parse error
-                                let error_entry = StreamingEntry {
-                                    content: String::new(),
-                                    entry_type: StreamingEntryType::ToolCallError,
-                                    tool_call: Some(ToolCallEntry {
-                                        tool_name: tool_name.clone(),
-                                        tool_id: tool_call.id.clone(),
-                                        arguments: Some(tool_args.clone()),
-                                        result: Some(error_msg.clone()),
-                                        status: ToolCallStatus::Error,
-                                    }),
-                                };
-                                
-                                {
-                                    let mut buffer = buffer_clone.write().await;
-                                    buffer.push_back(error_entry.clone());
-                                }
-                                {
-                                    let mut senders_lock = senders_clone.lock().await;
-                                    senders_lock.retain(|sender| {
-                                        sender.try_send(Ok(error_entry.clone())).is_ok()
-                                    });
-                                }
-                                
-                                error_msg
-                            }
-                        };
-
-                        // Add tool result to conversation
-                        {
-                            let mut history = conversation_history_clone.write().await;
-                            history.push(ChatCompletionRequestMessage::Tool(
-                                ChatCompletionRequestToolMessage {
-                                    content: async_openai::types::ChatCompletionRequestToolMessageContent::Text(tool_result.clone()),
-                                    tool_call_id: tool_call.id.clone(),
-                                }
-                            ));
-                            tracing::info!("💾 Added tool result to conversation for call ID: {}", tool_call.id);
-                        }
-                        
-                        tracing::info!("🟢🟢🟢 TOOL #{}/{} COMPLETED 🟢🟢🟢", index + 1, tool_calls.len());
-                    }
-                    
-                    tracing::info!("🟡🟡🟡 ALL TOOLS EXECUTED - CONTINUING CONVERSATION 🟡🟡🟡");
-                    // Continue the conversation with tool results
+                // Check if conversation should continue based on whether we executed any tools
+                // during this specific turn
+                if tools_executed_this_turn {
+                    tracing::info!("🔄 Continuing conversation after tool execution...");
                     continue;
                 } else {
-                    // No tool calls, conversation is complete
-                    tracing::info!("🔚 No tool calls detected - conversation complete");
+                    tracing::info!("🔚 No tools executed this turn - conversation complete");
                     conversation_complete = true;
                 }
             }
@@ -911,6 +758,213 @@ impl OngoingPrompt {
     pub async fn get_model_used(&self) -> Option<String> {
         let model_lock = self.state.model_used.read().await;
         model_lock.clone()
+    }
+
+    /// Execute a single tool call and handle streaming of results
+    async fn execute_tool_call(
+        tool_call: &ChatCompletionMessageToolCall,
+        state: &AppState,
+        buffer: &Arc<RwLock<VecDeque<StreamingEntry>>>,
+        senders: &Arc<Mutex<Vec<Sender<Result<StreamingEntry, String>>>>>,
+        conversation_history: &Arc<RwLock<Vec<ChatCompletionRequestMessage>>>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let tool_name = &tool_call.function.name;
+        let tool_args = &tool_call.function.arguments;
+        
+        tracing::info!("🟢🟢🟢 EXECUTING TOOL: {} 🟢🟢🟢", tool_name);
+        tracing::info!("🆔 Call ID: {}", tool_call.id);
+        tracing::info!("📋 Args: {}", tool_args);
+        
+        // Stream tool call start to user
+        let tool_start_entry = StreamingEntry {
+            content: String::new(),
+            entry_type: StreamingEntryType::ToolCallStart,
+            tool_call: Some(ToolCallEntry {
+                tool_name: tool_name.clone(),
+                tool_id: tool_call.id.clone(),
+                arguments: Some(tool_args.clone()),
+                result: None,
+                status: ToolCallStatus::Starting,
+            }),
+        };
+        
+        {
+            let mut buffer_lock = buffer.write().await;
+            buffer_lock.push_back(tool_start_entry.clone());
+        }
+        {
+            let mut senders_lock = senders.lock().await;
+            senders_lock.retain(|sender| {
+                sender.try_send(Ok(tool_start_entry.clone())).is_ok()
+            });
+        }
+
+        // Parse arguments and call the tool
+        let tool_result = match serde_json::from_str(tool_args) {
+            Ok(mut args_json) => {
+                tracing::info!("✅ Tool arguments parsed successfully");
+                
+                // Normalize numeric arguments (convert string numbers to actual numbers)
+                args_json = normalize_tool_arguments(tool_name, args_json);
+                tracing::info!("🔢 Tool arguments after normalization: {}", args_json);
+                
+                // Send executing status
+                let executing_entry = StreamingEntry {
+                    content: String::new(),
+                    entry_type: StreamingEntryType::ToolCallStart,
+                    tool_call: Some(ToolCallEntry {
+                        tool_name: tool_name.clone(),
+                        tool_id: tool_call.id.clone(),
+                        arguments: Some(tool_args.clone()),
+                        result: None,
+                        status: ToolCallStatus::Executing,
+                    }),
+                };
+                
+                {
+                    let mut buffer_lock = buffer.write().await;
+                    buffer_lock.push_back(executing_entry.clone());
+                }
+                {
+                    let mut senders_lock = senders.lock().await;
+                    senders_lock.retain(|sender| {
+                        sender.try_send(Ok(executing_entry.clone())).is_ok()
+                    });
+                }
+                
+                match state.workshop.mcp_client.write().await.call_tool(tool_name, args_json).await {
+                    Ok(response) => {
+                        let content: String = response.content
+                            .into_iter()
+                            .filter_map(|c| c.text)
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        
+                        tracing::info!("✅ TOOL EXECUTION SUCCESS: {}", tool_name);
+                        tracing::info!("📤 Tool result length: {} characters", content.len());
+                        tracing::info!("📄 Tool result preview: {}...", 
+                            content.chars().take(200).collect::<String>());
+                        
+                        // Send success result
+                        let success_entry = StreamingEntry {
+                            content: String::new(),
+                            entry_type: StreamingEntryType::ToolCallResult,
+                            tool_call: Some(ToolCallEntry {
+                                tool_name: tool_name.clone(),
+                                tool_id: tool_call.id.clone(),
+                                arguments: Some(tool_args.clone()),
+                                result: Some(content.clone()),
+                                status: ToolCallStatus::Success,
+                            }),
+                        };
+                        
+                        {
+                            let mut buffer_lock = buffer.write().await;
+                            buffer_lock.push_back(success_entry.clone());
+                        }
+                        {
+                            let mut senders_lock = senders.lock().await;
+                            senders_lock.retain(|sender| {
+                                sender.try_send(Ok(success_entry.clone())).is_ok()
+                            });
+                        }
+                        
+                        content
+                    }
+                    Err(e) => {
+                        tracing::error!("❌ TOOL EXECUTION FAILED: {} - Error: {}", tool_name, e);
+                        let error_msg = format!("Error executing tool {}: {}", tool_name, e);
+                        
+                        // Send error result
+                        let error_entry = StreamingEntry {
+                            content: String::new(),
+                            entry_type: StreamingEntryType::ToolCallError,
+                            tool_call: Some(ToolCallEntry {
+                                tool_name: tool_name.clone(),
+                                tool_id: tool_call.id.clone(),
+                                arguments: Some(tool_args.clone()),
+                                result: Some(error_msg.clone()),
+                                status: ToolCallStatus::Error,
+                            }),
+                        };
+                        
+                        {
+                            let mut buffer_lock = buffer.write().await;
+                            buffer_lock.push_back(error_entry.clone());
+                        }
+                        {
+                            let mut senders_lock = senders.lock().await;
+                            senders_lock.retain(|sender| {
+                                sender.try_send(Ok(error_entry.clone())).is_ok()
+                            });
+                        }
+                        
+                        error_msg
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::error!("❌ TOOL ARGS PARSE FAILED: {}", e);
+                let error_msg = format!("Error parsing tool arguments: {}", e);
+                
+                // Send parse error
+                let error_entry = StreamingEntry {
+                    content: String::new(),
+                    entry_type: StreamingEntryType::ToolCallError,
+                    tool_call: Some(ToolCallEntry {
+                        tool_name: tool_name.clone(),
+                        tool_id: tool_call.id.clone(),
+                        arguments: Some(tool_args.clone()),
+                        result: Some(error_msg.clone()),
+                        status: ToolCallStatus::Error,
+                    }),
+                };
+                
+                {
+                    let mut buffer_lock = buffer.write().await;
+                    buffer_lock.push_back(error_entry.clone());
+                }
+                {
+                    let mut senders_lock = senders.lock().await;
+                    senders_lock.retain(|sender| {
+                        sender.try_send(Ok(error_entry.clone())).is_ok()
+                    });
+                }
+                
+                error_msg
+            }
+        };
+
+        // Add assistant message with tool call to conversation history first
+        {
+            let mut history = conversation_history.write().await;
+            history.push(ChatCompletionRequestMessage::Assistant(
+                ChatCompletionRequestAssistantMessage {
+                    content: None,
+                    refusal: None,
+                    name: None,
+                    tool_calls: Some(vec![tool_call.clone()]),
+                    function_call: None,
+                    audio: None,
+                }
+            ));
+            tracing::info!("💾 Added assistant message with tool call to conversation");
+        }
+
+        // Add tool result to conversation history
+        {
+            let mut history = conversation_history.write().await;
+            history.push(ChatCompletionRequestMessage::Tool(
+                ChatCompletionRequestToolMessage {
+                    content: async_openai::types::ChatCompletionRequestToolMessageContent::Text(tool_result.clone()),
+                    tool_call_id: tool_call.id.clone(),
+                }
+            ));
+            tracing::info!("💾 Added tool result to conversation for call ID: {}", tool_call.id);
+        }
+        
+        tracing::info!("🟢🟢🟢 TOOL EXECUTION COMPLETED: {} 🟢🟢🟢", tool_name);
+        Ok(())
     }
 }
 

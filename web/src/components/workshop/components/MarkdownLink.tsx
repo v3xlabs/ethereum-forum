@@ -1,9 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import React from 'react';
 
+import { mapInstanceUrlDiscourse } from '@/util/discourse';
+
 import { TopicPreviewTooltip } from './TopicPreviewTooltip';
 import { UserProfileTooltip } from './UserProfileTooltip';
-import { mapInstanceUrlDiscourse } from '@/util/discourse';
 
 export const MarkdownLink = (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
     const { href, children, ...otherProps } = props;

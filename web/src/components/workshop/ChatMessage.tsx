@@ -2,7 +2,7 @@ import '../../styles/code.css';
 
 import classNames from 'classnames';
 import React from 'react';
-import { LuBrain, LuChevronLeft, LuChevronRight, LuCog, LuCopy, LuPencil } from 'react-icons/lu';
+import { LuBrain, LuChevronLeft, LuChevronRight, LuCopy, LuPencil } from 'react-icons/lu';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { match } from 'ts-pattern';
@@ -13,6 +13,7 @@ import { useWorkshopStreamMessage, WorkshopMessage } from '@/api/workshop';
 import { Tooltip } from '@/components/tooltip/Tooltip';
 import { UsageTooltip } from '@/components/usage/UsageTooltip';
 import { formatCompact } from '@/util/format';
+import { processStreamingData } from '@/util/streamingContent';
 
 import { MarkdownLink } from './components/MarkdownLink';
 import { ToolCallDisplay } from './ToolCallDisplay';
@@ -35,7 +36,7 @@ interface StreamingEvent {
     };
 }
 
-// Component to display stored streaming events using the same logic as live streaming
+// Component to display stored streaming events in proper order
 const StoredStreamingEvents = ({ events }: { events: StreamingEvent[] }) => {
     // Convert stored events to StreamingResponse format to reuse existing logic
     const streamingResponses: components['schemas']['StreamingResponse'][] = events.map(
@@ -56,46 +57,11 @@ const StoredStreamingEvents = ({ events }: { events: StreamingEvent[] }) => {
         })
     );
 
-    // Use the same tool call processing logic as the streaming API
-    const toolCalls = React.useMemo(() => {
-        const calls = new Map<string, components['schemas']['ToolCallEntry']>();
-
-        streamingResponses.forEach((response) => {
-            if (response.tool_call && response.entry_type !== 'Content') {
-                calls.set(response.tool_call.tool_id, response.tool_call);
-            }
-        });
-
-        return Array.from(calls.values());
-    }, [streamingResponses]);
-
-    if (toolCalls.length === 0) {
-        return null;
-    }
-
-    return (
-        <div className="mb-6">
-            <div className="flex items-center gap-2 mb-4 px-1">
-                <div className="flex items-center justify-center w-6 h-6 rounded-md bg-secondary text-primary shadow-sm">
-                    <LuCog size={14} />
-                </div>
-                <h3 className="text-sm font-semibold text-primary">Tool Executions</h3>
-                <div className="flex-1 h-px bg-primary/20"></div>
-                <span className="text-xs text-primary/70 bg-secondary px-2 py-1 rounded-full border border-primary/20">
-                    {toolCalls.length} call{toolCalls.length !== 1 ? 's' : ''}
-                </span>
-            </div>
-            <div className="space-y-3">
-                {toolCalls.map((toolCall) => (
-                    <ToolCallDisplay key={toolCall.tool_id} toolCall={toolCall} />
-                ))}
-            </div>
-        </div>
-    );
+    return <StreamingContent data={streamingResponses} />;
 };
 
 // Helper function to safely convert unknown streaming_events to typed version
-const convertToExtendedMessage = (message: WorkshopMessage): ExtendedWorkshopMessage => {
+export const convertToExtendedMessage = (message: WorkshopMessage): ExtendedWorkshopMessage => {
     const { streaming_events, ...rest } = message;
     let typedStreamingEvents: StreamingEvent[] | undefined;
 
@@ -182,26 +148,32 @@ export const ChatMessage = ({ node, message, editable, onEdit, onNavigate }: Cha
                 key={messageData.message_id}
                 // className="border p-4 border-primary/50 rounded-md pr-6"
             >
-                {/* Show stored streaming events if they exist */}
-                {messageData.streaming_events && messageData.streaming_events.length > 0 && (
-                    <StoredStreamingEvents events={messageData.streaming_events} />
-                )}
-                <div
-                    className={classNames(
-                        'prose',
-                        messageData.sender_role === 'user' && 'card border border-primary/50'
-                    )}
-                >
-                    <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                        {messageData.message}
-                    </Markdown>
-                </div>
-                {messageData.message.length === 0 && (
-                    <ChatDataStream
-                        chatId={messageData.chat_id}
-                        messageId={messageData.message_id}
-                    />
-                )}
+                {match(messageData)
+                    .when(
+                        (data) => data.streaming_events && data.streaming_events.length > 0,
+                        (data) => <StoredStreamingEvents events={data.streaming_events!} />
+                    )
+                    .when(
+                        (data) => data.message.length > 0,
+                        (data) => (
+                            <div
+                                className={classNames(
+                                    'prose',
+                                    data.sender_role === 'user' && 'card border border-primary/50'
+                                )}
+                            >
+                                <Markdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={markdownComponents}
+                                >
+                                    {data.message}
+                                </Markdown>
+                            </div>
+                        )
+                    )
+                    .otherwise((data) => (
+                        <ChatDataStream chatId={data.chat_id} messageId={data.message_id} />
+                    ))}
             </div>
 
             {/* Branch navigation and actions */}
@@ -271,10 +243,7 @@ export const ChatMessage = ({ node, message, editable, onEdit, onNavigate }: Cha
 };
 
 export const ChatDataStream = ({ chatId, messageId }: { chatId: string; messageId: string }) => {
-    const { combinedContent, toolCalls, isLoading, error, isComplete } = useWorkshopStreamMessage(
-        chatId,
-        messageId
-    );
+    const { data, isLoading, error, isComplete } = useWorkshopStreamMessage(chatId, messageId);
 
     if (isLoading)
         return (
@@ -287,36 +256,43 @@ export const ChatDataStream = ({ chatId, messageId }: { chatId: string; messageI
     if (error) return <div>Error: {error}</div>;
 
     return (
-        <>
-            {/* Display tool calls */}
-            {toolCalls.length > 0 && (
-                <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-4 px-1">
-                        <div className="flex items-center justify-center w-6 h-6 rounded-md bg-secondary text-primary shadow-sm">
-                            <LuCog size={14} />
-                        </div>
-                        <h3 className="text-sm font-semibold text-primary">Tool Executions</h3>
-                        <div className="flex-1 h-px bg-primary/20"></div>
-                        <span className="text-xs text-primary/70 bg-secondary px-2 py-1 rounded-full border border-primary/20">
-                            {toolCalls.length} call{toolCalls.length !== 1 ? 's' : ''}
-                        </span>
-                    </div>
-                    <div className="space-y-3">
-                        {toolCalls.map((toolCall) => (
-                            <ToolCallDisplay key={toolCall.tool_id} toolCall={toolCall} />
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Display regular content */}
-            <div className="prose">
-                <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                    {combinedContent}
-                </Markdown>
-            </div>
+        <div className="space-y-2">
+            <StreamingContent data={data} />
             {!isComplete && !error && <span className="animate-pulse">▋</span>}
-        </>
+        </div>
+    );
+};
+
+// New component to handle streaming content with proper aggregation and animations
+const StreamingContent = ({
+    data,
+}: {
+    data: NonNullable<ReturnType<typeof useWorkshopStreamMessage>['data']>;
+}) => {
+    // Process the data stream to create properly ordered and grouped content
+    const groupedContent = React.useMemo(() => {
+        return processStreamingData(data);
+    }, [data]);
+
+    return (
+        <div className="space-y-3">
+            {groupedContent.map((group) => (
+                <div
+                    key={`${group.type}-${group.index}`}
+                    className="animate-in fade-in duration-300 slide-in-from-bottom-2"
+                >
+                    {group.type === 'content' ? (
+                        <div className="prose prose-sm">
+                            <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                                {group.content}
+                            </Markdown>
+                        </div>
+                    ) : (
+                        <ToolCallDisplay toolCall={group.toolCall} />
+                    )}
+                </div>
+            ))}
+        </div>
     );
 };
 
