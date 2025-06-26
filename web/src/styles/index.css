@@ -30,12 +30,18 @@ html.dark {
 
 html {
     .prose-width {
-        @apply max-w-[690px] px-5;
+        @apply max-w-[690px];
+        &:not(.no-padding) {
+            @apply px-5;
+        }
     }
 }
 html.prose-wide {
     .prose-width {
-        @apply max-w-[1032px] px-5;
+        @apply max-w-[1032px];
+        &:not(.no-padding) {
+            @apply px-5;
+        }
     }
 }
 
