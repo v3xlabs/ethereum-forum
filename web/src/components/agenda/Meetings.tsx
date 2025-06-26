@@ -1,22 +1,19 @@
 import { Link } from '@tanstack/react-router';
 import { format, parseISO } from 'date-fns';
 import { FC } from 'react';
-import { FiRefreshCcw } from 'react-icons/fi';
 import { SiGooglemeet, SiYoutube, SiZoom } from 'react-icons/si';
 
 import { CalendarEvent, Meeting } from '@/api/events';
 import { convertYoutubeUrlToThumbnailUrl, getOccurence } from '@/routes/pm/$issueId';
 
 import { TimeAgo } from '../TimeAgo';
+import { CalendarDays } from './CalendarDays';
 
 export const Meetings: FC<{ data: CalendarEvent[] }> = ({ data }) => {
     return (
         <div className="flex gap-3">
-            <div className="flex flex-col">
-                {data?.map((event) => (
-                    // @ts-ignore
-                    <MeetingPreview key={event.uid + event.start?.toString()} event={event} />
-                ))}
+            <div className="flex flex-col w-full">
+                <CalendarDays data={data} />
             </div>
         </div>
     );
@@ -55,15 +52,30 @@ export const MeetingPreview = ({ event }: { event: CalendarEvent }) => {
 
     return (
         <div className="flex gap-2">
-            <div className="border-r w-full border-primary pr-2 max-w-24 break-all text-right">
-                <div className="text-sm">
-                    {event?.start && format(parseISO(event?.start), 'HH:mm')}
+            <div className="card flex flex-col gap-2 grow mb-4">
+                <div className="flex items-center justify-between">
+                    <div className="space-x-1">
+                        <span className="text-md text-secondary">
+                            {event.start && <TimeAgo date={parseISO(event.start)} />}
+                        </span>
+                        <span className="text-grey-500 text-sm">
+                            - {format(parseISO(event.start), 'HH:mm')}
+                        </span>
+                    </div>
+
+                    <div>
+                        {event.pm_number && (
+                            <Link
+                                to={'/pm/$issueId'}
+                                params={{ issueId: event.pm_number.toString() }}
+                                className="button"
+                            >
+                                #{event.pm_number}
+                            </Link>
+                        )}
+                    </div>
                 </div>
-                <div className="text-xs">
-                    (<TimeAgo date={parseISO(event.start)} />)
-                </div>
-            </div>
-            <div className="card flex gap-2 grow mb-4">
+
                 {occurence &&
                     'youtube_streams' in occurence &&
                     occurence.youtube_streams?.[0]?.stream_url && (
@@ -77,20 +89,12 @@ export const MeetingPreview = ({ event }: { event: CalendarEvent }) => {
                             />
                         </div>
                     )}
+
                 <div className="flex flex-col gap-2 grow">
                     <div className="flex items-center gap-2 justify-between">
-                        <h3 className="font-bold">{event.summary}</h3>
+                        <h3 className="font-bold text-xl">{event.summary}</h3>
                         <div className="flex items-center gap-2">
-                            {event.pm_number && (
-                                <Link
-                                    to={'/pm/$issueId'}
-                                    params={{ issueId: event.pm_number.toString() }}
-                                    className="button"
-                                >
-                                    #{event.pm_number}
-                                </Link>
-                            )}
-                            {event.occurance == 'Recurring' && <FiRefreshCcw className="size-3" />}
+                            {/* {event.occurance == 'Recurring' && <FiRefreshCcw className="size-3" />} */}
                         </div>
                     </div>
                     <div
@@ -103,9 +107,6 @@ export const MeetingPreview = ({ event }: { event: CalendarEvent }) => {
                                 <MeetingLink key={meeting.link} meeting={meeting} />
                             ))}
                         </div>
-                        <p className="text-sm text-gray-500 text-end flex items-end">
-                            {event.start && <TimeAgo date={parseISO(event.start)} />}
-                        </p>
                     </div>
                 </div>
             </div>
