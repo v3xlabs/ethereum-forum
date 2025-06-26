@@ -252,23 +252,29 @@ impl WorkshopApi {
                 is_default: false,
             },
             AvailableModel {
-                id: "openai/o4-mini".to_string(),
+                id: "openai/gpt-4o-mini".to_string(),
                 name: "OpenAI o4 Mini".to_string(),
                 provider: "OpenAI".to_string(),
                 is_default: false,
             },
             AvailableModel {
-                id: "mistralai/mistral-7b-instruct:free".to_string(),
-                name: "Mistral 7B Instruct (Free)".to_string(),
+                id: "mistralai/mistral-nemo".to_string(),
+                name: "Mistral Nemo".to_string(),
                 provider: "Mistral AI".to_string(),
                 is_default: false,
             },
-            AvailableModel {
-                id: "deepseek/deepseek-chat-v3-0324".to_string(),
-                name: "DeepSeek V3 0324".to_string(),
-                provider: "DeepSeek".to_string(),
-                is_default: false,
-            },
+            // AvailableModel {
+            //     id: "mistralai/mistral-7b-instruct:free".to_string(),
+            //     name: "Mistral 7B Instruct (Free)".to_string(),
+            //     provider: "Mistral AI".to_string(),
+            //     is_default: false,
+            // },
+            // AvailableModel {
+            //     id: "deepseek/deepseek-r1-0528:free".to_string(),
+            //     name: "DeepSeek R1 0528".to_string(),
+            //     provider: "DeepSeek".to_string(),
+            //     is_default: false,
+            // },
         ];
 
         Ok(Json(AvailableModelsResponse {
