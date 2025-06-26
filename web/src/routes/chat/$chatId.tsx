@@ -1,6 +1,6 @@
 import { createFileRoute, useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { FC, useEffect, useMemo, useState } from 'react';
-import { LuArrowRight, LuLoader, LuShare } from 'react-icons/lu';
+import { LuArrowRight, LuListTree, LuLoader, LuShare } from 'react-icons/lu';
 import { match, P } from 'ts-pattern';
 
 import {
@@ -12,8 +12,8 @@ import {
 } from '@/api/workshop';
 import { WorkshopAuthGuard } from '@/components/AuthGuard';
 import { UpDownScroller } from '@/components/UpDown';
-import { ChatMessage } from '@/components/workshop/ChatMessage';
-import { ConversationGraph } from '@/components/workshop/ConversationGraph';
+import { ChatMessage, convertToExtendedMessage } from '@/components/workshop/ChatMessage';
+import { ConversationGraph, ConversationGraphProps } from '@/components/workshop/ConversationGraph';
 import { ModelSelector } from '@/components/workshop/ModelSelector';
 import {
     buildMessageTree,
@@ -132,17 +132,13 @@ const ChatWithSidebar = ({ chatId }: { chatId: string }) => {
 
     return (
         <>
-            {/* Right Sidebar */}
-            {chat?.messages && chat.messages.length > 0 && useTreeView && (
-                <div className="right-bar p-4">
-                    <ConversationGraph
-                        rootNodes={rootNodes}
-                        visibleMessages={visibleMessages}
-                        messageMap={messageMap}
-                    />
-                </div>
+            {rootNodes.length > 1 && visibleMessages.length > 1 && messageMap && (
+                <MessageTreeButton
+                    rootNodes={rootNodes}
+                    visibleMessages={visibleMessages}
+                    messageMap={messageMap}
+                />
             )}
-
             {/* Main Chat */}
             <Chat
                 chatId={chatId}
@@ -274,7 +270,7 @@ const Chat = ({
                                 <UpDownScroller />
                                 <div className="flex w-full justify-between items-center mb-4">
                                     <div>
-                                        <h1 className="text-base">
+                                        <h1 className="text-base font-bold">
                                             {chat?.chat?.summary || 'Untitled conversation'}
                                         </h1>
                                     </div>
@@ -308,7 +304,7 @@ const Chat = ({
                                         : chat?.messages?.map((message: WorkshopMessage) => (
                                               <ChatMessage
                                                   key={message.message_id}
-                                                  message={message}
+                                                  message={convertToExtendedMessage(message)}
                                                   editable={true}
                                                   onEdit={handleEditMessage}
                                               />
@@ -463,5 +459,31 @@ export const ShareButton: FC<{ chatId: string; messageId: string }> = ({ chatId,
             <LuShare />
             Share
         </button>
+    );
+};
+
+export const MessageTreeButton: FC<ConversationGraphProps> = ({
+    rootNodes,
+    visibleMessages,
+    messageMap,
+}) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="relative">
+            <button className="button flex items-center gap-2" onClick={() => setIsOpen(!isOpen)}>
+                <LuListTree />
+                Message Tree
+            </button>
+            {isOpen && (
+                <div className="right-bar p-4">
+                    <ConversationGraph
+                        rootNodes={rootNodes}
+                        visibleMessages={visibleMessages}
+                        messageMap={messageMap}
+                    />
+                </div>
+            )}
+        </div>
     );
 };

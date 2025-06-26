@@ -311,7 +311,7 @@ impl WorkshopService {
                     // Update the message content and streaming events with token usage
                     if let Err(e) = WorkshopMessage::update_message_with_token_usage(
                         &system_response_clone.message_id,
-                        &content,
+                        "", // Empty message field - use streaming_events as source of truth
                         &streaming_events,
                         usage_data.as_ref(),
                         &model_used,
@@ -322,7 +322,7 @@ impl WorkshopService {
                         tracing::error!("❌ Error updating message with token usage: {:?}", e);
                     } else {
                         tracing::info!(
-                            "✅ Updated message content, streaming events, and token usage successfully"
+                            "✅ Updated message with empty content field (using streaming_events as source of truth)"
                         );
                         if let Some(usage) = &usage_data {
                             tracing::info!(

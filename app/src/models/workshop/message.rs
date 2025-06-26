@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{prelude::FromRow, query_as};
 use uuid::Uuid;
 
-use crate::{models::workshop::{chat::WorkshopChat}, modules::workshop::prompts::StreamingEntry, state::AppState};
+use crate::{models::workshop::{chat::WorkshopChat}, modules::workshop::prompts::{StreamingEntry, StreamingEntryType}, state::AppState};
 
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, Object)]
@@ -184,6 +184,20 @@ impl WorkshopMessage {
         self.streaming_events = serde_json::to_value(events).ok();
     }
 
+    /// Extract text content from streaming events
+    pub fn get_content_from_streaming_events(&self) -> String {
+        if let Some(events) = self.get_streaming_events() {
+            events
+                .iter()
+                .filter(|event| event.entry_type == StreamingEntryType::Content)
+                .map(|event| event.content.as_str())
+                .collect::<Vec<_>>()
+                .join("")
+        } else {
+            self.message.clone()
+        }
+    }
+
     /// Extract OpenAI-compatible tool calls from streaming events for reuse in subsequent requests
     pub fn get_openai_tool_calls(&self) -> Option<Vec<async_openai::types::ChatCompletionMessageToolCall>> {
         let events = self.get_streaming_events()?;
@@ -231,11 +245,21 @@ impl Into<ChatCompletionRequestMessage> for WorkshopMessage {
                 name: None,
             }),
             "assistant" => {
-                // Extract tool calls from streaming events if available
+                // Extract tool calls first before moving self
                 let tool_calls = self.get_openai_tool_calls();
                 
+                // For assistant messages, prefer content from streaming events over message field
+                let content = if self.streaming_events.is_some() {
+                    let content_from_events = self.get_content_from_streaming_events();
+                    if content_from_events.is_empty() { None } else { Some(content_from_events.into()) }
+                } else if self.message.is_empty() {
+                    None
+                } else {
+                    Some(self.message.into())
+                };
+                
                 ChatCompletionRequestMessage::Assistant(ChatCompletionRequestAssistantMessage {
-                    content: if self.message.is_empty() { None } else { Some(self.message.into()) },
+                    content,
                     name: None,
                     tool_calls,
                     #[allow(deprecated)]

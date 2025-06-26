@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { LuBook, LuGithub, LuWandSparkles } from 'react-icons/lu';
 
-import { ProtocolAgendaUpcoming } from '@/components/agenda/Upcoming';
 import { TopicList } from '@/components/topic/TopicList';
 import { TopicsTrending } from '@/components/topic/TopicsTrending';
 

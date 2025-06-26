@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 import { MessageTreeNode } from '@/components/workshop/ChatMessage';
 
-interface ConversationGraphProps {
+export interface ConversationGraphProps {
     rootNodes: MessageTreeNode[];
     visibleMessages: MessageTreeNode[];
     messageMap: Map<string, MessageTreeNode>;

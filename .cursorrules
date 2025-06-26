@@ -28,6 +28,14 @@ This is a monorepo with two main components:
 - **Utilities**: Move reusable functions to `util` or `lib` folders instead of defining them inline in components
 - **Example**: Functions like `toFirstLetterUppercase` should be extracted to utility modules in the util folder, not embedded in React components
 
+## React Best Practices
+
+- **Conditional Rendering**: Use `ts-pattern` with `match()` for complex conditional rendering instead of nested ternary operators
+  - **Prefer**: `match(data).when(condition, renderer).otherwise(fallback)`
+  - **Avoid**: `condition1 ? component1 : condition2 ? component2 : fallback`
+  - **Benefits**: Better type safety, cleaner code, easier to maintain and debug
+  - **Import**: Always import `{ match }` from `ts-pattern` when dealing with conditional rendering
+
 ## Development Guidelines
 
 - Prefer extracting utility functions over inline definitions in React components

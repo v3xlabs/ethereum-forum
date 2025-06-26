@@ -8,6 +8,7 @@
         "dev": "pnpm api-schema && vite --host",
         "dev:prod": "VITE_API_URL=https://ethereum.forum/ vite --host",
         "build": "vite build && rm -rf ../app/www && cp -r dist ../app/www",
+        "typecheck": "tsc --noEmit",
         "lint": "pnpm eslint -c eslint.config.js .",
         "lint:fix": "pnpm eslint -c eslint.config.js . --fix",
         "format": "prettier --write \"src/**/*.{ts,tsx}\"",
