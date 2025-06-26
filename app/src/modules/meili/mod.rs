@@ -38,6 +38,7 @@ async fn configure_forum_index(client: &Client) -> Result<(), Box<dyn std::error
         "username".to_string(),
         "pm_issue".to_string(),
         "post_id".to_string(),
+        "discourse_id".to_string(),
     ];
     
     // Set searchable attributes for better search experience
