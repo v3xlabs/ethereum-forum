@@ -40,6 +40,7 @@ export const NAV_ITEMS = [
         title: 'Workshop',
         href: '/chat/new',
         requiresAuth: true,
+        short: 'Chat & Tools',
         icon: <LuWrench />,
     },
 ];
@@ -127,7 +128,6 @@ export const Sidebar: FC = () => {
                             >
                                 <GrWorkshop />
                                 Open Workshop
-                                {!isAuthenticated && <FiLock size={12} className="opacity-60" />}
                             </Link>
                             <a
                                 href="https://chatgpt.com/g/g-68104906afb88191ae3f52c2aff36737-ethereum-forum-assistant"

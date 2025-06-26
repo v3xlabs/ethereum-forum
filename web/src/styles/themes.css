@@ -3,7 +3,7 @@
     /* Light theme colors - proper light mode */
     --light-bg-primary: 255 255 255;
     --light-bg-secondary: 250 250 250;
-    --light-bg-tertiary: 241 245 249;
+    --light-bg-tertiary: 240 240 240;
     --light-text-primary: 15 23 42;
     --light-text-secondary: 59 130 246;
     --light-border: 203 213 225;
@@ -24,7 +24,7 @@
     --dark-bg-primary: 0 0 0;
     --dark-bg-secondary: 13 13 13;
     --dark-bg-tertiary: 36 36 36;
-    --dark-text-primary: 116 116 116;
+    --dark-text-primary: 126 126 126;
     --dark-text-secondary: 38 139 210;
     --dark-border: 36 36 36;
     --dark-border-secondary: 36 36 36;
