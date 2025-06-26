@@ -1,4 +1,4 @@
-use crate::models::topics::{post::Post, Topic};
+use crate::models::topics::{Topic, post::Post};
 use crate::models::workshop::usage::UserUsageOverview;
 use crate::models::workshop::usage::get_all_users_usage_overview;
 use crate::modules::discourse::{DiscourseService, ForumSearchDocument};
@@ -326,6 +326,54 @@ impl AdminApi {
             total_reasoning_tokens,
             users,
         }))
+    }
+
+    #[oai(
+        path = "/admin/topic_summary",
+        method = "delete",
+        tag = "ApiTags::Admin"
+    )]
+    async fn delete_topic_summary(
+        &self,
+        state: Data<&AppState>,
+        #[oai(name = "X-Admin-Key")] admin_key: Header<Option<String>>,
+        #[oai(name = "topic_id")] topic_id: poem_openapi::param::Query<i32>,
+        #[oai(name = "discourse_id")] discourse_id: poem_openapi::param::Query<String>,
+    ) -> Result<()> {
+        Self::verify_admin_key(admin_key.0)?;
+
+        let result = sqlx::query!(
+            "DELETE FROM topic_summaries WHERE topic_id = $1 AND discourse_id = $2",
+            topic_id.0,
+            discourse_id.0
+        )
+        .execute(&state.database.pool)
+        .await;
+
+        match result {
+            Ok(query_result) => {
+                if query_result.rows_affected() > 0 {
+                    info!(
+                        "Successfully deleted topic summary for topic_id {}",
+                        topic_id.0
+                    );
+                    Ok(())
+                } else {
+                    error!("No topic summary found for topic_id {}", topic_id.0);
+                    Err(poem::Error::from_string(
+                        format!("Topic summary not found for topic_id {}", topic_id.0),
+                        StatusCode::NOT_FOUND,
+                    ))
+                }
+            }
+            Err(e) => {
+                error!(
+                    "Failed to delete topic summary for topic_id {}: {}",
+                    topic_id.0, e
+                );
+                Err(poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR))
+            }
+        }
     }
 }
 
