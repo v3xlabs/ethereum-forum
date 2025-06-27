@@ -845,4 +845,51 @@ impl WorkshopApi {
 
         Ok(Json(messages))
     }
+
+    /// /ws/chat/:chat_id
+    ///
+    /// Delete a chat and all associated messages and snapshots
+    #[oai(
+        path = "/ws/chat/:chat_id",
+        method = "delete",
+        tag = "ApiTags::Workshop"
+    )]
+    async fn delete_chat(
+        &self,
+        state: Data<&AppState>,
+        auth_user: AuthUser,
+        #[oai(style = "simple")] chat_id: Path<Uuid>,
+    ) -> Result<Json<serde_json::Value>> {
+        let user_id = auth_user.0.user.user_id;
+
+        let chat = WorkshopChat::find_by_id(*chat_id, &state)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error finding chat: {:?}", e);
+                poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+            })?;
+
+        if chat.user_id != user_id {
+            tracing::warn!(
+                "User {} attempted to delete chat {} owned by {}",
+                user_id,
+                *chat_id,
+                chat.user_id
+            );
+            return Err(poem::Error::from_status(StatusCode::FORBIDDEN));
+        }
+
+        WorkshopChat::delete(&chat_id, &state).await.map_err(|e| {
+            tracing::error!("Error deleting chat: {:?}", e);
+            poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+        })?;
+
+        tracing::info!(
+            "Successfully deleted chat {} for user {}",
+            *chat_id,
+            user_id
+        );
+
+        Ok(Json(serde_json::json!({ "success": true })))
+    }
 }
