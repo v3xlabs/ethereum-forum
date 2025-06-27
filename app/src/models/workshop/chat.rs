@@ -21,15 +21,18 @@ pub struct WorkshopChat {
 }
 
 impl WorkshopChat {
-    pub async fn find_by_user_id(user_id: Uuid, state: &AppState) -> Result<Vec<Self>, sqlx::Error> {
-        query_as("SELECT * FROM workshop_chats WHERE user_id = $1 ORDER BY created_at DESC")
+    pub async fn find_by_user_id(
+        user_id: Uuid,
+        state: &AppState,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        query_as("SELECT * FROM workshop_chats WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC")
             .bind(user_id)
             .fetch_all(&state.database.pool)
             .await
     }
 
     pub async fn find_by_id(chat_id: Uuid, state: &AppState) -> Result<Self, sqlx::Error> {
-        query_as("SELECT * FROM workshop_chats WHERE chat_id = $1")
+        query_as("SELECT * FROM workshop_chats WHERE chat_id = $1 AND deleted_at IS NULL")
             .bind(chat_id)
             .fetch_one(&state.database.pool)
             .await
@@ -42,20 +45,34 @@ impl WorkshopChat {
             .await
     }
 
-    pub async fn update_last_message(chat_id: &Uuid, message_id: &Uuid, state: &AppState) -> Result<Self, sqlx::Error> {
-        query_as("UPDATE workshop_chats SET last_message_id = $1 WHERE chat_id = $2 RETURNING *")
+    pub async fn update_last_message(
+        chat_id: &Uuid,
+        message_id: &Uuid,
+        state: &AppState,
+    ) -> Result<Self, sqlx::Error> {
+        query_as("UPDATE workshop_chats SET last_message_id = $1 WHERE chat_id = $2 AND deleted_at IS NULL RETURNING *")
             .bind(message_id)
             .bind(chat_id)
             .fetch_one(&state.database.pool)
             .await
     }
 
-    pub async fn update_summary(chat_id: &Uuid, summary: &str, state: &AppState) -> Result<Self, sqlx::Error> {
-        query_as("UPDATE workshop_chats SET summary = $1 WHERE chat_id = $2 RETURNING *")
+    pub async fn update_summary(
+        chat_id: &Uuid,
+        summary: &str,
+        state: &AppState,
+    ) -> Result<Self, sqlx::Error> {
+        query_as("UPDATE workshop_chats SET summary = $1 WHERE chat_id = $2 AND deleted_at IS NULL RETURNING *")
             .bind(summary)
             .bind(chat_id)
             .fetch_one(&state.database.pool)
             .await
     }
-}
 
+    pub async fn delete(chat_id: &Uuid, state: &AppState) -> Result<Self, sqlx::Error> {
+        query_as("UPDATE workshop_chats SET deleted_at = NOW() WHERE chat_id = $1 AND deleted_at IS NULL RETURNING *")
+            .bind(chat_id)
+            .fetch_one(&state.database.pool)
+            .await
+    }
+}
