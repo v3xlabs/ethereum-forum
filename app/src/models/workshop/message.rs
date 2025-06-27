@@ -143,7 +143,11 @@ impl WorkshopMessage {
     ) -> Result<Vec<Self>, sqlx::Error> {
         query_as!(
             Self,
-            "SELECT message_id, chat_id, sender_role, message, created_at, parent_message_id, streaming_events, prompt_tokens, completion_tokens, total_tokens, reasoning_tokens, model_used FROM workshop_messages WHERE chat_id = $1 ORDER BY created_at ASC",
+            "SELECT m.message_id, m.chat_id, m.sender_role, m.message, m.created_at, m.parent_message_id, m.streaming_events, m.prompt_tokens, m.completion_tokens, m.total_tokens, m.reasoning_tokens, m.model_used 
+             FROM workshop_messages m 
+             INNER JOIN workshop_chats c ON m.chat_id = c.chat_id 
+             WHERE m.chat_id = $1 AND c.deleted_at IS NULL 
+             ORDER BY m.created_at ASC",
             chat_id
         )
         .fetch_all(&state.database.pool)
@@ -159,10 +163,15 @@ impl WorkshopMessage {
     ) -> Result<Vec<Self>, sqlx::Error> {
         query_as(
             r#"WITH RECURSIVE message_tree AS (
-            SELECT message_id, chat_id, sender_role, message, created_at, parent_message_id, streaming_events, prompt_tokens, completion_tokens, total_tokens, reasoning_tokens, model_used FROM workshop_messages WHERE message_id = $1
+            SELECT m.message_id, m.chat_id, m.sender_role, m.message, m.created_at, m.parent_message_id, m.streaming_events, m.prompt_tokens, m.completion_tokens, m.total_tokens, m.reasoning_tokens, m.model_used 
+            FROM workshop_messages m 
+            INNER JOIN workshop_chats c ON m.chat_id = c.chat_id 
+            WHERE m.message_id = $1 AND c.deleted_at IS NULL
             UNION ALL
-            SELECT m.message_id, m.chat_id, m.sender_role, m.message, m.created_at, m.parent_message_id, m.streaming_events, m.prompt_tokens, m.completion_tokens, m.total_tokens, m.reasoning_tokens, m.model_used FROM workshop_messages m
+            SELECT m.message_id, m.chat_id, m.sender_role, m.message, m.created_at, m.parent_message_id, m.streaming_events, m.prompt_tokens, m.completion_tokens, m.total_tokens, m.reasoning_tokens, m.model_used 
+            FROM workshop_messages m
             INNER JOIN message_tree mt ON m.message_id = mt.parent_message_id
+            INNER JOIN workshop_chats c ON m.chat_id = c.chat_id AND c.deleted_at IS NULL
         )
         SELECT message_id, chat_id, sender_role, message, created_at, parent_message_id, streaming_events, prompt_tokens, completion_tokens, total_tokens, reasoning_tokens, model_used FROM message_tree
         ORDER BY created_at ASC"#,
