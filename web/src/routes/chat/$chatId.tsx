@@ -1,6 +1,7 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import { createFileRoute, useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { FC, useEffect, useMemo, useState } from 'react';
-import { LuArrowRight, LuListTree, LuLoader, LuShare } from 'react-icons/lu';
+import { LuArrowRight, LuClipboard, LuListTree, LuLoader, LuShare } from 'react-icons/lu';
 import { match, P } from 'ts-pattern';
 
 import {
@@ -23,6 +24,8 @@ import {
     updatePath,
 } from '@/util/messageTree';
 import { queryClient } from '@/util/query';
+import { useAuth } from '@/api';
+import { toast } from 'sonner';
 
 const suggestions = [
     'Find topics related to risc-v in the evm and evaluate me the opinions of all parties involved.',
@@ -438,27 +441,54 @@ const InputBox = ({
 export const ShareButton: FC<{ chatId: string; messageId: string }> = ({ chatId, messageId }) => {
     const { mutate: shareChat } = useWorkshopChatShare();
     const navigate = useNavigate();
+    const { user} = useAuth();
 
     return (
-        <button
-            className="button flex items-center gap-2"
-            onClick={() =>
-                shareChat(
-                    { chatId, messageId },
-                    {
-                        onSuccess(data) {
-                            navigate({
-                                to: '/chat/share/$snapshotId',
-                                params: { snapshotId: data.snapshot_id.toString() },
-                            });
-                        },
-                    }
-                )
-            }
-        >
-            <LuShare />
-            Share
-        </button>
+        <Dialog.Root>
+            <Dialog.Trigger asChild>
+                <button className="button flex items-center gap-2">
+                    <LuShare className="size-5" />
+                    Share
+                </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40 data-[state=open]:animate-overlayShow overflow-y-scroll grid place-items-center">
+                    <Dialog.Content className="z-50 relative my-10 max-w-3xl shadow-[var(--shadow-6)] focus:outline-none data-[state=open]:animate-contentShow mx-auto w-full p-6 bg-primary space-y-4">
+                        <Dialog.Title className="text-xl font-bold">Share chat</Dialog.Title>
+                        <Dialog.Description className="text-sm text-muted-foreground">
+                            Your display name ({user?.username}) will be shared
+                        </Dialog.Description>
+                        <div className="flex gap-2">
+                            <button
+                                className="button"
+                                onClick={() => {
+                                    shareChat(
+                                        { chatId, messageId },
+                                        {
+                                            onSuccess(data) {
+                                                navigator.clipboard.writeText(
+                                                    location.origin +
+                                                        '/chat/share/' +
+                                                        data.snapshot_id
+                                                );
+                                                toast.success('Chat link copied to clipboard!');
+                                                navigate({
+                                                    to: '/chat/share/$snapshotId',
+                                                    params: { snapshotId: data.snapshot_id },
+                                                });
+                                            },
+                                        }
+                                    );
+                                }}
+                            >
+                                <LuClipboard className="size-5 inline-block mr-2" />
+                                Copy to clipboard
+                            </button>
+                        </div>
+                    </Dialog.Content>
+                </Dialog.Overlay>
+            </Dialog.Portal>
+        </Dialog.Root>
     );
 };
 

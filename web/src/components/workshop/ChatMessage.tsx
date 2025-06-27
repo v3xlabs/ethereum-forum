@@ -92,6 +92,7 @@ export interface MessageTreeNode {
 }
 
 export interface ChatMessageProps {
+    user?: string;
     node?: MessageTreeNode;
     message?: ExtendedWorkshopMessage;
     editable?: boolean;
@@ -99,7 +100,14 @@ export interface ChatMessageProps {
     onNavigate?: (message: ExtendedWorkshopMessage) => void;
 }
 
-export const ChatMessage = ({ node, message, editable, onEdit, onNavigate }: ChatMessageProps) => {
+export const ChatMessage = ({
+    user = 'You',
+    node,
+    message,
+    editable,
+    onEdit,
+    onNavigate,
+}: ChatMessageProps) => {
     // Support both old and new interfaces
     const messageData = node?.message || convertToExtendedMessage(message!);
     const siblings = node?.siblings || [];
@@ -140,7 +148,7 @@ export const ChatMessage = ({ node, message, editable, onEdit, onNavigate }: Cha
             id={messageData.message_id}
         >
             {match(messageData.sender_role)
-                .with('user', () => <div className="text-sm text-primary/50">You</div>)
+                .with('user', () => <div className="text-sm text-primary/50">{user}</div>)
                 .with('assistant', () => <div className="text-sm text-primary/50">Assistant</div>)
                 .otherwise(() => null)}
 
