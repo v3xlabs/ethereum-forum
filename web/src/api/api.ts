@@ -9,9 +9,11 @@ export const useApi = createFetch<paths>({
     baseUrl,
     async headers() {
         const token = localStorage.getItem('auth_token');
+        const adminKey = localStorage.getItem('forum.ethereum.adminKey');
 
         return {
             ...(token && { Authorization: `Bearer ${token}` }),
+            ...(adminKey && { 'X-Admin-Key': adminKey }),
         };
     },
     onError(error: { status: number }) {
