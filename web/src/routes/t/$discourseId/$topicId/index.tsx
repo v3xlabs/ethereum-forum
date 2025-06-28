@@ -34,7 +34,7 @@ import { TopicPost } from '@/components/topic/TopicPost';
 import { StreamingSummary } from '@/components/topics/StreamingSummary';
 import { UpDownScroller } from '@/components/UpDown';
 import { decodeCategory } from '@/util/category';
-import { mapInstanceUrlDiscourse } from '@/util/discourse';
+import { mapDiscourseInstanceUrl } from '@/util/discourse';
 import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/links';
 import { formatBigNumber } from '@/util/numbers';
 import { queryClient } from '@/util/query';
@@ -124,7 +124,7 @@ function RouteComponent() {
                                 >
                                     <div className="size-4 rounded-full overflow-hidden">
                                         <img
-                                            src={`${mapInstanceUrlDiscourse(discourseId)}${creator.avatar_template.replace(
+                                            src={`${mapDiscourseInstanceUrl(discourseId)}${creator.avatar_template.replace(
                                                 '{size}',
                                                 '48'
                                             )}`}
