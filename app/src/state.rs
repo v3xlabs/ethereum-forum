@@ -2,6 +2,7 @@ use crate::{
     database::Database,
     modules::{
         discourse::{self, DiscourseService},
+        github::{self, GithubService},
         ical::{self, ICalConfig},
         meili,
         pm::PMModule,
@@ -30,6 +31,7 @@ pub struct AppStateInner {
     pub workshop: WorkshopService,
     pub cache: CacheService,
     pub meili: Option<meili::Client>,
+    pub github: GithubService,
 }
 
 impl AppStateInner {
@@ -58,6 +60,9 @@ impl AppStateInner {
 
         let meili = meili::init_meili().await;
 
+        let github_key = Env::var("GITHUB_TOKEN");
+        let github = GithubService::new(github_key).await;
+
         let sso = match SSOService::new(Figment::new().merge(Env::raw())).await {
             Ok(service) => {
                 tracing::info!("SSO service initialized successfully");
@@ -81,6 +86,7 @@ impl AppStateInner {
             workshop,
             sso,
             meili,
+            github,
         }
     }
 }
