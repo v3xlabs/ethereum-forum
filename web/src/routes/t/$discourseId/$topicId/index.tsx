@@ -1,5 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { parseISO } from 'date-fns';
 import { Fragment, useEffect } from 'react';
@@ -34,6 +34,7 @@ import { TopicPost } from '@/components/topic/TopicPost';
 import { StreamingSummary } from '@/components/topics/StreamingSummary';
 import { UpDownScroller } from '@/components/UpDown';
 import { decodeCategory } from '@/util/category';
+import { mapInstanceUrlDiscourse } from '@/util/discourse';
 import { isGithub, isHackmd, isStandardsLink, spliceRelatedLinks } from '@/util/links';
 import { formatBigNumber } from '@/util/numbers';
 import { queryClient } from '@/util/query';
@@ -116,24 +117,25 @@ function RouteComponent() {
                         {creator && (
                             <li className="flex items-center gap-1 mx-1.5 justify-between">
                                 <div className="text-base">Author</div>
-                                <a
-                                    href={'https://ethereum-magicians.org/u/' + creator.username}
+                                <Link
+                                    to="/u/$discourseId/$userId"
+                                    params={{ discourseId, userId: creator.username.toString() }}
                                     className="flex items-center gap-1 hover:bg-secondary w-fit justify-end"
-                                    target="_blank"
-                                    rel="noreferrer"
                                 >
                                     <div className="size-4 rounded-full overflow-hidden">
                                         <img
-                                            src={
-                                                'https://ethereum-magicians.org' +
-                                                creator.avatar_template.replace('{size}', '48')
-                                            }
+                                            src={`${mapInstanceUrlDiscourse(discourseId)}${creator.avatar_template.replace(
+                                                '{size}',
+                                                '48'
+                                            )}`}
                                             alt={creator.name}
                                             className="w-full h-full object-cover"
                                         />
                                     </div>
-                                    <div className="text-base truncate">{creator.name}</div>
-                                </a>
+                                    <div className="text-base truncate">
+                                        {creator.name || creator.username}
+                                    </div>
+                                </Link>
                             </li>
                         )}
                         <li className="flex items-center gap-1 px-1.5 justify-between">
