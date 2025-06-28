@@ -50,26 +50,21 @@ export const Sidebar: FC = () => {
     const { isAuthenticated } = useAuth();
     const { isSidebarOpen } = useApp();
 
-    if (!isSidebarOpen) {
-        // Keep the sidebar width for layout, but hide content
-        return (
-            <div
-                className="left-bar w-[240px] min-w-[180px] max-w-xs bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0 transition-all duration-300"
-                style={{
+    return (
+        <div
+            className="left-bar space-y-2 bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0 transition-all duration-300"
+            style={{
+                ...(!isSidebarOpen && {
                     width: 0,
                     minWidth: 0,
                     maxWidth: 0,
                     overflow: 'hidden',
                     padding: 0,
                     border: 'none',
-                }}
-            />
-        );
-    }
-
-    return (
-        <div className="left-bar space-y-2 bg-secondary border-r border-r-secondary h-screen max-h-screen min-h-screen sticky top-0">
-            <div className="flex flex-col justify-between h-screen">
+                }),
+            }}
+        >
+            <div className="flex flex-col justify-between h-screen min-w-[240px]">
                 <nav className="w-full space-y-6 p-2 h-8">
                     <div>
                         <div className="flex items-stretch gap-2 h-full px-2">
