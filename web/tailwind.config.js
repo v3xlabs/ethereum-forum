@@ -9,6 +9,7 @@ export default {
                     'rgb(var(--theme-bg-secondary) / <alpha-value>) /* rgb(238, 232, 213) */',
                 tertiary: 'rgb(var(--theme-bg-tertiary) / <alpha-value>) /* rgb(204, 192, 157) */',
                 purple: 'rgb(var(--theme-bg-purple) / <alpha-value>) /* rgb(129, 52, 255) */',
+                grey: 'rgb(var(--theme-border) / <alpha-value>) /* rgb(101, 123, 131) */',
             },
             textColor: {
                 primary: 'rgb(var(--theme-text-primary) / <alpha-value>) /* rgb(101, 123, 131) */',
