@@ -3,7 +3,7 @@ import { FC } from 'react';
 
 import { CalendarEvent } from '@/api/events';
 
-import { MeetingPreview } from './Meetings';
+import { MeetingCard } from './Meetings';
 
 const DayHeader: FC<{ date: string }> = ({ date }) => {
     let prefix = format(date, 'MMM d');
@@ -13,7 +13,7 @@ const DayHeader: FC<{ date: string }> = ({ date }) => {
     if (isTomorrow(date)) prefix = 'tomorrow';
 
     return (
-        <h2 className="text-lg font-semibold text-primary py-2">
+        <h2 className="text-md font-semibold text-primary py-6">
             <span className="font-semibold">{prefix}</span>
             <span className="font-normal"> {format(date, 'EEEE')}</span>
         </h2>
@@ -46,8 +46,8 @@ export const CalendarDays: FC<{ data: CalendarEvent[] }> = ({ data }) => {
                 <div key={date} className="flex gap-5">
                     {/* timeline */}
                     <div className="relative flex flex-col items-center">
-                        <div className="absolute top-5 h-2 w-2 rounded-full bg-grey" />
-                        <div className="absolute top-6 h-full border-r border-dashed border-primary" />
+                        <div className="absolute top-8 h-2 w-2 rounded-full bg-grey" />
+                        <div className="absolute top-8 h-full border-r border-dashed border-primary" />
                     </div>
 
                     <div className="min-w-full">
@@ -56,7 +56,7 @@ export const CalendarDays: FC<{ data: CalendarEvent[] }> = ({ data }) => {
                         {/* meeting cards */}
                         <div className="space-y-3 pb-1">
                             {events.map((event) => (
-                                <MeetingPreview key={`${event.uid}-${event.start}`} event={event} />
+                                <MeetingCard key={`${event.uid}-${event.start}`} event={event} />
                             ))}
                         </div>
                     </div>

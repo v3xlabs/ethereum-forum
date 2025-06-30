@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import { addMinutes, format, isWithinInterval, parseISO } from 'date-fns';
+import { addHours, addMinutes, format, isWithinInterval, parseISO } from 'date-fns';
+import parse from 'html-react-parser';
 import { FC, useMemo } from 'react';
 import { SiGithub, SiGooglemeet, SiYoutube, SiZoom } from 'react-icons/si';
 
@@ -11,66 +12,115 @@ import { CalendarDays } from './CalendarDays';
 
 export const Meetings: FC<{ data: CalendarEvent[] }> = ({ data }) => <CalendarDays data={data} />;
 
-const platformIcons = {
-    Zoom: <SiZoom className="text-2xl" />,
-    Google: <SiGooglemeet className="text-lg" />,
-    Youtube: <SiYoutube className="text-lg" />,
-} as const;
+export const platformIcons = {
+    Zoom: <SiZoom className="text-2xl text-blue-600" />,
+    Google: <SiGooglemeet className="text-md" />,
+    Youtube: <SiYoutube className="text-lg text-red-500" />,
+    Github: <SiGithub />,
+};
 
-const isMeetingIn6Hours = (startTime?: string) => {
+const isMeetingLive = (startTime: string) => {
     return useMemo(() => {
         if (!startTime) return false;
 
-        const start = parseISO(startTime);
-
         return isWithinInterval(new Date(), {
-            start,
-            end: addMinutes(start, 30),
+            start: startTime,
+            end: addMinutes(startTime, 30),
+            // testing live buttons
+            // start: new Date(),
+            // end: addMinutes(new Date(), 30),
         });
     }, [startTime]);
 };
-// testing live buttons
-// const isMeetingIn6Hours = (start: string) => {
-//     return useMemo(() => {
-//         if (!start) return false;
 
-//         const now = new Date();
+const isMeetingIn6Hours = (startTime: string) => {
+    return useMemo(() => {
+        if (!startTime) return false;
 
-//         return isWithinInterval(new Date(), {
-//             start: now,
-//             end: addMinutes(now, 30),
-//         });
-//     }, [start]);
-// };
+        const now = new Date();
+
+        return isWithinInterval(startTime, {
+            start: now,
+            end: addHours(now, 6),
+        });
+    }, [startTime]);
+};
 
 const MeetingStatus = ({ event }: { event: CalendarEvent }) => {
-    const isLive = isMeetingIn6Hours(event.start);
-
     if (!event.start) return null;
 
     return (
-        <div className="pb-2">
-            {isLive ? (
-                <div className="font-bold text-sm text-orange-700 animate-pulse flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-orange-700" />
-                    <span>LIVE</span>
-                </div>
+        <div className="flex items-center gap-2">
+            {isMeetingLive(event.start) ? (
+                <>
+                    <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
+                    <span className="font-bold text-orange-400 text-md">LIVE</span>
+                </>
             ) : (
-                <div className="flex items-center">
-                    <span className="text-secondary text-base">
-                        <TimeAgo date={parseISO(event.start)} />
-                    </span>
-                </div>
+                <span className="text-secondary">
+                    <TimeAgo date={parseISO(event.start)} />
+                </span>
+            )}
+
+            <span className="text-primary/70 text-sm">- {format(event.start, 'HH:mm')}</span>
+        </div>
+    );
+};
+
+const CompactMeetingButtons: FC<{
+    event: CalendarEvent;
+    youtubeStream: string;
+}> = ({ event, youtubeStream }) => {
+    const showButtons =
+        !!event.start && (isMeetingIn6Hours(event.start) || isMeetingLive(event.start));
+
+    return (
+        <div className="flex gap-2 justify-center">
+            {!showButtons &&
+                event.meetings.map((meeting) => (
+                    <Link
+                        key={meeting.link}
+                        to={meeting.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="button w-10 h-10 flex items-center justify-center"
+                    >
+                        <span>{platformIcons[meeting.type]} </span>
+                    </Link>
+                ))}
+
+            {!showButtons && youtubeStream && (
+                <Link
+                    to={youtubeStream}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="button w-10 h-10 flex items-center justify-center"
+                >
+                    {platformIcons.Youtube}
+                </Link>
+            )}
+
+            {event.pm_number && (
+                <Link
+                    className="button w-10 h-10 flex items-center justify-center"
+                    to="/pm/$issueId"
+                    params={{ issueId: event.pm_number.toString() }}
+                >
+                    {platformIcons.Github}
+                </Link>
             )}
         </div>
     );
 };
 
-const CompactMeetingButtons: FC<{ event: CalendarEvent; isLive: boolean }> = ({
-    event,
-    isLive,
-}) => {
-    if (isLive) return null;
+const ExpandedMeetingButtons: FC<{
+    event: CalendarEvent;
+    youtubeStream: string;
+}> = ({ event, youtubeStream }) => {
+    const showButtons =
+        !!event.start && (isMeetingIn6Hours(event.start) || isMeetingLive(event.start));
+
+    if (!showButtons) return <div className="flex gap-2" />;
 
     return (
         <div className="flex gap-2">
@@ -80,79 +130,70 @@ const CompactMeetingButtons: FC<{ event: CalendarEvent; isLive: boolean }> = ({
                     to={meeting.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="button w-10 h-8 flex items-center justify-center"
-                    title={`Join ${meeting.type} meeting`}
+                    className="flex items-center justify-center gap-2 button px-3"
                 >
-                    <span className={meeting.type === 'Zoom' ? 'scale-120' : 'scale-100'}>
+                    <span className="text-xl border-r border-secondary pr-2">
                         {platformIcons[meeting.type]}
                     </span>
+                    <span className="text-sm">Participate</span>
                 </Link>
             ))}
-            {event.pm_number && (
+
+            {youtubeStream && (
                 <Link
-                    className="button w-10 h-8 flex items-center justify-center"
-                    to="/pm/$issueId"
-                    params={{ issueId: event.pm_number.toString() }}
-                    title={`View PM #${event.pm_number}`}
+                    to={youtubeStream}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 button w-fit"
                 >
-                    <SiGithub className="text-lg" />
+                    <span className="text-xl border-r border-primary pr-2">
+                        {platformIcons.Youtube}
+                    </span>
+                    <span className="text-sm">Watch</span>
                 </Link>
             )}
         </div>
     );
 };
 
-export const MeetingPreview = ({ event }: { event: CalendarEvent }) => {
+export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
     const occurrence = getOccurence(event.pm_data, event.pm_number);
     const youtubeStream = occurrence?.youtube_streams?.[0]?.stream_url;
-    const isLive = isMeetingIn6Hours(event.start);
 
     return (
-        <div className="card gap-4 flex flex-col">
-            <div className="flex justify-between items-end border">
+        <div className="card gap-2 flex flex-col justify-center">
+            <div className="flex justify-between items-center">
                 <MeetingStatus event={event} />
-
-                <CompactMeetingButtons event={event} isLive={isLive} />
+                <CompactMeetingButtons event={event} youtubeStream={youtubeStream} />
             </div>
 
-            <div className="flex gap-4 justify-between">
+            <div className="flex justify-between">
                 <div className="space-y-4">
-                    <h3 className="font-bold truncate flex-1" title={event.summary}>
-                        {event.summary}
-                    </h3>
-                    <p
-                        dangerouslySetInnerHTML={{ __html: event.description ?? '' }}
-                        className="grow max-h-40 overflow-y-auto"
-                    />
+                    <h3 className="font-bold">{event.summary}</h3>
+                    <p>{event.description && parse(event.description)}</p>
                 </div>
 
+                {/* yt link should be embedded */}
                 {youtubeStream && (
-                    <img
-                        src={convertYoutubeUrlToThumbnailUrl(youtubeStream)}
-                        alt="YouTube Stream"
-                        className="rounded w-40 aspect-video object-cover"
-                    />
+                    <Link to={youtubeStream}>
+                        <img
+                            src={convertYoutubeUrlToThumbnailUrl(youtubeStream)}
+                            alt="YouTube Stream"
+                            className="w-96 aspect-video object-cover rounded"
+                        />
+                    </Link>
                 )}
             </div>
 
-            {isLive && event.meetings.length > 0 && (
-                <div className="flex gap-2">
-                    {event.meetings.map((meeting) => (
-                        <Link
-                            key={meeting.link}
-                            to={meeting.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 button w-fit"
-                        >
-                            <span className="text-xl border-r border-primary pr-2">
-                                {platformIcons[meeting.type]}
-                            </span>
-                            <span className="text-sm">Join Meeting </span>
-                        </Link>
-                    ))}
-                </div>
-            )}
+            <ExpandedMeetingButtons event={event} youtubeStream={youtubeStream} />
+        </div>
+    );
+};
+
+export const DebugRichData = ({ event }: { event: unknown }) => {
+    return (
+        <div className="border border-primary px-1 whitespace-pre-wrap">
+            {JSON.stringify(event, null, 2)}
         </div>
     );
 };
