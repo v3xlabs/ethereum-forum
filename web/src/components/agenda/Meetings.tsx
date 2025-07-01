@@ -120,7 +120,7 @@ const ExpandedMeetingButtons: FC<{
     const showButtons =
         !!event.start && (isMeetingIn6Hours(event.start) || isMeetingLive(event.start));
 
-    if (!showButtons) return <div className="flex gap-2" />;
+    if (!showButtons) return <></>;
 
     return (
         <div className="flex gap-2">
@@ -161,8 +161,8 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
     const youtubeStream = occurrence?.youtube_streams?.[0]?.stream_url;
 
     return (
-        <div className="card gap-2 flex flex-col justify-center">
-            <div className="flex justify-between items-center">
+        <div className="card gap-2 flex flex-col justify-center space-y-1">
+            <div className="flex justify-between items-start h-4">
                 <MeetingStatus event={event} />
                 <CompactMeetingButtons event={event} youtubeStream={youtubeStream} />
             </div>
@@ -170,7 +170,7 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
             <div className="flex justify-between">
                 <div className="space-y-4">
                     <h3 className="font-bold">{event.summary}</h3>
-                    <p>{event.description && parse(event.description)}</p>
+                    {event.description && <p>{parse(event.description)}</p>}
                 </div>
 
                 {/* yt link should be embedded */}
