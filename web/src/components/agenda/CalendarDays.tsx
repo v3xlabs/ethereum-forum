@@ -8,14 +8,15 @@ import { MeetingCard } from './Meetings';
 const DayHeader: FC<{ date: string }> = ({ date }) => {
     let prefix = format(date, 'MMM d');
 
-    if (isToday(date)) prefix = 'today';
+    if (isToday(date)) prefix = 'Today';
 
-    if (isTomorrow(date)) prefix = 'tomorrow';
+    if (isTomorrow(date)) prefix = 'Tomorrow';
 
     return (
-        <h2 className="text-md font-semibold text-primary py-6">
+        <h2 className="text-base text-primary py-4">
             <span className="font-semibold">{prefix}</span>
-            <span className="font-normal"> {format(date, 'EEEE')}</span>
+            <span> -</span>
+            <span className="font-normal text-primary/70"> {format(date, 'EEEE')}</span>
         </h2>
     );
 };
@@ -46,8 +47,8 @@ export const CalendarDays: FC<{ data: CalendarEvent[] }> = ({ data }) => {
                 <div key={date} className="flex gap-5">
                     {/* timeline */}
                     <div className="relative flex flex-col items-center">
-                        <div className="absolute top-8 h-2 w-2 rounded-full bg-grey" />
-                        <div className="absolute top-8 h-full border-r border-dashed border-primary" />
+                        <div className="absolute top-6 h-2 w-2 rounded-full bg-grey" />
+                        <div className="absolute top-6 h-full border-r border-dashed border-primary" />
                     </div>
 
                     <div className="flex-1">
