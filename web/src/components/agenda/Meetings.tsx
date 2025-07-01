@@ -168,7 +168,7 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
             </div>
 
             <div className="flex justify-between">
-                <div className="space-y-4">
+                <div className="space-y-1">
                     <h3 className="font-bold">{event.summary}</h3>
                     {event.description && <p>{parse(event.description)}</p>}
                 </div>
