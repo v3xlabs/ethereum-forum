@@ -1,13 +1,12 @@
 import { createFileRoute, useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { FC, useEffect, useMemo, useState } from 'react';
-import { LuArrowRight, LuListTree, LuLoader, LuShare, LuTrash } from 'react-icons/lu';
+import { LuArrowRight, LuListTree, LuLoader, LuShare } from 'react-icons/lu';
 import { match, P } from 'ts-pattern';
 
 import {
     getWorkshopChat,
     useWorkshopChat,
     useWorkshopChatShare,
-    useWorkshopDeleteChat,
     useWorkshopSendMessage,
     WorkshopMessage,
 } from '@/api/workshop';
@@ -289,7 +288,6 @@ const Chat = ({
                                             chatId={chatId}
                                             messageId={lastVisibleMessage?.message_id ?? ''}
                                         />
-                                        <DeleteButton chatId={chatId} />
                                     </div>
                                 </div>
                                 <div className="space-y-2 pb-80 relative">
@@ -460,26 +458,6 @@ export const ShareButton: FC<{ chatId: string; messageId: string }> = ({ chatId,
         >
             <LuShare />
             Share
-        </button>
-    );
-};
-
-export const DeleteButton: FC<{ chatId: string }> = ({ chatId }) => {
-    const { mutate: deleteChat } = useWorkshopDeleteChat();
-    const navigate = useNavigate();
-
-    return (
-        <button
-            className="button flex items-center gap-2"
-            onClick={() =>
-                deleteChat(chatId, {
-                    onSuccess() {
-                        navigate({ to: '/chat/$chatId', params: { chatId: 'new' } });
-                    },
-                })
-            }
-        >
-            <LuTrash />
         </button>
     );
 };

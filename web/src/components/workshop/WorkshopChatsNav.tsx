@@ -1,9 +1,11 @@
-import { Link, useParams, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useParams, useRouterState } from '@tanstack/react-router';
 import classNames from 'classnames';
+import { FC } from 'react';
 import { FiBarChart } from 'react-icons/fi';
+import { LuX } from 'react-icons/lu';
 
 import { useAuth } from '@/api/auth';
-import { useWorkshopChats } from '@/api/workshop';
+import { useWorkshopChats, useWorkshopDeleteChat } from '@/api/workshop';
 
 import { Tooltip } from '../tooltip/Tooltip';
 
@@ -29,6 +31,7 @@ const AuthenticatedWorkshopChats = () => {
     try {
         const params = useParams({ from: '/chat/$chatId' });
 
+        // eslint-disable-next-line prefer-destructuring
         chatId = params.chatId;
     } catch {
         // We're not on a /chat/$chatId route, so no chatId
@@ -60,8 +63,8 @@ const AuthenticatedWorkshopChats = () => {
                             params={{ chatId: chat.chat_id }}
                             hash={chat.last_message_id}
                             className={classNames(
-                                'flex justify-between items-center hover:bg-secondary px-1.5 py-0.5 relative',
-                                chat.chat_id === chatId && 'bg-secondary'
+                                'flex justify-between items-center hover:bg-tertiary px-1.5 py-0.5 relative group/workshoplink',
+                                chat.chat_id === chatId && 'bg-tertiary'
                             )}
                         >
                             <div className="w-full">
@@ -76,11 +79,41 @@ const AuthenticatedWorkshopChats = () => {
                                 >
                                     {chat.summary || 'Untitled conversation'}
                                 </Tooltip>
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden group-hover/workshoplink:block">
+                                    <DeleteButton chatId={chat.chat_id} currentChatId={chatId} />
+                                </div>
                             </div>
                         </Link>
                     </li>
                 ))}
             </ul>
         </div>
+    );
+};
+
+export const DeleteButton: FC<{ chatId: string; currentChatId?: string }> = ({
+    chatId,
+    currentChatId,
+}) => {
+    const { mutate: deleteChat } = useWorkshopDeleteChat();
+    const navigate = useNavigate();
+
+    return (
+        <button
+            className="button flex items-center gap-2"
+            onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                deleteChat(chatId, {
+                    onSuccess() {
+                        if (chatId === currentChatId) {
+                            navigate({ to: '/chat/$chatId', params: { chatId: 'new' } });
+                        }
+                    },
+                });
+            }}
+        >
+            <LuX />
+        </button>
     );
 };
