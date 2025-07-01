@@ -13,7 +13,7 @@ import { CalendarDays } from './CalendarDays';
 export const Meetings: FC<{ data: CalendarEvent[] }> = ({ data }) => <CalendarDays data={data} />;
 
 export const platformIcons = {
-    Zoom: <SiZoom className="text-2xl text-blue-600" />,
+    Zoom: <SiZoom className="text-xl text-blue-600" />,
     Google: <SiGooglemeet className="text-md" />,
     Youtube: <SiYoutube className="text-lg text-red-500" />,
     Github: <SiGithub />,
@@ -83,9 +83,9 @@ const CompactMeetingButtons: FC<{
                         to={meeting.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="button w-10 h-10 flex items-center justify-center"
+                        className="button aspect-square flex items-center justify-center button-ghost"
                     >
-                        <span>{platformIcons[meeting.type]} </span>
+                        <span>{platformIcons[meeting.type]}</span>
                     </Link>
                 ))}
 
@@ -94,7 +94,7 @@ const CompactMeetingButtons: FC<{
                     to={youtubeStream}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="button w-10 h-10 flex items-center justify-center"
+                    className="button aspect-square flex items-center justify-center button-ghost"
                 >
                     {platformIcons.Youtube}
                 </Link>
@@ -102,7 +102,7 @@ const CompactMeetingButtons: FC<{
 
             {event.pm_number && (
                 <Link
-                    className="button w-10 h-10 flex items-center justify-center"
+                    className="button aspect-square flex items-center justify-center button-ghost"
                     to="/pm/$issueId"
                     params={{ issueId: event.pm_number.toString() }}
                 >
