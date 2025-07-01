@@ -136,12 +136,6 @@ function RouteComponent() {
                                 </a>
                             </li>
                         )}
-                        <li className="flex items-center gap-1 px-1.5 justify-between">
-                            <div className="text-base">Created</div>
-                            <div className="text-base">
-                                {topic?.created_at && <TimeAgo date={parseISO(topic.created_at)} />}
-                            </div>
-                        </li>
                         {topic?.last_post_at && (
                             <li className="flex items-center gap-1 px-1.5 justify-between">
                                 <div className="text-base">Last Post</div>
@@ -151,6 +145,12 @@ function RouteComponent() {
                                 </div>
                             </li>
                         )}
+                        <li className="flex items-center gap-1 px-1.5 justify-between">
+                            <div className="text-base">Created</div>
+                            <div className="text-base">
+                                {topic?.created_at && <TimeAgo date={parseISO(topic.created_at)} />}
+                            </div>
+                        </li>
                         <li className="flex items-center gap-1 px-1.5 justify-between">
                             <div className="text-base">Source</div>
                             <div className="text-base flex items-center">

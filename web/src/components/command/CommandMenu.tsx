@@ -37,9 +37,12 @@ export function useCommand() {
 
 export const CommandMenu: FC<{
     onSelect?: (item: { title: string; href: string; short?: string }) => void;
-}> = ({ onSelect }) => {
+    triggerOpen?: boolean;
+    onClose?: () => void;
+}> = ({ onSelect, triggerOpen, onClose }) => {
     const navigate = useNavigate();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(triggerOpen ?? false);
+
     const [search, setSearch] = useState('');
 
     useEffect(() => {
@@ -68,6 +71,18 @@ export const CommandMenu: FC<{
     const handleClose = () => {
         setOpen(false);
     };
+
+    useEffect(() => {
+        if (triggerOpen) {
+            setOpen(true);
+        }
+    }, [triggerOpen]);
+
+    useEffect(() => {
+        if (triggerOpen && !open && onClose) {
+            onClose();
+        }
+    }, [open]);
 
     const contextValue: CommandContextType = {
         open,

@@ -1,11 +1,12 @@
 import { useMatches } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { FC, useEffect, useState } from 'react';
-import { FiLogOut, FiSidebar, FiUser } from 'react-icons/fi';
+import { FiLogOut, FiSearch, FiSidebar, FiUser } from 'react-icons/fi';
 
 import { useAuth, useLogout } from '../api/auth';
 import { useApp } from '../hooks/context';
 import { LoginButton } from './LoginButton';
+import { CommandMenu } from './command/CommandMenu';
 
 export const Navbar: FC = () => {
     const data = useMatches();
@@ -43,6 +44,7 @@ export const Navbar: FC = () => {
                     </div>
                 </div>
                 <div className="items-center h-full gap-2 flex-1 justify-end px-2 text-sm hidden md:flex">
+                    <SearchButton />
                     {isLoading ? (
                         <div className="flex items-center gap-2 px-3 py-1 text-sm text-primary">
                             <FiUser size={16} />
@@ -118,4 +120,18 @@ const ScrollListener = () => {
     }, [scrolled]);
 
     return <></>;
+};
+
+export const SearchButton = () => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <>
+            <button className="button aspect-square border-none" onClick={() => setIsOpen(true)}>
+                <FiSearch />
+            </button>
+
+            <CommandMenu triggerOpen={isOpen} onClose={() => setIsOpen(false)} />
+        </>
+    );
 };
