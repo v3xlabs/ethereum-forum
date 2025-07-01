@@ -50,7 +50,7 @@ const MeetingStatus = ({ event }: { event: CalendarEvent }) => {
     if (!event.start) return null;
 
     return (
-        <div className="flex items-center gap-2">
+        <div className="inline-block">
             {isMeetingLive(event.start) ? (
                 <>
                     <span className="h-1.5 w-1.5 rounded-full bg-orange-400 animate-pulse" />
@@ -61,8 +61,8 @@ const MeetingStatus = ({ event }: { event: CalendarEvent }) => {
                     <TimeAgo date={parseISO(event.start)} />
                 </span>
             )}
-
-            <span className="text-primary/70 text-sm">- {format(event.start, 'HH:mm')}</span>
+            <span> - </span>
+            <span className="text-primary/70">{format(event.start, 'HH:mm')}</span>
         </div>
     );
 };
@@ -161,15 +161,17 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
     const youtubeStream = occurrence?.youtube_streams?.[0]?.stream_url;
 
     return (
-        <div className="card gap-2 flex flex-col justify-center space-y-1">
-            <div className="flex justify-between items-start h-4">
-                <MeetingStatus event={event} />
+        <div className="card space-y-1">
+            <div className="flex justify-between items-start">
+                <div>
+                    <MeetingStatus event={event} />
+                    <h3 className="font-bold">{event.summary}</h3>
+                </div>
                 <CompactMeetingButtons event={event} youtubeStream={youtubeStream} />
             </div>
 
             <div className="flex justify-between">
                 <div className="space-y-1">
-                    <h3 className="font-bold">{event.summary}</h3>
                     {event.description && <p>{parse(event.description)}</p>}
                 </div>
 
