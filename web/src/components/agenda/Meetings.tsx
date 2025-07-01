@@ -101,13 +101,14 @@ const CompactMeetingButtons: FC<{
             )}
 
             {event.pm_number && (
-                <Link
+                <a
                     className="button aspect-square flex items-center justify-center button-ghost"
-                    to="/pm/$issueId"
-                    params={{ issueId: event.pm_number.toString() }}
+                    href={`https://github.com/ethereum/pm/issues/${event.pm_number}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                 >
                     {platformIcons.Github}
-                </Link>
+                </a>
             )}
         </div>
     );
@@ -160,35 +161,47 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
     const occurrence = getOccurence(event.pm_data, event.pm_number);
     const youtubeStream = occurrence?.youtube_streams?.[0]?.stream_url;
 
-    return (
-        <div className="card space-y-1">
-            <div className="flex justify-between items-start">
-                <div>
-                    <MeetingStatus event={event} />
-                    <h3 className="font-bold">{event.summary}</h3>
-                </div>
+    const cardContent = (
+        <>
+            <div className="flex justify-between items-start h-4">
+                <MeetingStatus event={event} />
                 <CompactMeetingButtons event={event} youtubeStream={youtubeStream} />
             </div>
 
-            <div className="flex justify-between">
-                <div className="space-y-1">
-                    {event.description && <p>{parse(event.description)}</p>}
-                </div>
-
+            <div className="flex gap-2">
                 {/* yt link should be embedded */}
                 {youtubeStream && (
                     <Link to={youtubeStream}>
                         <img
                             src={convertYoutubeUrlToThumbnailUrl(youtubeStream)}
                             alt="YouTube Stream"
-                            className="w-96 aspect-video object-cover rounded"
+                            className="w-60 aspect-video object-cover rounded"
                         />
                     </Link>
                 )}
+                <div className="space-y-1">
+                    <h3 className="font-bold">{event.summary}</h3>
+                    {event.description && <p>{parse(event.description)}</p>}
+                </div>
             </div>
 
             <ExpandedMeetingButtons event={event} youtubeStream={youtubeStream} />
-        </div>
+        </>
+    );
+
+    return event.pm_number ? (
+        <Link
+            to="/pm/$issueId"
+            params={{ issueId: event.pm_number?.toString() }}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View on GitHub"
+            className="card gap-2 flex flex-col justify-center space-y-1 pointer"
+        >
+            {cardContent}
+        </Link>
+    ) : (
+        <div className="card gap-2 flex flex-col justify-center space-y-1">{cardContent}</div>
     );
 };
 
