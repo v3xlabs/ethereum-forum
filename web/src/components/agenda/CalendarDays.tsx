@@ -45,12 +45,12 @@ export const CalendarDays: FC<{ data: CalendarEvent[] }> = ({ data }) => {
             {groupedDays.map(({ date, events }) => (
                 <div key={date} className="flex gap-1">
                     {/* timeline */}
-                    <div className="relative flex flex-col items-center pl-3 pr-3">
+                    <div className="relative md:flex flex-col items-center pl-3 pr-3 hidden">
                         <div className="absolute top-6 h-2 w-2 rounded-full bg-grey" />
                         <div className="absolute top-6 h-full border-r border-dashed border-primary" />
                     </div>
 
-                    <div className="flex-1">
+                    <div className="min-w-full">
                         <DayHeader date={date} />
 
                         {/* meeting cards */}
