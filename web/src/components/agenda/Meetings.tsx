@@ -163,7 +163,7 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
 
     const cardContent = (
         <>
-            <div className="flex justify-between items-start h-4">
+            <div className="flex justify-between items-start">
                 <MeetingStatus event={event} />
                 <CompactMeetingButtons event={event} youtubeStream={youtubeStream} />
             </div>
@@ -179,7 +179,7 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
                         />
                     </Link>
                 )}
-                <div className="space-y-1">
+                <div className="space-y-1 break-all">
                     <h3 className="font-bold">{event.summary}</h3>
                     {event.description && <p>{parse(event.description)}</p>}
                 </div>
