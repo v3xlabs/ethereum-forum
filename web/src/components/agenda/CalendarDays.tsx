@@ -50,7 +50,7 @@ export const CalendarDays: FC<{ data: CalendarEvent[] }> = ({ data }) => {
                         <div className="absolute top-6 h-full border-r border-dashed border-primary" />
                     </div>
 
-                    <div className="min-w-full">
+                    <div className="flex-1">
                         <DayHeader date={date} />
 
                         {/* meeting cards */}
