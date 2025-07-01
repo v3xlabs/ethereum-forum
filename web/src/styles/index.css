@@ -112,7 +112,7 @@ body {
 }
 
 .button {
-    @apply px-3 py-1.5 bg-primary text-primary hover:bg-secondary hover:text-primary border border-secondary rounded-md;
+    @apply px-3 py-1.5 bg-primary text-primary hover:bg-tertiary hover:text-primary rounded-md;
 }
 .button.aspect-square {
     @apply px-2 py-2;
@@ -126,6 +126,9 @@ body {
 }
 .button-purple {
     @apply bg-purple/30 text-purple border-purple hover:bg-purple/70 hover:text-purple;
+}
+.button:not(.button-ghost) {
+    @apply border border-secondary;
 }
 
 input.input {

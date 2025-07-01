@@ -47,6 +47,7 @@
         "cx": "^25.3.1",
         "date-fns": "^4.1.0",
         "eslint-config-prettier": "^10.1.2",
+        "html-react-parser": "^5.2.5",
         "leaflet": "^1.9.4",
         "openapi-hooks": "0.0.6",
         "postcss": "^8.5.1",
