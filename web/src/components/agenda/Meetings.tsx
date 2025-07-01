@@ -196,12 +196,12 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
             target="_blank"
             rel="noopener noreferrer"
             title="View on GitHub"
-            className="card gap-2 flex flex-col justify-center space-y-1 pointer"
+            className="card space-y-1 pointer block"
         >
             {cardContent}
         </Link>
     ) : (
-        <div className="card gap-2 flex flex-col justify-center space-y-1">{cardContent}</div>
+        <div className="card space-y-1">{cardContent}</div>
     );
 };
 
