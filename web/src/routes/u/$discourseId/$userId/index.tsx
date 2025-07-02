@@ -6,6 +6,7 @@ import { useUser, useUserSummary } from '@/api/user';
 import { CategoryTag } from '@/components/CategoryTag';
 import { TimeAgo } from '@/components/TimeAgo';
 import { Tooltip } from '@/components/tooltip/Tooltip';
+import { mapDiscourseInstanceUrl } from '@/util/discourse';
 import { formatBigNumber } from '@/util/numbers';
 
 const RouteComponent: FC = () => {
@@ -16,16 +17,34 @@ const RouteComponent: FC = () => {
 
     if (userLoading || summaryLoading) {
         return (
-            <div className="mx-auto w-full max-w-screen-lg pt-8 px-2">
-                <h1 className="text-3xl">Loading...</h1>
+            <div className="mx-auto w-full max-w-screen-lg px-2 space-y-6">
+                <div className="flex items-center gap-6 py-4">
+                    <div className="size-20 rounded-full bg-gray-200 animate-pulse" />
+                    <div className="flex flex-col justify-center">
+                        <div className="h-8 w-48 bg-gray-200 animate-pulse mb-2" />
+                        <div className="h-4 w-32 bg-gray-200 animate-pulse" />
+                    </div>
+                </div>
+                <div className="flex flex-wrap text-sm text-primary border-b pb-2 border-primary gap-x-6 font-thin">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-4 w-32 bg-gray-200 animate-pulse" />
+                    ))}
+                </div>
+                <div className="space-y-4">
+                    <div className="h-6 w-48 bg-gray-200 animate-pulse" />
+                    <div className="h-6 w-full bg-gray-200 animate-pulse" />
+                    <div className="h-6 w-full bg-gray-200 animate-pulse" />
+                </div>
             </div>
         );
     }
 
     if (!userData || !userSummary) {
         return (
-            <div className="mx-auto w-full max-w-screen-lg pt-8 px-2">
-                <h1 className="text-3xl">User not found</h1>
+            <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-6">
+                <div className="text-center text-gray-500">
+                    User not found or no data available.
+                </div>
             </div>
         );
     }
@@ -35,13 +54,13 @@ const RouteComponent: FC = () => {
         userData.user.name.toLowerCase() !== userData.user.username.toLowerCase();
 
     const modifyAvatarUrl = (url: string | undefined) => {
-        if (!url) return '/default-avatar.png'; // Fallback avatar
+        if (!url) return '';
 
-        return 'https://ethereum-magicians.org' + url.replace('{size}', '200');
+        return mapDiscourseInstanceUrl(discourseId) + url.replace('{size}', '200');
     };
 
     return (
-        <div className="mx-auto w-full max-w-screen-lg px-2 space-y-6">
+        <div className="mx-auto w-full max-w-screen-lg px-2 pb-8 space-y-6">
             <div className="flex items-center gap-6 py-4">
                 <div className="size-20 rounded-full overflow-hidden border-4 border-gray-200 shadow">
                     <img
@@ -126,11 +145,11 @@ const RouteComponent: FC = () => {
                 </div>
             )}
 
-            {userSummary?.user_summary?.most_liked_by_users?.length > 0 && (
+            {(userSummary.user_summary?.most_liked_by_users?.length ?? 0) > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-1">Most Liked By</h2>
                     <div className="flex flex-wrap gap-2 items-center">
-                        {userSummary.user_summary.most_liked_by_users?.map((u) => (
+                        {userSummary.user_summary?.most_liked_by_users?.map((u) => (
                             <div key={u.id} className="flex items-center gap-1">
                                 <img
                                     src={modifyAvatarUrl(u.avatar_template)}
@@ -145,11 +164,11 @@ const RouteComponent: FC = () => {
                 </div>
             )}
 
-            {userSummary?.user_summary?.most_liked_users?.length > 0 && (
+            {(userSummary.user_summary?.most_liked_users?.length ?? 0) > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-1">Most Liked Users</h2>
                     <div className="flex flex-wrap gap-2 items-center">
-                        {userSummary.user_summary.most_liked_users?.map((u) => (
+                        {userSummary.user_summary?.most_liked_users?.map((u) => (
                             <div key={u.id} className="flex items-center gap-1">
                                 <img
                                     src={modifyAvatarUrl(u.avatar_template)}
@@ -164,11 +183,11 @@ const RouteComponent: FC = () => {
                 </div>
             )}
 
-            {userSummary?.user_summary?.replies?.length > 0 && (
+            {userSummary?.user_summary?.replies && userSummary.user_summary.replies.length > 0 && (
                 <div>
                     <h2 className="text-lg font-semibold mb-1">Recent Replies</h2>
                     <ul className="list-disc pl-5">
-                        {userSummary.user_summary.replies?.map((reply, i) => {
+                        {userSummary.user_summary.replies.map((reply, i) => {
                             const topic = userSummary.topics?.find((t) => t.id === reply.topic_id);
 
                             return (
