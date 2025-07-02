@@ -21,14 +21,14 @@
     --solarized-code-shadow: 1px;
 
     /* Dark theme colors */
-    --dark-bg-primary: 0 0 0;
-    --dark-bg-secondary: 13 13 13;
-    --dark-bg-tertiary: 36 36 36;
-    --dark-text-primary: 126 126 126;
-    --dark-text-secondary: 38 139 210;
-    --dark-border: 36 36 36;
-    --dark-border-secondary: 36 36 36;
-    --dark-code-shadow: 6px;
+    --dark-bg-primary: 24 24 27;
+    --dark-bg-secondary: 39 39 42;
+    --dark-bg-tertiary: 63 63 70;
+    --dark-text-primary: 244 244 245;
+    --dark-text-secondary: 161 161 170;
+    --dark-border: 82 82 91;
+    --dark-border-secondary: 63 63 70;
+    --dark-code-shadow: 3px;
 
     /* Shared colors across themes */
     --shared-bg-purple: 218 178 255;
