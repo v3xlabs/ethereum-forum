@@ -195,7 +195,7 @@ const RouteComponent: FC = () => {
                                     <Link
                                         to="/t/$discourseId/$topicId"
                                         params={{
-                                            discourseId: 'magicians',
+                                            discourseId: discourseId,
                                             topicId: reply.topic_id.toString(),
                                         }}
                                         className="underline"
@@ -221,7 +221,7 @@ const RouteComponent: FC = () => {
                     {userSummary?.topics?.map((topic) => (
                         <Link
                             to="/t/$discourseId/$topicId"
-                            params={{ discourseId: 'magicians', topicId: topic.id.toString() }}
+                            params={{ discourseId: discourseId, topicId: topic.id.toString() }}
                             key={topic.id}
                             className="card hover:border-primary border border-transparent gap-1 flex flex-col"
                         >
