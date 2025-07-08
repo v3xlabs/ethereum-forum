@@ -26,7 +26,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, showDetails = true }) 
                         <span className="text-xs text-primary/60">#{post.post_number}</span>
                     )}
                     <a
-                        href={`#/topic/${post.topic_id}/${post.post_number}`}
+                        href={`/t/magicians/${post.topic_id}/#${post.post_number}`}
                         className="text-primary/60 hover:text-primary transition-colors"
                         title="View post"
                     >
