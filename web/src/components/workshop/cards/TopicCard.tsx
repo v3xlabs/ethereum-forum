@@ -36,7 +36,8 @@ export const TopicCard: React.FC<TopicCardProps> = ({ topic, showDetails = true 
                 )}
             </div>
             <a
-                href={`#/topic/${topic.id}`}
+                // should not be hard coded
+                href={`/t/magicians/${topic.id}`}
                 className="text-primary/60 hover:text-primary transition-colors flex-shrink-0"
                 title="View topic"
             >

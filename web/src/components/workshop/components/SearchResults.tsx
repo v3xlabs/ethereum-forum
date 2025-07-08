@@ -2,6 +2,8 @@ import classNames from 'classnames';
 import React, { useState } from 'react';
 import { LuChevronDown, LuChevronLeft, LuHash, LuMessageSquare, LuSearch } from 'react-icons/lu';
 
+import { useTopic } from '@/api';
+
 import { PostCard } from '../cards/PostCard';
 import { TopicCard } from '../cards/TopicCard';
 import type { Post, SearchEntity, SearchResult, TopicSummary } from '../types';
@@ -26,59 +28,61 @@ const getResultsMessage = (toolName: string, topicCount: number, postCount: numb
     }
 };
 
-// Transform search entity to topic/post format
-const transformSearchEntity = (entity: SearchEntity): TopicSummary | Post | null => {
-    if (entity.entity_type === 'topic') {
-        return {
-            id: entity.topic_id || 0,
-            title: entity.title || 'Untitled Topic',
-            posts_count: 0,
-            created_at: '',
-            last_posted_at: '',
-            views: 0,
-            like_count: 0,
-        };
+const Topics: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
+    // should add better error handling
+    if (!entity.topic_id) {
+        return;
     }
 
-    if (entity.entity_type === 'post') {
-        return {
-            id: entity.post_id || 0,
-            topic_id: entity.topic_id || 0,
-            post_number: entity.post_number || 0,
-            cooked: entity.cooked || '',
-            created_at: '',
-            username: entity.username || 'Unknown User',
-        };
+    // 'magicians' should not be hard coded an
+    const { data: topicData } = useTopic('magicians', entity.topic_id.toString());
+
+    if (!topicData) {
+        return <div className="text-red-600">Topic not found.</div>;
     }
 
-    return null;
+    const topic: TopicSummary = {
+        id: topicData.topic_id,
+        title: topicData.title,
+        posts_count: topicData.post_count,
+        created_at: topicData.created_at,
+        last_posted_at: topicData.last_post_at || '',
+        views: topicData.view_count,
+        like_count: topicData.like_count,
+    };
+
+    return <TopicCard topic={topic} />;
+};
+
+const Posts: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
+    // should add better error handling
+    if (!entity.topic_id) {
+        return;
+    }
+
+    // need to get correct data
+    const post: Post = {
+        id: entity.post_id || 0,
+        topic_id: entity.topic_id || 0,
+        post_number: entity.post_number || 0,
+        cooked: entity.cooked || '',
+        created_at: '',
+        username: entity.username || 'Unknown User',
+    };
+
+    return <PostCard post={post} />;
 };
 
 export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) => {
-    let topics: TopicSummary[] = [];
-    let posts: Post[] = [];
-
     // Individual expansion states for each section
     const [isTopicsExpanded, setIsTopicsExpanded] = useState(false);
     const [isPostsExpanded, setIsPostsExpanded] = useState(false);
 
-    // Handle different data formats
-    if (Array.isArray(data)) {
-        // SearchEntity[] format
-        data.forEach((entity) => {
-            const transformed = transformSearchEntity(entity);
+    // Filter topic & post search result entities instead of manually pushing them to array
+    const entities: SearchEntity[] = Array.isArray(data) ? data : [];
 
-            if (transformed && entity.entity_type === 'topic') {
-                topics.push(transformed as TopicSummary);
-            } else if (transformed && entity.entity_type === 'post') {
-                posts.push(transformed as Post);
-            }
-        });
-    } else {
-        // SearchResult format
-        topics = data.topics || [];
-        posts = data.posts || [];
-    }
+    const topics = entities.filter((entity) => entity.entity_type === 'topic');
+    const posts = entities.filter((entity) => entity.entity_type === 'post');
 
     const topicCount = topics.length;
     const postCount = posts.length;
@@ -132,7 +136,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
                             )}
                         >
                             {topicsToShow.map((topic) => (
-                                <TopicCard key={topic.id} topic={topic} />
+                                <Topics key={topic.topic_id} entity={topic} />
                             ))}
                         </div>
                     )}
@@ -168,7 +172,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
                             )}
                         >
                             {postsToShow.map((post) => (
-                                <PostCard key={post.id} post={post} />
+                                <Posts key={post.post_id} entity={post} />
                             ))}
                         </div>
                     )}
