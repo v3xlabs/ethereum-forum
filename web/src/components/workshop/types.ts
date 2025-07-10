@@ -8,6 +8,7 @@ export interface TopicSummary {
     last_post_at?: string; // changed from last_posted_at
     view_count: number; // changed from views
     like_count: number;
+    extra: string;
     participants?: Array<{ id: number; username: string; avatar_template?: string }>;
 }
 

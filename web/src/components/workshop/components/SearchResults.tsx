@@ -28,20 +28,21 @@ const getResultsMessage = (toolName: string, topicCount: number, postCount: numb
     }
 };
 
+// basic implementation of hooks, change to ts pattern ?
 const Topics: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
-    // basic implementation, will be changed to ts pattern ?
     const {
         data: topic,
         isLoading,
         isError,
         error,
+        // 'magicians' fallback is necessary because discourse_id is sometimes undefined
     } = useTopic(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString());
 
-    if (!topic) return <span className="text-red-600">Topic not found.</span>;
+    if (!topic) return <p className="text-red-600">Topic not found.</p>;
 
-    if (isError) return <span className="text-red-600">Error: {error.message}</span>;
+    if (isError) return <p className="text-red-600">Error: {error.message}</p>;
 
-    if (isLoading) return <span>Loading...</span>;
+    if (isLoading) return <p>Loading...</p>;
 
     return <TopicCard topic={topic as TopicSummary} />;
 };
@@ -56,11 +57,11 @@ const Posts: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
 
     const post = postData?.posts.find((p) => p.topic_id === entity.topic_id);
 
-    if (!post) return <span className="text-red-600">Post not found.</span>;
+    if (!post) return <p className="text-red-600">Post not found.</p>;
 
-    if (isError) return <span className="text-red-600">Error: {error.message}</span>;
+    if (isError) return <p className="text-red-600">Error: {error.message}</p>;
 
-    if (isLoading) return <span>Loading...</span>;
+    if (isLoading) return <p>Loading...</p>;
 
     return <PostCard post={post as Post} entity={entity} />;
 };
