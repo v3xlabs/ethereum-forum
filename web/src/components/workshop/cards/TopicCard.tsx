@@ -1,7 +1,10 @@
 import { Link } from '@tanstack/react-router';
 import React from 'react';
-import { LuCalendar, LuEye, LuMessageSquare } from 'react-icons/lu';
+import { LuEye, LuMessageSquare } from 'react-icons/lu';
 
+import { CategoryTag } from '@/components/CategoryTag';
+import { DiscourseInstanceIcon } from '@/components/DiscourseInstanceIcon';
+import { decodeCategory } from '@/util/category';
 import { formatCompact, formatRelativeTime } from '@/util/format';
 
 import type { TopicSummary } from '../types';
@@ -12,6 +15,13 @@ interface TopicCardProps {
 }
 
 export const TopicCard: React.FC<TopicCardProps> = ({ topic, showDetails = true }) => {
+    const extra = (topic.extra || {}) as Record<string, unknown>;
+
+    const tags = [
+        ...decodeCategory(extra?.['category_id'] as number),
+        ...(extra?.['tags'] as string[]),
+    ];
+
     return (
         <Link
             to="/t/$discourseId/$topicId"
@@ -23,29 +33,40 @@ export const TopicCard: React.FC<TopicCardProps> = ({ topic, showDetails = true 
             title="View topic"
         >
             {topic.title && (
-                <h3 className="font-semibold text-primary text-sm leading-tight mb-2 line-clamp-2">
-                    {topic.title}
-                </h3>
+                <div className="grow space-y-1">
+                    <div className="flex items-start gap-4 justify-between">
+                        <h3 className="font-semibold text-primary text-sm leading-tight mb-2 line-clamp-2">
+                            {topic.title}
+                        </h3>
+                        <div>
+                            <DiscourseInstanceIcon discourse_id={topic.discourse_id} />
+                        </div>
+                    </div>
+                    <div className="flex gap-2 whitespace-nowrap overflow-x-hidden">
+                        {tags?.map((tag) => <CategoryTag key={tag} tag={tag} />)}
+                    </div>
+                </div>
             )}
             {showDetails && (
-                <div className="flex items-center gap-4 text-xs text-primary/60">
-                    {topic.post_count && (
-                        <div className="flex items-center gap-1">
-                            <LuMessageSquare size={12} />
-                            <span>{topic.post_count} posts</span>
-                        </div>
-                    )}
+                <div className="flex items-center justify-between gap-4 text-xs text-primary/60">
+                    <div className="flex gap-2">
+                        {topic.view_count && (
+                            <div className="flex items-center gap-1">
+                                <LuEye size={12} />
+                                <span>{formatCompact(topic.view_count)}</span>
+                            </div>
+                        )}
+                        {topic.post_count && (
+                            <div className="flex items-center gap-1">
+                                <LuMessageSquare size={12} />
+                                <span>{topic.post_count}</span>
+                            </div>
+                        )}
+                    </div>
                     {topic.created_at && (
                         <div className="flex items-center gap-1">
-                            <LuCalendar size={12} />
+                            {/* <LuCalendar size={12} /> */}
                             <span>{formatRelativeTime(topic.created_at)}</span>
-                        </div>
-                    )}
-
-                    {topic.view_count && (
-                        <div className="flex items-center gap-1">
-                            <LuEye size={12} />
-                            <span>{formatCompact(topic.view_count)} views</span>
                         </div>
                     )}
                 </div>
