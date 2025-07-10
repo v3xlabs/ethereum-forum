@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import React, { useState } from 'react';
 import { LuChevronDown, LuChevronLeft, LuHash, LuMessageSquare, LuSearch } from 'react-icons/lu';
 
-import { useTopic } from '@/api';
+import { usePosts, useTopic } from '@/api';
 
 import { PostCard } from '../cards/PostCard';
 import { TopicCard } from '../cards/TopicCard';
@@ -29,48 +29,40 @@ const getResultsMessage = (toolName: string, topicCount: number, postCount: numb
 };
 
 const Topics: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
-    // should add better error handling
-    if (!entity.topic_id) {
-        return;
-    }
+    // basic implementation, will be changed to ts pattern ?
+    const {
+        data: topic,
+        isLoading,
+        isError,
+        error,
+    } = useTopic(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString());
 
-    // 'magicians' should not be hard coded an
-    const { data: topicData } = useTopic('magicians', entity.topic_id.toString());
+    if (!topic) return <span className="text-red-600">Topic not found.</span>;
 
-    if (!topicData) {
-        return <div className="text-red-600">Topic not found.</div>;
-    }
+    if (isError) return <span className="text-red-600">Error: {error.message}</span>;
 
-    const topic: TopicSummary = {
-        id: topicData.topic_id,
-        title: topicData.title,
-        posts_count: topicData.post_count,
-        created_at: topicData.created_at,
-        last_posted_at: topicData.last_post_at || '',
-        views: topicData.view_count,
-        like_count: topicData.like_count,
-    };
+    if (isLoading) return <span>Loading...</span>;
 
-    return <TopicCard topic={topic} />;
+    return <TopicCard topic={topic as TopicSummary} />;
 };
 
 const Posts: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
-    // should add better error handling
-    if (!entity.topic_id) {
-        return;
-    }
+    const {
+        data: postData,
+        isLoading,
+        isError,
+        error,
+    } = usePosts(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString(), 1);
 
-    // need to get correct data
-    const post: Post = {
-        id: entity.post_id || 0,
-        topic_id: entity.topic_id || 0,
-        post_number: entity.post_number || 0,
-        cooked: entity.cooked || '',
-        created_at: '',
-        username: entity.username || 'Unknown User',
-    };
+    const post = postData?.posts.find((p) => p.topic_id === entity.topic_id);
 
-    return <PostCard post={post} />;
+    if (!post) return <span className="text-red-600">Post not found.</span>;
+
+    if (isError) return <span className="text-red-600">Error: {error.message}</span>;
+
+    if (isLoading) return <span>Loading...</span>;
+
+    return <PostCard post={post as Post} entity={entity} />;
 };
 
 export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) => {
@@ -78,7 +70,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
     const [isTopicsExpanded, setIsTopicsExpanded] = useState(false);
     const [isPostsExpanded, setIsPostsExpanded] = useState(false);
 
-    // Filter topic & post search result entities instead of manually pushing them to array
+    // Filter topic & post search result entities
     const entities: SearchEntity[] = Array.isArray(data) ? data : [];
 
     const topics = entities.filter((entity) => entity.entity_type === 'topic');
