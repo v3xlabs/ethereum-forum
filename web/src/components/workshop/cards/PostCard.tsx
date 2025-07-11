@@ -1,62 +1,83 @@
-import React from 'react';
-import { LuCalendar, LuExternalLink, LuUser } from 'react-icons/lu';
+import { Link } from '@tanstack/react-router';
+import { FC } from 'react';
 
+import { DiscourseInstanceIcon } from '@/components/DiscourseInstanceIcon';
+import { mapDiscourseInstanceUrl } from '@/util/discourse';
 import { formatRelativeTime, getPlainText, truncateText } from '@/util/format';
 
-import type { Post } from '../types';
+import type { Post, SearchEntity } from '../types';
 
 interface PostCardProps {
     post: Post;
     showDetails?: boolean;
+    entity: SearchEntity;
 }
 
-export const PostCard: React.FC<PostCardProps> = ({ post, showDetails = true }) => {
-    const plainText = getPlainText(post.cooked);
+export const PostCard: FC<PostCardProps> = ({ post, entity, showDetails = true }) => {
+    const plainText = getPlainText(entity.cooked ?? '');
+
+    // copied from TopicPost
+    const extra = post.extra as Record<string, unknown>;
+    const displayName =
+        (extra?.['display_username'] as string) ||
+        (extra?.['name'] as string) ||
+        (extra?.['username'] as string);
+    const avatar = extra?.['avatar_template'] as string;
+    const username = extra?.['username'] as string;
 
     return (
-        <div className="border border-primary/20 rounded-lg p-4 bg-secondary/50 hover:bg-secondary/70 transition-colors space-y-3">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                    <LuUser size={14} className="text-primary/60" />
-                    <span className="font-medium text-primary text-sm">@{post.username}</span>
-                    {post.name && <span className="text-primary/60 text-xs">({post.name})</span>}
-                </div>
-                <div className="flex items-center gap-2">
-                    {showDetails && (
-                        <span className="text-xs text-primary/60">#{post.post_number}</span>
-                    )}
-                    <a
-                        href={`#/topic/${post.topic_id}/${post.post_number}`}
-                        className="text-primary/60 hover:text-primary transition-colors"
-                        title="View post"
-                    >
-                        <LuExternalLink size={14} />
-                    </a>
-                </div>
-            </div>
+        <Link
+            to="/t/$discourseId/$topicId"
+            params={{
+                discourseId: post.discourse_id ?? 'magicians',
+                topicId: post.topic_id.toString(),
+            }}
+            className="block"
+            title="View post"
+        >
+            <div className="border border-primary/20 rounded-lg p-4 bg-secondary/50 hover:bg-secondary/70 transition-colors space-y-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        {avatar && (
+                            <img
+                                src={
+                                    mapDiscourseInstanceUrl(post.discourse_id) +
+                                    avatar.replace('{size}', '40')
+                                }
+                                alt={username}
+                                className="w-7 h-7 rounded-sm"
+                            />
+                        )}
+                        <div className="flex items-center gap-1">
+                            <span className="font-bold text-primary text-sm">@{displayName}</span>
 
-            <div className="text-sm text-primary/80 leading-relaxed">
-                {truncateText(plainText, showDetails ? 300 : 150)}
-            </div>
-
-            {showDetails && (
-                <div className="flex items-center gap-4 text-xs text-primary/60">
-                    <div className="flex items-center gap-1">
-                        <LuCalendar size={12} />
-                        <span>{formatRelativeTime(post.created_at)}</span>
+                            {username && username?.toLowerCase() !== displayName.toLowerCase() && (
+                                <span className="text-primary/60 text-xs">({username})</span>
+                            )}
+                        </div>
                     </div>
-                    {post.like_count && post.like_count > 0 && (
-                        <div className="flex items-center gap-1">
-                            <span>❤️ {post.like_count}</span>
-                        </div>
-                    )}
-                    {post.reply_count && post.reply_count > 0 && (
-                        <div className="flex items-center gap-1">
-                            <span>💬 {post.reply_count}</span>
+                    {post.discourse_id && (
+                        <div>
+                            <DiscourseInstanceIcon discourse_id={post.discourse_id} />
                         </div>
                     )}
                 </div>
-            )}
-        </div>
+
+                {showDetails && (
+                    <>
+                        {plainText && (
+                            <div className="text-sm text-primary/80 leading-relaxed">
+                                {truncateText(plainText, showDetails ? 300 : 150)}
+                            </div>
+                        )}
+                        {post.created_at && (
+                            <div className="text-xs text-primary/60 text-right">
+                                {formatRelativeTime(post.created_at)}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </Link>
     );
 };
