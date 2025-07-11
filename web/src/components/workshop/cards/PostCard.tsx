@@ -14,12 +14,10 @@ interface PostCardProps {
 }
 
 export const PostCard: FC<PostCardProps> = ({ post, entity, showDetails = true }) => {
-    if (!entity.cooked) return '';
+    const plainText = getPlainText(entity.cooked ?? '');
 
-    const plainText = getPlainText(entity.cooked);
-
+    // copied from TopicPost
     const extra = post.extra as Record<string, unknown>;
-
     const displayName =
         (extra?.['display_username'] as string) ||
         (extra?.['name'] as string) ||
