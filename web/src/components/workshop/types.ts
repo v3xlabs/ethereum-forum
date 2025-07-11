@@ -13,17 +13,21 @@ export interface TopicSummary {
 }
 
 export interface Post {
+    discourse_id: string;
     topic_id: number;
     post_id: number;
     post_number: number;
-    // raw: string; -- doesn't exist in post data
+    // raw: string;
     created_at?: string;
-    name?: string; // doesn't exist but should
-    // avatar_template?: string; -- doesn't exist
-    // like_count: number; -- doesn't exist
+    name?: string;
+    avatar_template?: string;
+    // like_count: number;
     // reply_count: number; -- doesn't exist
-    user_id: number;
-    discourse_id: string;
+    user_id?: number;
+    extra?: unknown;
+    updated_at?: string;
+    cooked?: string;
+    post_url?: string;
 }
 
 export interface SearchEntity {
