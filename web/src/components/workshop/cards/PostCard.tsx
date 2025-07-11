@@ -14,11 +14,11 @@ interface PostCardProps {
 }
 
 export const PostCard: FC<PostCardProps> = ({ post, entity, showDetails = true }) => {
-    if (!entity.cooked) return null;
+    if (!entity.cooked) return '';
 
     const plainText = getPlainText(entity.cooked);
 
-    const extra = post.extra as unknown as Record<string, unknown>;
+    const extra = post.extra as Record<string, unknown>;
 
     const displayName =
         (extra?.['display_username'] as string) ||
@@ -58,22 +58,26 @@ export const PostCard: FC<PostCardProps> = ({ post, entity, showDetails = true }
                             )}
                         </div>
                     </div>
-
-                    <div>
-                        <DiscourseInstanceIcon discourse_id={post.discourse_id} />
-                    </div>
+                    {post.discourse_id && (
+                        <div>
+                            <DiscourseInstanceIcon discourse_id={post.discourse_id} />
+                        </div>
+                    )}
                 </div>
 
-                {plainText && (
-                    <div className="text-sm text-primary/80 leading-relaxed">
-                        {truncateText(plainText, showDetails ? 300 : 150)}
-                    </div>
-                )}
-
                 {showDetails && (
-                    <div className="text-xs text-primary/60 text-right">
-                        {post.created_at && <span>{formatRelativeTime(post.created_at)}</span>}
-                    </div>
+                    <>
+                        {plainText && (
+                            <div className="text-sm text-primary/80 leading-relaxed">
+                                {truncateText(plainText, showDetails ? 300 : 150)}
+                            </div>
+                        )}
+                        {post.created_at && (
+                            <div className="text-xs text-primary/60 text-right">
+                                {formatRelativeTime(post.created_at)}
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </Link>
