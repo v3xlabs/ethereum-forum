@@ -1,12 +1,14 @@
 import classNames from 'classnames';
-import React, { useState } from 'react';
+import React, { FC, useState } from 'react';
 import { LuChevronDown, LuChevronLeft, LuHash, LuMessageSquare, LuSearch } from 'react-icons/lu';
+import { match } from 'ts-pattern';
+import { LoadingIcon } from 'yet-another-react-lightbox';
 
-import { usePosts, useTopic } from '@/api';
+import { Post, usePosts, useTopic } from '@/api';
 
 import { PostCard } from '../cards/PostCard';
 import { TopicCard } from '../cards/TopicCard';
-import type { Post, SearchEntity, SearchResult, TopicSummary } from '../types';
+import { SearchEntity, SearchResult, TopicSummary } from '../types';
 
 interface SearchResultsProps {
     data: SearchResult | SearchEntity[];
@@ -29,44 +31,42 @@ const getResultsMessage = (toolName: string, topicCount: number, postCount: numb
 };
 
 // basic implementation of hooks, change to ts pattern ?
-const Topics: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
-    const {
-        data: topic,
-        isLoading,
-        isError,
-        error,
-        // 'magicians' fallback is necessary because discourse_id is sometimes undefined
-    } = useTopic(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString());
+const Topics: FC<{ entity: SearchEntity }> = ({ entity }) => {
+    const query = useTopic(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString());
 
-    if (!topic) return <p className="text-red-600">Topic not found.</p>;
-
-    if (isError) return <p className="text-red-600">Error: {error.message}</p>;
-
-    if (isLoading) return <p>Loading...</p>;
-
-    return <TopicCard topic={topic as TopicSummary} />;
+    return match(query)
+        .with({ status: 'pending' }, () => <LoadingIcon />)
+        .with({ status: 'error' }, ({ error }) => (
+            <p className="text-red-500">Error: Topic not found {error.message}</p>
+        ))
+        .with(
+            { status: 'success' },
+            ({ data: topic }) => topic && <TopicCard topic={topic as TopicSummary} />
+        )
+        .exhaustive();
 };
 
-const Posts: React.FC<{ entity: SearchEntity }> = ({ entity }) => {
-    const {
-        data: postData,
-        isLoading,
-        isError,
-        error,
-    } = usePosts(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString(), 1);
+const Posts: FC<{ entity: SearchEntity }> = ({ entity }) => {
+    const query = usePosts(
+        entity.discourse_id ?? 'magicians',
+        (entity.topic_id ?? 1).toString(),
+        1
+    );
 
-    const post = postData?.posts.find((p) => p.topic_id === entity.topic_id);
+    return match(query)
+        .with({ status: 'pending' }, () => <LoadingIcon />)
+        .with({ status: 'error' }, ({ error }) => (
+            <p className="text-red-500">Error: Post not found {error.message}</p>
+        ))
+        .with({ status: 'success' }, ({ data: postData }) => {
+            const post = postData?.posts.find((p) => p.post_number === entity.post_number);
 
-    if (!post) return <p className="text-red-600">Post not found.</p>;
-
-    if (isError) return <p className="text-red-600">Error: {error.message}</p>;
-
-    if (isLoading) return <p>Loading...</p>;
-
-    return <PostCard post={post as Post} entity={entity} />;
+            if (post) return <PostCard post={post as Post} entity={entity} />;
+        })
+        .exhaustive();
 };
 
-export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) => {
+export const SearchResults: FC<SearchResultsProps> = ({ data, toolName }) => {
     // Individual expansion states for each section
     const [isTopicsExpanded, setIsTopicsExpanded] = useState(false);
     const [isPostsExpanded, setIsPostsExpanded] = useState(false);
@@ -164,9 +164,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
                                 hasManyPosts ? 'max-h-80 overflow-y-auto' : ''
                             )}
                         >
-                            {postsToShow.map((post) => (
-                                <Posts key={post.post_id} entity={post} />
-                            ))}
+                            {postsToShow.map(
+                                (post) => post && <Posts key={post.post_id} entity={post} />
+                            )}
                         </div>
                     )}
                 </div>
