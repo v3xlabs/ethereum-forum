@@ -17,19 +17,6 @@ function capitalizeFirst(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export const Route = createFileRoute('/pm/$issueId/')({
-    component: RouteComponent,
-    beforeLoad: async ({ params }) => {
-        const { issueId } = params;
-        const pm = await queryClient.ensureQueryData(getPM(Number(params.issueId)));
-        const occurence = getOccurence(pm as any, Number(issueId));
-
-        return {
-            title: occurence?.issue_title,
-        };
-    },
-});
-
 type OneOffMeeting = components['schemas']['PMOneOffMeeting'];
 type Occurrence = components['schemas']['PMOccurrence'];
 
@@ -37,7 +24,7 @@ const RouteComponent = () => {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
-    const { data: discoursePosts } = usePosts(occurence?.discourse_topic_id || '', 1);
+    const { data: discoursePosts } = usePosts("magicians", occurence?.discourse_topic_id || '', 1);
     const { data: githubPosts } = useGithubIssueComments(parseInt(issueId) || 0);
 
     const ghPosts = (Array.isArray(githubPosts) ? githubPosts : []).map((post) => ({
@@ -56,40 +43,39 @@ const RouteComponent = () => {
 
     posts.forEach((post) => {
         const youtubeLinks =
-            post.type === 'discourse'
-                ? post.post.cooked?.match(
-                      /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
-                  )
-                : post.post.body?.match(
-                      /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
-                  );
+            (post?.type === 'discourse'
+                ? post.post.cooked || ""
+                : post.post.body).match(
+                    /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
+                );
 
-        if (youtubeLinks) {
+        if (
+            youtubeLinks &&
+            Array.isArray(youtubeLinks) &&
+            typeof occurence === 'object' &&
+            occurence !== null &&
+            'youtube_streams' in occurence
+        ) {
+            occurence.youtube_streams = occurence.youtube_streams || [];
+
             youtubeLinks.forEach((url) => {
-                if (
-                    url &&
-                    typeof occurence === 'object' &&
-                    occurence !== null &&
-                    'youtube_streams' in occurence
-                ) {
-                    console.log('Found youtube link:', url);
-                    const videoId = parseYoutubeUrl(url);
+                if (!url) return;
 
-                    if (videoId) {
-                        occurence.youtube_streams = occurence.youtube_streams || [];
+                const videoId = parseYoutubeUrl(url);
+                if (!videoId) return;
 
-                        if (
-                            !occurence.youtube_streams.find(
-                                (stream: any) => stream.stream_url === url
-                            )
-                        ) {
-                            // @ts-expect-error: dynamic property check above
-                            occurence.youtube_streams.push({
-                                stream_url: url,
-                            });
-                        }
-                    }
+                const alreadyExists = occurence.youtube_streams!.some(
+                    (stream) => stream.stream_url === "https://youtube.com/watch?v=" + videoId
+                );
+
+                if (!alreadyExists) {
+                    occurence.youtube_streams!.push({
+                        stream_url: "https://youtube.com/watch?v=" + videoId,
+                        extra: {},
+                    });
                 }
+
+                console.log('Added YouTube stream:', url, 'to occurrence', occurence.issue_number);
             });
         }
     });
@@ -172,6 +158,19 @@ const RouteComponent = () => {
         </div>
     );
 };
+
+export const Route = createFileRoute('/pm/$issueId/')({
+    component: RouteComponent,
+    beforeLoad: async ({ params }) => {
+        const { issueId } = params;
+        const pm = await queryClient.ensureQueryData(getPM(Number(params.issueId)));
+        const occurence = getOccurence(pm as any, Number(issueId));
+
+        return {
+            title: occurence?.issue_title,
+        };
+    },
+});
 
 export const getOccurence = (
     pm: PMMeetingData,
