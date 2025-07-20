@@ -261,4 +261,34 @@ impl UserApi {
             }
         }
     }
+
+    /// /user/:user_id
+    /// Get a Forum user by its user_id
+    #[oai(path = "/user/:user_id", method = "get", tag = "ApiTags::User")]
+    async fn get_user_by_id(
+        &self,
+        state: Data<&AppState>,
+        #[oai(style = "simple")] user_id: Path<String>,
+    ) -> Result<poem_openapi::payload::PlainText<String>> {
+        let user_id = match uuid::Uuid::parse_str(&user_id) {
+            Ok(id) => id,
+            Err(_) => {
+                tracing::error!("Invalid user_id format");
+                return Err(poem::Error::from_status(StatusCode::BAD_REQUEST));
+            }
+        };
+
+        let user = sqlx::query!("SELECT * FROM users WHERE user_id = $1", user_id)
+            .fetch_one(&state.database.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error fetching user by ID: {:?}", e);
+                poem::Error::from_status(StatusCode::NOT_FOUND)
+            })?;
+
+        Ok(poem_openapi::payload::PlainText(
+            user.display_name
+                .unwrap_or_else(|| "Unknown User".to_string()),
+        ))
+    }
 }
