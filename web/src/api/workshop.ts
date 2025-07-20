@@ -252,3 +252,18 @@ export const useWorkshopSnapshot = (snapshotId: string) => {
         },
     });
 };
+
+export const useWorkshopDeleteChat = () => {
+    return useMutation({
+        mutationFn: async (chatId: string) => {
+            await useApi('/ws/chat/{chat_id}', 'delete', {
+                path: { chat_id: chatId },
+            });
+        },
+        onSuccess: (_, chatId) => {
+            queryClient.invalidateQueries({ queryKey: ['workshop', 'chats'] });
+            queryClient.invalidateQueries({ queryKey: ['workshop', 'chat', chatId] });
+            queryClient.invalidateQueries({ queryKey: ['workshop'] });
+        },
+    });
+};

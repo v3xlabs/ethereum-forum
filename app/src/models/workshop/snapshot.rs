@@ -29,14 +29,28 @@ pub struct WorkshopSnapshotResponse {
 
 impl WorkshopSnapshot {
     pub async fn create(chat_id: Uuid, message_id: Uuid, user_id: Uuid, state: &AppState) -> Result<Self, sqlx::Error> {
-        let snapshot = query_as!(WorkshopSnapshot, "INSERT INTO workshop_snapshots (chat_id, message_id, user_id) VALUES ($1, $2, $3) RETURNING *", chat_id, message_id, user_id)
+        sqlx::query!(
+            "SELECT chat_id FROM workshop_chats WHERE chat_id = $1 AND deleted_at IS NULL",
+            chat_id
+        )
+        .fetch_one(&state.database.pool)
+        .await?;
+
+        let snapshot = query_as!(WorkshopSnapshot, 
+            "INSERT INTO workshop_snapshots (chat_id, message_id, user_id) VALUES ($1, $2, $3) RETURNING *", 
+            chat_id, message_id, user_id)
             .fetch_one(&state.database.pool)
             .await?;
         Ok(snapshot)
     }
 
     pub async fn get_by_snapshot_id(snapshot_id: Uuid, state: &AppState) -> Result<Self, sqlx::Error> {
-        let snapshot = query_as!(WorkshopSnapshot, "SELECT * FROM workshop_snapshots WHERE snapshot_id = $1", snapshot_id)
+        let snapshot = query_as!(WorkshopSnapshot, 
+            "SELECT s.snapshot_id, s.chat_id, s.user_id, s.message_id, s.created_at 
+             FROM workshop_snapshots s 
+             INNER JOIN workshop_chats c ON s.chat_id = c.chat_id 
+             WHERE s.snapshot_id = $1 AND c.deleted_at IS NULL", 
+            snapshot_id)
             .fetch_one(&state.database.pool)
             .await?;
         Ok(snapshot)

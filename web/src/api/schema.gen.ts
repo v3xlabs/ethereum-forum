@@ -800,7 +800,31 @@ export interface paths {
                 };
             };
         };
-        delete?: never;
+        /**
+         * /ws/chat/:chat_id
+         * @description Delete a chat and all associated messages and snapshots
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    chat_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": unknown;
+                    };
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
