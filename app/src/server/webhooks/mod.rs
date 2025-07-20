@@ -1,12 +1,15 @@
 use discourse_webhooks::{
     PostWebhookEvent, TopicWebhookEvent, WebhookError, WebhookEventHandler, WebhookProcessor,
+    async_trait,
 };
 use poem::{Result, web::Data};
 use poem_openapi::param::Header;
-use poem_openapi::{Object, OpenApi, payload::Json};
+use poem_openapi::{Object, OpenApi};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
+use crate::models::topics::Topic;
+use crate::models::topics::post::Post;
 use crate::server::ApiTags;
 use crate::state::AppState;
 
@@ -21,45 +24,89 @@ pub struct WebhookPayload {
 }
 struct DiscourseEventHandler {
     instance: String,
+    state: AppState,
 }
 
 impl DiscourseEventHandler {
-    fn new(instance: String) -> Self {
-        Self { instance }
+    fn new(instance: String, state: AppState) -> Self {
+        Self { instance, state }
+    }
+
+    async fn upsert_topic_from_event(
+        &mut self,
+        event: &TopicWebhookEvent,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let topic = Topic {
+            discourse_id: self.instance.clone(),
+            topic_id: event.topic.id,
+            title: event.topic.title.clone(),
+            slug: event.topic.slug.clone(),
+            post_count: event.topic.posts_count,
+            view_count: event.topic.views,
+            like_count: event.topic.like_count,
+            image_url: None, // WebhookTopic doesn't have image_url field
+            created_at: event.topic.created_at,
+            last_post_at: Some(event.topic.last_posted_at),
+            bumped_at: None, // WebhookTopic doesn't have bumped_at field
+            pm_issue: None,
+            extra: None,
+        };
+
+        match topic.upsert(&self.state).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                info!("Error upserting topic: {:?}", e);
+                Err("Failed to upsert topic".into())
+            }
+        }
+    }
+
+    async fn upsert_post_from_event(
+        &mut self,
+        event: &PostWebhookEvent,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let post = Post {
+            discourse_id: self.instance.clone(),
+            post_id: event.post.id,
+            topic_id: event.post.topic_id,
+            user_id: event.post.user_id,
+            post_number: event.post.post_number,
+            updated_at: Some(event.post.updated_at),
+            created_at: Some(event.post.created_at),
+            cooked: Some(event.post.cooked.clone()),
+            post_url: Some(event.post.post_url.clone()),
+            extra: None,
+        };
+
+        match post.upsert(&self.state).await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                info!("Error upserting post: {:?}", e);
+                Err("Failed to upsert post".into())
+            }
+        }
     }
 }
 
+#[async_trait]
 impl WebhookEventHandler for DiscourseEventHandler {
     type Error = Box<dyn std::error::Error + Send + Sync>;
 
-    fn handle_ping(&mut self) -> std::result::Result<(), Self::Error> {
-        info!("Received ping event from instance: {}", self.instance);
-        Ok(())
+    async fn handle_topic_created(&mut self, event: &TopicWebhookEvent) -> Result<(), Self::Error> {
+        self.upsert_topic_from_event(event).await
     }
 
-    fn handle_topic_created(
-        &mut self,
-        event: &TopicWebhookEvent,
-    ) -> std::result::Result<(), Self::Error> {
-        info!(
-            "Topic created on instance {}: {}",
-            self.instance, event.topic.title
-        );
-        Ok(())
+    async fn handle_topic_edited(&mut self, event: &TopicWebhookEvent) -> Result<(), Self::Error> {
+        self.upsert_topic_from_event(event).await
     }
 
-    fn handle_post_created(
-        &mut self,
-        event: &PostWebhookEvent,
-    ) -> std::result::Result<(), Self::Error> {
-        info!(
-            "Post created on instance {}: Topic {}",
-            self.instance, event.post.topic_id
-        );
-        Ok(())
+    async fn handle_post_created(&mut self, event: &PostWebhookEvent) -> Result<(), Self::Error> {
+        self.upsert_post_from_event(event).await
     }
 
-    // Add other handler methods as needed...
+    async fn handle_post_edited(&mut self, event: &PostWebhookEvent) -> Result<(), Self::Error> {
+        self.upsert_post_from_event(event).await
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
@@ -77,8 +124,9 @@ impl WebhookApi {
     )]
     async fn discourse_webhook(
         &self,
-        _state: Data<&AppState>,
-        body: Json<serde_json::Value>,
+        state: Data<&AppState>,
+        // Oddly enought we have to use Binary here because otherwise Poem won't accept JSON body
+        body: poem_openapi::payload::Binary<Vec<u8>>,
         #[oai(name = "X-Discourse-Instance")] discourse_id: Header<String>,
         #[oai(name = "X-Discourse-Event")] discourse_event: Header<String>,
         #[oai(name = "X-Discourse-Event-Signature")] signature: Header<String>,
@@ -106,14 +154,19 @@ impl WebhookApi {
 
         let discourse_event = discourse_event.0;
 
-        let mut handler = DiscourseEventHandler::new(instance.to_string());
+        let mut handler = DiscourseEventHandler::new(instance.to_string(), state.0.clone());
 
-        match processor.process_json(
-            &mut handler,
-            discourse_event.as_str(),
-            body.0,
-            Some(signature.0.as_str()),
-        ) {
+        let body_str = String::from_utf8_lossy(&body.0);
+
+        match processor
+            .process(
+                &mut handler,
+                discourse_event.as_str(),
+                &body_str,
+                Some(signature.0.as_str()),
+            )
+            .await
+        {
             Ok(_) => Ok(poem_openapi::payload::PlainText(
                 "Webhook processed successfully".to_string(),
             )),
