@@ -16,6 +16,7 @@ use std::num::NonZero;
 use topic::TopicApi;
 use tracing::info;
 use user::UserApi;
+use webhooks::WebhookApi;
 
 use crate::{
     server::{search::SearchApi, workshop::WorkshopApi},
@@ -33,6 +34,7 @@ pub mod ratelimit;
 pub mod search;
 pub mod topic;
 pub mod user;
+pub mod webhooks;
 pub mod workshop;
 
 #[derive(Tags)]
@@ -49,6 +51,8 @@ pub enum ApiTags {
     Search,
     /// Admin Related Operations
     Admin,
+    /// Webhooks Related Operations
+    Webhooks,
 }
 
 fn get_api(_state: AppState) -> impl OpenApi {
@@ -60,6 +64,7 @@ fn get_api(_state: AppState) -> impl OpenApi {
         WorkshopApi,
         SearchApi,
         AdminApi,
+        WebhookApi,
     )
 }
 

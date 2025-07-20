@@ -882,6 +882,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "discourse-webhooks"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9d1a88f0ca1848d783d5cf1d0abc8df5aaed5a0b2b64fa251b43e09124d490f1"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "hex",
+ "hmac",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -973,6 +989,7 @@ dependencies = [
  "async-std",
  "async-trait",
  "chrono",
+ "discourse-webhooks",
  "dotenvy",
  "figment",
  "futures",
