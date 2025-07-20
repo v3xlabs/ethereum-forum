@@ -125,7 +125,7 @@ impl WebhookApi {
     async fn discourse_webhook(
         &self,
         state: Data<&AppState>,
-        // Oddly enought we have to use Binary here because otherwise Poem won't accept JSON body
+        // Oddly enough we have to use Binary here because otherwise Poem won't accept JSON body
         body: poem_openapi::payload::Binary<Vec<u8>>,
         #[oai(name = "X-Discourse-Instance")] discourse_id: Header<String>,
         #[oai(name = "X-Discourse-Event")] discourse_event: Header<String>,
