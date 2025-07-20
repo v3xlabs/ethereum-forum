@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT * FROM workshop_snapshots WHERE snapshot_id = $1",
+  "query": "SELECT s.snapshot_id, s.chat_id, s.user_id, s.message_id, s.created_at \n             FROM workshop_snapshots s \n             INNER JOIN workshop_chats c ON s.chat_id = c.chat_id \n             WHERE s.snapshot_id = $1 AND c.deleted_at IS NULL",
   "describe": {
     "columns": [
       {
@@ -15,18 +15,18 @@
       },
       {
         "ordinal": 2,
-        "name": "message_id",
+        "name": "user_id",
         "type_info": "Uuid"
       },
       {
         "ordinal": 3,
-        "name": "created_at",
-        "type_info": "Timestamptz"
+        "name": "message_id",
+        "type_info": "Uuid"
       },
       {
         "ordinal": 4,
-        "name": "user_id",
-        "type_info": "Uuid"
+        "name": "created_at",
+        "type_info": "Timestamptz"
       }
     ],
     "parameters": {
@@ -42,5 +42,5 @@
       false
     ]
   },
-  "hash": "2208013472195a8f752fbaeca4d024d5119bd11ee888e4ec78d1962ea3b25eaa"
+  "hash": "74bc707bbc5093a23f8df32079836ecb3458fbbb1393fdf6c116b9d75c0cc663"
 }

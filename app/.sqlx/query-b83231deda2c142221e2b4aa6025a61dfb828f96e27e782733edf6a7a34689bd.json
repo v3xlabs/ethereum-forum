@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT message_id, chat_id, sender_role, message, created_at, parent_message_id, streaming_events, prompt_tokens, completion_tokens, total_tokens, reasoning_tokens, model_used FROM workshop_messages WHERE chat_id = $1 ORDER BY created_at ASC",
+  "query": "SELECT m.message_id, m.chat_id, m.sender_role, m.message, m.created_at, m.parent_message_id, m.streaming_events, m.prompt_tokens, m.completion_tokens, m.total_tokens, m.reasoning_tokens, m.model_used \n             FROM workshop_messages m \n             INNER JOIN workshop_chats c ON m.chat_id = c.chat_id \n             WHERE m.chat_id = $1 AND c.deleted_at IS NULL \n             ORDER BY m.created_at ASC",
   "describe": {
     "columns": [
       {
@@ -84,5 +84,5 @@
       true
     ]
   },
-  "hash": "72dfcfced0ceb48bc24c2d6e99e9d5633b005f234be37181431fdb54db2e1dc8"
+  "hash": "b83231deda2c142221e2b4aa6025a61dfb828f96e27e782733edf6a7a34689bd"
 }
