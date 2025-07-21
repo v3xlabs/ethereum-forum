@@ -52,13 +52,23 @@ impl DiscourseEventHandler {
             extra: None,
         };
 
-        match topic.upsert(&self.state).await {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                info!("Error upserting topic: {:?}", e);
-                Err("Failed to upsert topic".into())
-            }
+        let upsert_result = topic.upsert(&self.state).await;
+        let instance = self.instance.clone();
+        let enqueue_result = self
+            .state
+            .discourse
+            .enqueue(instance.as_str(), event.topic.id, 1)
+            .await;
+
+        if let Err(e) = upsert_result {
+            info!("Error processing topic upsert: {:?}", e);
+            return Err("Failed to process topic upsert".into());
         }
+        if let Err(e) = enqueue_result {
+            info!("Error enqueuing topic: {:?}", e);
+            return Err("Failed to enqueue topic".into());
+        }
+        Ok(())
     }
 
     async fn upsert_post_from_event(
@@ -78,20 +88,35 @@ impl DiscourseEventHandler {
             extra: None,
         };
 
-        match post.upsert(&self.state).await {
-            Ok(_) => Ok(()),
-            Err(e) => {
-                info!("Error upserting post: {:?}", e);
-                Err("Failed to upsert post".into())
-            }
+        let posts_per_page = 20; // Discourse fetches posts in pages of 20 by default
+        let upsert_result = post
+            .upsert(&self.state)
+            .await
+            .map_err(|e| anyhow::anyhow!(e));
+        let instance = self.instance.clone();
+        let page = ((event.post.post_number.max(1) - 1) / posts_per_page) + 1;
+        let enqueue_result = self
+            .state
+            .discourse
+            .enqueue(instance.as_str(), event.post.topic_id, page as u32)
+            .await
+            .map_err(|e| anyhow::anyhow!(e));
+
+        if let Err(e) = upsert_result {
+            info!("Error processing post upsert: {:?}", e);
+            return Err("Failed to process post upsert".into());
         }
+        if let Err(e) = enqueue_result {
+            info!("Error enqueuing post: {:?}", e);
+            return Err("Failed to enqueue post".into());
+        }
+        Ok(())
     }
 }
 
 #[async_trait]
 impl WebhookEventHandler for DiscourseEventHandler {
     type Error = Box<dyn std::error::Error + Send + Sync>;
-
     async fn handle_topic_created(&mut self, event: &TopicWebhookEvent) -> Result<(), Self::Error> {
         self.upsert_topic_from_event(event).await
     }
