@@ -36,27 +36,16 @@ impl DiscourseEventHandler {
         &mut self,
         event: &TopicWebhookEvent,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let topic = Topic {
-            discourse_id: self.instance.clone(),
-            topic_id: event.topic.id,
-            title: event.topic.title.clone(),
-            slug: event.topic.slug.clone(),
-            post_count: event.topic.posts_count,
-            view_count: event.topic.views,
-            like_count: event.topic.like_count,
-            image_url: None, // WebhookTopic doesn't have image_url field
-            created_at: event.topic.created_at,
-            last_post_at: Some(event.topic.last_posted_at),
-            bumped_at: None, // WebhookTopic doesn't have bumped_at field
-            pm_issue: None,
-            extra: None,
-        };
-
-        match topic.upsert(&self.state).await {
+        match self
+            .state
+            .discourse
+            .enqueue(&self.instance, event.topic.id, 1)
+            .await
+        {
             Ok(_) => Ok(()),
             Err(e) => {
-                info!("Error upserting topic: {:?}", e);
-                Err("Failed to upsert topic".into())
+                info!("Error enqueuing topic: {:?}", e);
+                Err("Failed to enqueue topic".into())
             }
         }
     }
@@ -65,24 +54,20 @@ impl DiscourseEventHandler {
         &mut self,
         event: &PostWebhookEvent,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let post = Post {
-            discourse_id: self.instance.clone(),
-            post_id: event.post.id,
-            topic_id: event.post.topic_id,
-            user_id: event.post.user_id,
-            post_number: event.post.post_number,
-            updated_at: Some(event.post.updated_at),
-            created_at: Some(event.post.created_at),
-            cooked: Some(event.post.cooked.clone()),
-            post_url: Some(event.post.post_url.clone()),
-            extra: None,
-        };
-
-        match post.upsert(&self.state).await {
+        let posts_per_page = 20; // Discourse fetches posts in pages of 20 by default
+        let instance = self.instance.clone();
+        let page = ((event.post.post_number.max(1) - 1) / posts_per_page) + 1;
+        match self
+            .state
+            .discourse
+            .enqueue(instance.as_str(), event.post.topic_id, page as u32)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))
+        {
             Ok(_) => Ok(()),
             Err(e) => {
-                info!("Error upserting post: {:?}", e);
-                Err("Failed to upsert post".into())
+                info!("Error enqueuing post: {:?}", e);
+                Err("Failed to enqueue post".into())
             }
         }
     }
@@ -91,7 +76,6 @@ impl DiscourseEventHandler {
 #[async_trait]
 impl WebhookEventHandler for DiscourseEventHandler {
     type Error = Box<dyn std::error::Error + Send + Sync>;
-
     async fn handle_topic_created(&mut self, event: &TopicWebhookEvent) -> Result<(), Self::Error> {
         self.upsert_topic_from_event(event).await
     }
