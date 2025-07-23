@@ -6,7 +6,7 @@ export interface TopicSummary {
     post_count: number;
     created_at: string;
     last_post_at?: string;
-    view_count: number; // changed from views
+    view_count: number;
     like_count: number;
     extra: string;
     participants?: Array<{ id: number; username: string; avatar_template?: string }>;
