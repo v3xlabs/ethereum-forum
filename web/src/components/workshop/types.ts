@@ -21,7 +21,6 @@ export interface Post {
     created_at?: string;
     name?: string;
     avatar_template?: string;
-    // like_count: number;
     user_id?: number;
     extra?: unknown;
     updated_at?: string;
