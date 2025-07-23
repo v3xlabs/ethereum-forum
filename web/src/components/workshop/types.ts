@@ -17,7 +17,6 @@ export interface Post {
     topic_id: number;
     post_id: number;
     post_number: number;
-    // raw: string;
     created_at?: string;
     name?: string;
     avatar_template?: string;
