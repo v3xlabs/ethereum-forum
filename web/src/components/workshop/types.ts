@@ -22,7 +22,6 @@ export interface Post {
     name?: string;
     avatar_template?: string;
     // like_count: number;
-    // reply_count: number; -- doesn't exist
     user_id?: number;
     extra?: unknown;
     updated_at?: string;
