@@ -1,6 +1,6 @@
 // Type definitions for the forum API responses
 export interface TopicSummary {
-    discourse_id: string; // changed from id
+    discourse_id: string;
     topic_id: number;
     title: string;
     post_count: number; // changed from posts_count
