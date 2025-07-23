@@ -3,7 +3,7 @@ export interface TopicSummary {
     discourse_id: string;
     topic_id: number;
     title: string;
-    post_count: number; // changed from posts_count
+    post_count: number;
     created_at: string;
     last_post_at?: string; // changed from last_posted_at
     view_count: number; // changed from views
