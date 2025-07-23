@@ -39,7 +39,7 @@ export interface SearchEntity {
     pm_issue: number | null;
     cooked: string | null;
     entity_id: string;
-    discourse_id: string; // added to match api
+    discourse_id: string;
 }
 
 export interface SearchResult {
