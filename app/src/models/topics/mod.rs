@@ -241,7 +241,8 @@ impl Topic {
                     // The summary should already be saved by the background task, but let's check
                     if let Ok(existing_summary) = query_as!(
                         TopicSummary,
-                        "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
+                        "SELECT * FROM topic_summaries WHERE discourse_id = $1 AND topic_id = $2 ORDER BY based_on DESC LIMIT 1",
+                        discourse_id,
                         topic_id
                     ).fetch_optional(&state.database.pool).await {
                         if let Some(summary) = existing_summary {
