@@ -90,6 +90,24 @@ export const getPosts = (discourse_id: string, topicId: string, page: number) =>
         },
     });
 
+export const getPost = (discourse_id: string, postId: string) =>
+    queryOptions({
+        queryKey: ['post', discourse_id, postId],
+        queryFn: async () => {
+            const response = await useApi('/t/{discourse_id}/post/{post_id}',
+                'get',
+                {
+                    path: {
+                        discourse_id,
+                        post_id: Number(postId),
+                    },
+                }
+            );
+
+            return response.data;
+        },
+    });
+
 export const getTopicSummary = (discourse_id: string, topicId: number) =>
     queryOptions({
         queryKey: ['summary', discourse_id, topicId],
@@ -142,6 +160,9 @@ export const useGithubIssueComments = (issueId: number) =>
 
 export const usePosts = (discourse_id: string, topicId: string, page: number) =>
     useQuery(getPosts(discourse_id, topicId, page));
+
+export const usePost = (discourse_id: string, postId: string) =>
+    useQuery(getPost(discourse_id, postId));
 
 export const useTopicSummary = (discourse_id: string, topicId: number) =>
     useQuery(getTopicSummary(discourse_id, topicId));
