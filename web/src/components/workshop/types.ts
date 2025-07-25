@@ -1,27 +1,30 @@
 // Type definitions for the forum API responses
 export interface TopicSummary {
-    id: number;
+    discourse_id: string;
+    topic_id: number;
     title: string;
-    posts_count: number;
+    post_count: number;
     created_at: string;
-    last_posted_at: string;
-    views: number;
+    last_post_at?: string;
+    view_count: number;
     like_count: number;
+    extra: string;
     participants?: Array<{ id: number; username: string; avatar_template?: string }>;
 }
 
 export interface Post {
-    id: number;
+    discourse_id: string;
     topic_id: number;
+    post_id: number;
     post_number: number;
-    raw?: string;
-    cooked: string;
-    created_at: string;
-    username: string;
+    created_at?: string;
     name?: string;
     avatar_template?: string;
-    like_count?: number;
-    reply_count?: number;
+    user_id?: number;
+    extra?: unknown;
+    updated_at?: string;
+    cooked?: string;
+    post_url?: string;
 }
 
 export interface SearchEntity {
@@ -36,6 +39,7 @@ export interface SearchEntity {
     pm_issue: number | null;
     cooked: string | null;
     entity_id: string;
+    discourse_id: string;
 }
 
 export interface SearchResult {
