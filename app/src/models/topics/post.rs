@@ -137,4 +137,19 @@ impl Post {
 
         Ok(count.unwrap_or_default() as i32)
     }
+
+    pub async fn get_by_post_id(
+        discourse_id: &str,
+        post_id: i32,
+        state: &AppState,
+    ) -> Result<Option<Self>, sqlx::Error> {
+        query_as!(
+            Self,
+            "SELECT * FROM posts WHERE discourse_id = $1 AND post_id = $2",
+            discourse_id,
+            post_id
+        )
+        .fetch_optional(&state.database.pool)
+        .await
+    }
 }

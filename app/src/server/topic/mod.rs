@@ -151,4 +151,33 @@ impl TopicApi {
 
         Ok(Json(summary))
     }
+
+    /// /t/:discourse_id/post/:post_id
+    /// Get a specific post by post ID
+    #[oai(
+        path = "/t/:discourse_id/post/:post_id",
+        method = "get",
+        operation_id = "get_post",
+        tag = "ApiTags::Topic"
+    )]
+    async fn get_post(
+        &self,
+        state: Data<&AppState>,
+        #[oai(style = "simple")] discourse_id: Path<String>,
+        #[oai(style = "simple")] post_id: Path<i32>,
+    ) -> Result<Json<Post>> {
+        let discourse_id = discourse_id.0;
+        let post_id = post_id.0;
+        let post = Post::get_by_post_id(&discourse_id, post_id, &state)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error getting post: {:?}", e);
+                poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+            })?;
+
+        match post {
+            Some(post) => Ok(Json(post)),
+            None => Err(poem::Error::from_status(StatusCode::NOT_FOUND)),
+        }
+    }
 }
