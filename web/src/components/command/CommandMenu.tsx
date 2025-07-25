@@ -11,6 +11,7 @@ import {
 
 import { CommandDialog, CommandInput, CommandList } from './Command';
 import { Navigation } from './groups/Navigation';
+import { ThemeSwitcherCommand } from './groups/ThemeSwitcher';
 // import { Suggested } from './groups/Suggested';
 import { UpcomingCalendarEvent } from './groups/Upcoming';
 import { WorkshopIdea } from './groups/Workshop';
@@ -106,6 +107,7 @@ export const CommandMenu: FC<{
                     <UpcomingCalendarEvent />
                     {/* <Suggested /> */}
                     <Navigation />
+                    <ThemeSwitcherCommand />
                     <WorkshopIdea />
                 </CommandList>
             </CommandDialog>

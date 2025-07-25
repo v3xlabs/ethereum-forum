@@ -21,6 +21,7 @@ export const UpcomingCalendarEvent = () => {
     const startDate = parseISO(soonest.start!);
     const now = new Date();
     const minutes = Math.max(0, differenceInMinutes(startDate, now));
+    const hasStarted = now >= startDate;
 
     if (minutes > 10) return null;
 
@@ -29,20 +30,22 @@ export const UpcomingCalendarEvent = () => {
 
     return (
         <>
-            <CommandGroup heading="Calendar Events">
+            <CommandGroup>
+                <div className="flex items-center gap-2 my-2 text-base font-semibold">
+                    <LuCalendar className="size-5" />
+                    Upcoming
+                </div>
                 <CommandItem className="flex items-center gap-4 p-4 rounded-lg border border-primary bg-blue-50/80 shadow-md">
-                    <span className="text-3xl text-blue-600">
-                        <LuCalendar />
-                    </span>
                     <div className="flex flex-col flex-1 min-w-0">
                         <span className="font-bold text-base truncate">
                             {soonest.summary || 'Untitled Event'}
                         </span>
                         <span className="block text-xs text-muted-foreground">
-                            starts in{' '}
-                            {minutes === 0
-                                ? 'less than a minute'
-                                : `${minutes} minute${minutes !== 1 ? 's' : ''}`}
+                            {hasStarted
+                                ? 'in progress'
+                                : minutes === 0
+                                  ? 'less than a minute'
+                                  : `${minutes} minute${minutes !== 1 ? 's' : ''}`}
                         </span>
                     </div>
                     <span className="ml-auto flex items-center">
