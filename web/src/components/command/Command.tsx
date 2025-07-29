@@ -10,6 +10,7 @@ import {
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Command as CommandPrimitive } from 'cmdk';
 import * as React from 'react';
+import { twMerge } from 'tailwind-merge';
 
 const CommandDialog = ({ children, ...props }: DialogProps) => {
     return (
@@ -97,7 +98,10 @@ const CommandGroup = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Group
         ref={ref}
-        className="overflow-hidden p-0 text-primary [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground"
+        className={twMerge(
+            'overflow-hidden p-0 text-primary [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground',
+            props.className
+        )}
         {...props}
     />
 ));
@@ -119,7 +123,10 @@ const CommandItem = React.forwardRef<
 >((props, ref) => (
     <CommandPrimitive.Item
         ref={ref}
-        className="raycast-cmdk-item relative flex w-full cursor-pointer gap-2 select-none items-center rounded-lg px-4 py-2 text-base outline-none transition-colors data-[disabled=true]:pointer-events-none data-[selected=true]:bg-tertiary data-[selected=true]:text-primary data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0"
+        className={twMerge(
+            'raycast-cmdk-item relative flex w-full cursor-pointer gap-2 select-none items-center rounded-lg px-4 py-2 text-base outline-none transition-colors hover:bg-secondary data-[selected=true]:bg-secondary data-[selected=true]:text-primary data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0',
+            props.className
+        )}
         {...props}
     />
 ));
