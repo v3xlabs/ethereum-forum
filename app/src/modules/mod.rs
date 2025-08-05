@@ -1,3 +1,4 @@
+pub mod blog;
 pub mod discourse;
 pub mod ical;
 pub mod meili;

@@ -1,6 +1,7 @@
 use crate::{
     database::Database,
     modules::{
+        blog::BlogService,
         discourse::{self, DiscourseService},
         ical::{self, ICalConfig},
         meili,
@@ -25,6 +26,7 @@ pub struct AppStateInner {
     pub database: Database,
     pub ical: Option<ICalConfig>,
     pub discourse: DiscourseService,
+    pub blog: BlogService,
     pub pm: PMModule,
     pub sso: Option<SSOService>,
     pub workshop: WorkshopService,
@@ -54,6 +56,8 @@ impl AppStateInner {
         let discourse_configs = discourse::create_discourse_configs();
         let discourse = DiscourseService::new(discourse_configs);
 
+        let blog = BlogService::new();
+
         let pm = PMModule::default();
 
         let meili = meili::init_meili().await;
@@ -77,6 +81,7 @@ impl AppStateInner {
             ical,
             cache,
             discourse,
+            blog,
             pm,
             workshop,
             sso,
