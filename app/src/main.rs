@@ -22,10 +22,23 @@ pub async fn main() -> Result<(), Error> {
     let discourse_state = state.clone();
     let discourse_handle = async_std::task::spawn(async move {
         sleep(Duration::from_secs(5)).await;
-        discourse_state.clone().discourse.start_all_indexers(discourse_state).await;
+        discourse_state
+            .clone()
+            .discourse
+            .start_all_indexers(discourse_state)
+            .await;
     });
+
+    let blog_state = state.clone();
+    let blog_handle = async_std::task::spawn(async move {
+        sleep(Duration::from_secs(10)).await;
+        Arc::new(blog_state.blog.clone())
+            .start_blog_service(blog_state)
+            .await;
+    });
+
     let server_handle = async_std::task::spawn(server::start_http(state));
 
-    join!(server_handle, discourse_handle);
+    join!(server_handle, discourse_handle, blog_handle);
     Ok(())
 }
