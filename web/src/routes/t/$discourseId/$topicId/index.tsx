@@ -157,7 +157,11 @@ function RouteComponent() {
                             <div className="text-base">Source</div>
                             <div className="text-base flex items-center">
                                 <a
-                                    href={mapDiscourseInstanceUrl(discourseId) + '/t/' + topic?.topic_id}
+                                    href={
+                                        mapDiscourseInstanceUrl(discourseId) +
+                                        '/t/' +
+                                        topic?.topic_id
+                                    }
                                     target="_blank"
                                     rel="noreferrer"
                                     className="hover:underline"
@@ -306,8 +310,8 @@ function RouteComponent() {
                                     {isFetchingNextPage
                                         ? 'Loading more...'
                                         : hasNextPage
-                                            ? 'Load More'
-                                            : 'No more posts'}
+                                          ? 'Load More'
+                                          : 'No more posts'}
                                 </button>
                             </div>
                         </>
