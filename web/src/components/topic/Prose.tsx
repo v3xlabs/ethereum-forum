@@ -15,6 +15,8 @@ import 'prismjs/components/prism-solidity';
 import 'prismjs/components/prism-go';
 
 import { FC, useEffect, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { mapDiscourseInstanceUrl, mapInstanceUrlDiscourse } from '@/util/discourse';
 
 const trackLinkClick = async (
     url: string,
@@ -22,19 +24,17 @@ const trackLinkClick = async (
     topicId: number,
     postId: number
 ) => {
+    if (navigator.doNotTrack === '1') {
+        return;
+    }
+
     const formData = new FormData();
 
     formData.append('url', url);
     formData.append('post_id', postId.toString());
     formData.append('topic_id', topicId.toString());
 
-    // TODO: map discourse_id to url
-    const mapping = {
-        magicians: 'https://ethereum-magicians.org/clicks/track',
-        research: 'https://ethresear.ch/clicks/track',
-    };
-
-    await fetch(mapping[discourseId as keyof typeof mapping], {
+    await fetch(mapDiscourseInstanceUrl(discourseId) + "/clicks/track", {
         body: formData,
         method: 'POST',
         mode: 'no-cors',
@@ -78,12 +78,14 @@ export function ImageLightbox() {
     );
 }
 
-export const Prose: FC<{ content: string; topicId: number; postId: number }> = ({
-    content,
-    topicId,
-    postId,
-}) => {
+export const Prose: FC<{
+    content: string;
+    topicId: number;
+    postId: number;
+    discourseId: string;
+}> = ({ content, topicId, postId, discourseId }) => {
     const ref = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const container = ref.current;
