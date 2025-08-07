@@ -152,7 +152,13 @@ const RouteComponent = () => {
                             )
                         );
                     case 'discourse':
-                        return <TopicPost key={post.post.post_id} post={post.post} />;
+                        return (
+                            <TopicPost
+                                key={post.post.post_id}
+                                post={post.post}
+                                discourseId="magicians"
+                            />
+                        );
                 }
             })}
         </div>
