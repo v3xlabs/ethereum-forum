@@ -100,7 +100,8 @@ export const Prose: FC<{
 
             if (
                 img &&
-                a.href.startsWith('https://ethereum-magicians.org/uploads/default/original/')
+                (a.href.startsWith('https://ethereum-magicians.org/uploads/default/original/') ||
+                    a.href.startsWith('https://ethresear.ch/uploads/default/original/'))
             ) {
                 onClick = (e: MouseEvent) => {
                     e.preventDefault();
@@ -110,15 +111,52 @@ export const Prose: FC<{
                     );
                 };
             } else {
-                onClick = (e: MouseEvent) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                // Check if it's a discourse topic/user link that should be handled internally
+                const topicMatch = a.href.match(
+                    /https:\/\/(?:www\.)?(ethereum-magicians\.org|ethresear\.ch)\/t(?:\/[\w-]+)?\/(\d+)(?:\/\d+)?/
+                );
+                const userMatch = a.href.match(
+                    /https:\/\/(?:www\.)?(ethereum-magicians\.org|ethresear\.ch)\/u\/([^/]+)/
+                );
 
-                    (async () => {
-                        await trackLinkClick(a.href, topicId, postId);
-                        window.open(a.href, '_blank', 'noopener,noreferrer');
-                    })();
-                };
+                if (topicMatch || userMatch) {
+                    onClick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (topicMatch) {
+                            const [, instance, topicId] = topicMatch;
+                            const slug = mapInstanceUrlDiscourse(instance);
+                            if (slug) {
+                                navigate({ to: '/t/$discourseId/$topicId', params: { discourseId: slug, topicId } });
+                                return;
+                            }
+                        } else if (userMatch) {
+                            const [, instance, username] = userMatch;
+                            const slug = mapInstanceUrlDiscourse(instance);
+                            if (slug) {
+                                navigate({ to: '/u/$discourseId/$userId', params: { discourseId: slug, userId: username } });
+                                return;
+                            }
+                        }
+
+                        // Fallback to external link if mapping fails
+                        (async () => {
+                            await trackLinkClick(a.href, discourseId, topicId, postId);
+                            window.open(a.href, '_blank', 'noopener,noreferrer');
+                        })();
+                    };
+                } else {
+                    onClick = (e: MouseEvent) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        (async () => {
+                            await trackLinkClick(a.href, discourseId, topicId, postId);
+                            window.open(a.href, '_blank', 'noopener,noreferrer');
+                        })();
+                    };
+                }
             }
 
             a.setAttribute('target', '_blank');
@@ -164,7 +202,7 @@ export const Prose: FC<{
         return () => {
             handlers.forEach(({ a, onClick }) => a.removeEventListener('click', onClick));
         };
-    }, [content, ref]);
+    }, [content, ref, discourseId, topicId, postId, navigate]);
 
     return <div ref={ref} dangerouslySetInnerHTML={{ __html: content }} className="prose" />;
 };
