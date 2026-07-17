@@ -64,8 +64,8 @@ impl PMMeetingData {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Object)]
 pub struct PMRecurringMeeting {
-    pub meeting_id: String,
-    pub is_recurring: bool, // true
+    pub meeting_id: Option<String>,
+    pub is_recurring: Option<bool>,
     pub occurrence_rate: Option<String>,
     pub call_series: Option<String>,
     pub zoom_link: Option<String>,
@@ -80,7 +80,7 @@ pub struct PMOccurrence {
     pub occurrence_number: u32,
     pub issue_number: Option<u32>,
     pub issue_title: Option<String>,
-    #[serde(deserialize_with = "deserialize_optional_string_from_string_or_number")]
+    #[serde(default, deserialize_with = "deserialize_optional_string_from_string_or_number")]
     pub discourse_topic_id: Option<String>,
     pub start_time: Option<DateTime<Utc>>,
     pub duration: Option<u32>,
@@ -108,13 +108,13 @@ pub struct PMYoutubeStream {
 
 #[derive(Debug, Serialize, Deserialize, Clone, Object)]
 pub struct PMOneOffMeeting {
-    #[serde(deserialize_with = "deserialize_optional_string_from_string_or_number")]
+    #[serde(default, deserialize_with = "deserialize_optional_string_from_string_or_number")]
     pub discourse_topic_id: Option<String>,
     pub issue_title: Option<String>,
     pub start_time: Option<DateTime<Utc>>,
     pub duration: Option<u32>,
     pub issue_number: Option<u32>,
-    pub meeting_id: String,
+    pub meeting_id: Option<String>,
     #[serde(rename = "Youtube_upload_processed")]
     pub youtube_upload_processed: Option<bool>,
     pub transcript_processed: Option<bool>,

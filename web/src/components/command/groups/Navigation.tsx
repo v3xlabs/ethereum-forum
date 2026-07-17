@@ -9,7 +9,6 @@ const navItems = [
     { title: 'Roadmap', href: '/r', short: 'Hardforks' },
     { title: 'Standards', href: '/s', short: 'EIPs & ERCs' },
     { title: 'Protocol Agenda', href: '/c', short: 'Calendar' },
-    { title: 'Workshop', href: '/chat/new' },
 ];
 
 export const Navigation: React.FC = () => {

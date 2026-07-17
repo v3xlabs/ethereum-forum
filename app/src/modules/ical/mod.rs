@@ -1,11 +1,14 @@
 use anyhow::Error;
 use chrono::{Duration, Utc};
 use figment::{Figment, providers::Env};
-use icalendar::{Calendar, CalendarComponent};
+use icalendar::{Calendar, CalendarComponent, Component};
 use serde::Deserialize;
 use tracing::{error, info};
 
-use crate::{models::ical::CalendarEvent, state::AppState};
+use crate::{
+    models::ical::{recurrence_id, CalendarEvent},
+    state::AppState,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ICalConfig {
@@ -27,17 +30,35 @@ pub async fn init_ical(figment: Figment) -> Option<ICalConfig> {
 
 impl ICalConfig {
     pub async fn fetch(&self) -> Result<Vec<CalendarEvent>, Error> {
-        let response = reqwest::get(&self.url).await?;
+        let response = reqwest::get(&self.url).await?.error_for_status()?;
         let body = response.text().await?;
 
-        let cal: Calendar = body.parse().unwrap();
+        let cal: Calendar = body.parse().map_err(Error::msg)?;
         let mut events: Vec<CalendarEvent> = Vec::new();
+
+        let mut overrides: std::collections::HashMap<String, std::collections::HashSet<_>> =
+            std::collections::HashMap::new();
+        for component in &cal.components {
+            if let CalendarComponent::Event(event) = component {
+                if let (Some(uid), Some(recurrence_id)) = (event.get_uid(), recurrence_id(event)) {
+                    overrides
+                        .entry(uid.to_string())
+                        .or_default()
+                        .insert(recurrence_id);
+                }
+            }
+        }
 
         // keep 365 days of history
         let now = Utc::now() - Duration::days(365);
         for calendar in cal.components {
             if let CalendarComponent::Event(event) = calendar {
-                let parsed_events = match CalendarEvent::from_event(event) {
+                let empty = std::collections::HashSet::new();
+                let excluded_starts = event
+                    .get_uid()
+                    .and_then(|uid| overrides.get(uid))
+                    .unwrap_or(&empty);
+                let parsed_events = match CalendarEvent::from_event(event, excluded_starts) {
                     Ok(events) => events,
                     Err(e) => {
                         error!("Error parsing event: {}", e);

@@ -1732,7 +1732,7 @@ export interface components {
             duration?: number;
             /** Format: uint32 */
             issue_number?: number;
-            meeting_id: string;
+            meeting_id?: string;
             youtube_upload_processed?: boolean;
             transcript_processed?: boolean;
             /** Format: uint32 */
@@ -1748,8 +1748,8 @@ export interface components {
         };
         /** PMRecurringMeeting */
         PMRecurringMeeting: {
-            meeting_id: string;
-            is_recurring: boolean;
+            meeting_id?: string;
+            is_recurring?: boolean;
             occurrence_rate?: string;
             call_series?: string;
             zoom_link?: string;

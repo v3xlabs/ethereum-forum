@@ -96,10 +96,29 @@ impl CalendarEvent {
         // info!("calendar_event: {:?} {:?}", self.start, self.meetings);
         // info!("pm_data: {:?}", pm_data);
 
+        let calendar_event = CalendarEvent {
+            description: self.description.as_deref().map(clean_description),
+            ..self
+        };
+
         Ok(RichCalendarEvent {
-            calendar_event: self,
+            calendar_event,
             pm_data,
             pm_number,
         })
     }
+}
+
+fn clean_description(body: &str) -> String {
+    let issue_line_regex = Regex::new(
+        r#"(?im)^[ \t]*Issue[ \t]*:[ \t]*(?:<a[^>]*>)?https?://github\.com/ethereum/pm/issues/\d+(?:</a>)?[ \t]*$"#,
+    )
+    .unwrap();
+    let body = issue_line_regex.replace_all(body, "");
+
+    let blank_lines_regex = Regex::new(r"\n{3,}").unwrap();
+    blank_lines_regex
+        .replace_all(&body, "\n\n")
+        .trim()
+        .to_string()
 }

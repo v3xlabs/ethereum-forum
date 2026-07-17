@@ -1,9 +1,10 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use icalendar::{CalendarDateTime, Component, DatePerhapsTime, Event};
 use meetings::{try_parse_meeting, Meeting};
 use poem_openapi::{Enum, Object};
 use rrule::RRuleSet;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 pub mod meetings;
 pub mod rich;
@@ -28,7 +29,10 @@ pub enum EventOccurrence {
 }
 
 impl CalendarEvent {
-    pub fn from_event(event: Event) -> Result<Vec<Self>, anyhow::Error> {
+    pub fn from_event(
+        event: Event,
+        excluded_starts: &HashSet<DateTime<Utc>>,
+    ) -> Result<Vec<Self>, anyhow::Error> {
         let x = event.to_string();
         let mut events = vec![];
         let mut body: String = event.get_description().unwrap_or_default().to_string();
@@ -59,6 +63,11 @@ impl CalendarEvent {
                 // println!("{:?}", event);
                 let start = start.with_timezone(&Utc);
 
+                // occurrences rescheduled by a RECURRENCE-ID override event
+                if excluded_starts.contains(&start) {
+                    continue;
+                }
+
                 events.push(CalendarEvent {
                     summary: event.get_summary().map(String::from),
                     description: Some(body.clone()),
@@ -88,6 +97,12 @@ impl CalendarEvent {
 
         Ok(events)
     }
+}
+
+pub fn recurrence_id(event: &Event) -> Option<DateTime<Utc>> {
+    let value = event.property_value("RECURRENCE-ID")?;
+    let naive = NaiveDateTime::parse_from_str(value.trim_end_matches('Z'), "%Y%m%dT%H%M%S").ok()?;
+    Some(DateTime::from_naive_utc_and_offset(naive, Utc))
 }
 
 fn date_perhaps_time_to_datetime(date_perhaps_time: DatePerhapsTime) -> Option<DateTime<Utc>> {

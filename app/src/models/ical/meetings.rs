@@ -38,17 +38,14 @@ pub fn try_parse_meeting(event: &Event, body: &str) -> Result<(String, Vec<Meeti
     if let Some(location) = location {
         info!("location: {}", location);
         // https://ethereumfoundation.zoom.us/j/87569210985?pwd=3Cv1hDh7If4cq9IMXvNln1CtqQ72MR.1
-        let eth_zoom_regex =
-            Regex::new(r#"https://ethereumfoundation.zoom.us/j/(\d+)\?pwd=(\w+)"#).unwrap();
+        let zoom_regex =
+            Regex::new(r#"https://(?:[\w-]+\.)?zoom\.us/j/(\d+)(?:\?pwd=([\w.]+))?"#).unwrap();
 
-        if let Some(captures) = eth_zoom_regex.captures(location) {
-            let meeting_id = captures[1].to_string();
-            let passcode = captures[2].to_string();
-
+        if let Some(captures) = zoom_regex.captures(location) {
             meetings.push(Meeting::Zoom(ZoomMeetingData {
-                link: location.to_string(),
-                meeting_id: Some(meeting_id),
-                passcode: Some(passcode),
+                link: captures[0].to_string(),
+                meeting_id: Some(captures[1].to_string()),
+                passcode: captures.get(2).map(|m| m.as_str().to_string()),
             }));
         }
 
@@ -63,6 +60,34 @@ pub fn try_parse_meeting(event: &Event, body: &str) -> Result<(String, Vec<Meeti
             let link = captures[0].to_string();
             meetings.push(Meeting::Google(GoogleMeetingData { link }));
         }
+    }
+
+    // ACDbot-style descriptions: "Meeting: https://...zoom.us/j/<id>?pwd=<pwd>\n\nIssue: ..."
+    let zoom_body_regex =
+        Regex::new(r#"https://(?:[\w-]+\.)?zoom\.us/j/(\d+)(?:\?pwd=([\w.]+))?"#).unwrap();
+    if let Some(captures) = zoom_body_regex.captures(&new_body) {
+        meetings.push(Meeting::Zoom(ZoomMeetingData {
+            link: captures[0].to_string(),
+            meeting_id: Some(captures[1].to_string()),
+            passcode: captures.get(2).map(|m| m.as_str().to_string()),
+        }));
+    }
+
+    let google_body_regex = Regex::new(r#"https://meet\.google\.com/[a-zA-Z0-9_\-]+"#).unwrap();
+    if let Some(captures) = google_body_regex.captures(&new_body) {
+        meetings.push(Meeting::Google(GoogleMeetingData {
+            link: captures[0].to_string(),
+        }));
+    }
+
+    let youtube_body_regex = Regex::new(
+        r#"https://(?:www\.)?(?:youtube\.com/(?:watch\?v=|live/)[^\s<,"\\]+|youtu\.be/[^\s<,"\\]+)"#,
+    )
+    .unwrap();
+    if let Some(captures) = youtube_body_regex.captures(&new_body) {
+        meetings.push(Meeting::Youtube(YoutubeMeetingData {
+            link: captures[0].to_string(),
+        }));
     }
 
     // 'Join Zoom Meeting'
@@ -185,6 +210,17 @@ pub fn try_parse_meeting(event: &Event, body: &str) -> Result<(String, Vec<Meeti
             info!("no google meet found {}", new_body);
         }
     }
+
+    // strip the extracted meeting links back out of the description
+    let meeting_line_regex =
+        Regex::new(r#"(?im)^[ \t]*(?:Meeting|Zoom)[ \t]*:[ \t]*(?:https?://)?\S+[ \t]*$"#).unwrap();
+    new_body = meeting_line_regex.replace_all(&new_body, "").to_string();
+
+    let bare_link_line_regex = Regex::new(
+        r#"(?im)^[ \t]*https?://(?:(?:[\w-]+\.)?zoom\.us|meet\.google\.com|(?:www\.)?youtube\.com|youtu\.be)\S*[ \t]*$"#,
+    )
+    .unwrap();
+    new_body = bare_link_line_regex.replace_all(&new_body, "").to_string();
 
     meetings.dedup_by(|a, b| a == b);
 

@@ -1,15 +1,11 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { FC } from 'react';
-import { FiLock } from 'react-icons/fi';
-import { GrWorkshop } from 'react-icons/gr';
-import { LuBook, LuCalendar, LuHouse, LuNewspaper, LuWrench } from 'react-icons/lu';
-import { SiEthereum, SiOpenai } from 'react-icons/si';
+import { LuBook, LuCalendar, LuExternalLink, LuHouse, LuNewspaper } from 'react-icons/lu';
+import { SiEthereum } from 'react-icons/si';
 
-import { useAuth } from '../api/auth';
 import { useApp } from '../hooks/context';
 import { ProseWidthSwitcher } from './preferences/ProseWidthSwitcher';
 import { ThemeSwitcher } from './preferences/ThemeSwitcher';
-import { WorkshopChatsNav } from './workshop/WorkshopChatsNav';
 
 export const NAV_ITEMS = [
     {
@@ -36,18 +32,9 @@ export const NAV_ITEMS = [
         short: 'Hardforks',
         icon: <LuNewspaper />,
     },
-    {
-        title: 'Workshop',
-        href: '/chat/new',
-        requiresAuth: true,
-        short: 'Chat & Tools',
-        icon: <LuWrench />,
-    },
 ];
 
 export const Sidebar: FC = () => {
-    const { pathname } = useRouterState({ select: (s) => s.location });
-    const { isAuthenticated } = useAuth();
     const { isSidebarOpen } = useApp();
 
     return (
@@ -84,56 +71,43 @@ export const Sidebar: FC = () => {
                     <ul className="overflow-hidden space-y-1">
                         {NAV_ITEMS.map((item) => (
                             <li key={item.href} className="group">
-                                <Link
-                                    to={item.href}
-                                    className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1.5 relative"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <div className="">{item.icon}</div>
-                                        <span className="">{item.title}</span>
-                                        {item.requiresAuth && !isAuthenticated && (
-                                            <FiLock size={12} className="text-primary opacity-60" />
-                                        )}
-                                    </div>
-                                    {item.short && (
-                                        <span className="text-sm text-secondary text-right">
-                                            {item.short}
-                                        </span>
-                                    )}
-                                </Link>
-                                {item.href === '/chat/new' &&
-                                    pathname.startsWith('/chat') &&
-                                    isAuthenticated && (
-                                        <div className="pl-4">
-                                            <WorkshopChatsNav />
+                                {item.href === '/r' ? (
+                                    <a
+                                        href="https://forkcast.org"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1.5 relative"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div>{item.icon}</div>
+                                            <span>{item.title}</span>
                                         </div>
-                                    )}
+                                        <span className="flex items-center gap-1 text-sm text-secondary text-right">
+                                            {item.short}
+                                            <LuExternalLink size={12} />
+                                        </span>
+                                    </a>
+                                ) : (
+                                    <Link
+                                        to={item.href}
+                                        className="flex justify-between items-center hover:bg-tertiary rounded-md px-2 py-1.5 relative"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div>{item.icon}</div>
+                                            <span>{item.title}</span>
+                                        </div>
+                                        {item.short && (
+                                            <span className="text-sm text-secondary text-right">
+                                                {item.short}
+                                            </span>
+                                        )}
+                                    </Link>
+                                )}
                             </li>
                         ))}
                     </ul>
                 </nav>
                 <div className="py-4 px-4 space-y-0.5">
-                    <div className="flex items-center justify-between gap-1">
-                        <span className="text-sm">Explore</span>
-                        <div className="flex items-center gap-1">
-                            <Link
-                                to="/chat/$chatId"
-                                params={{ chatId: 'new' }}
-                                className="text-sm button flex items-center justify-center gap-1"
-                            >
-                                <GrWorkshop />
-                                Open Workshop
-                            </Link>
-                            <a
-                                href="https://chatgpt.com/g/g-68104906afb88191ae3f52c2aff36737-ethereum-forum-assistant"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm button aspect-square size-8 flex items-center justify-center"
-                            >
-                                <SiOpenai />
-                            </a>
-                        </div>
-                    </div>
                     <div className="flex items-center justify-between gap-1">
                         <span className="text-sm">Theme</span>
                         <ThemeSwitcher />
@@ -142,10 +116,6 @@ export const Sidebar: FC = () => {
                         <span className="text-sm">Text Width</span>
                         <ProseWidthSwitcher />
                     </div>
-                    {/* <div className="flex items-center justify-between gap-1 pr-1">
-                        <span className="text-sm">Last refreshed</span>
-                        <span className="text-sm">2 min ago</span>
-                    </div> */}
                 </div>
             </div>
         </div>

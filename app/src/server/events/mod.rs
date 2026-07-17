@@ -20,13 +20,23 @@ impl EventsApi {
     #[oai(path = "/events", method = "get", tag = "ApiTags::Events")]
     async fn list(&self, state: Data<&AppState>) -> Result<Json<Vec<RichCalendarEvent>>> {
         if let Some(ical) = &state.ical {
-            let events = ical.fetch_upcoming(&state).await.unwrap();
+            let events = ical
+                .fetch_upcoming(&state)
+                .await
+                .map_err(|e| poem::Error::from_string(e.to_string(), StatusCode::BAD_GATEWAY))?;
             let events: Vec<CalendarEvent> = events.iter().take(32).cloned().collect();
 
             // async map
-            let x = stream::iter(events).then(|event| async {
-                event.rich(&state).await.unwrap()
-            }).collect::<Vec<RichCalendarEvent>>().await;
+            let x = stream::iter(events)
+                .then(|event| async {
+                    event.rich(&state).await.map_err(|e| {
+                        poem::Error::from_string(e.to_string(), StatusCode::BAD_GATEWAY)
+                    })
+                })
+                .collect::<Vec<Result<RichCalendarEvent>>>()
+                .await;
+
+            let x = x.into_iter().collect::<Result<Vec<RichCalendarEvent>>>()?;
 
             return Ok(Json(x));
         }
@@ -40,13 +50,23 @@ impl EventsApi {
     #[oai(path = "/events/recent", method = "get", tag = "ApiTags::Events")]
     async fn recent(&self, state: Data<&AppState>) -> Result<Json<Vec<RichCalendarEvent>>> {
         if let Some(ical) = &state.ical {
-            let events = ical.fetch_recent(&state).await.unwrap();
+            let events = ical
+                .fetch_recent(&state)
+                .await
+                .map_err(|e| poem::Error::from_string(e.to_string(), StatusCode::BAD_GATEWAY))?;
             let events: Vec<CalendarEvent> = events.iter().take(32).cloned().collect();
 
             // async map
-            let x = stream::iter(events).then(|event| async {
-                event.rich(&state).await.unwrap()
-            }).collect::<Vec<RichCalendarEvent>>().await;
+            let x = stream::iter(events)
+                .then(|event| async {
+                    event.rich(&state).await.map_err(|e| {
+                        poem::Error::from_string(e.to_string(), StatusCode::BAD_GATEWAY)
+                    })
+                })
+                .collect::<Vec<Result<RichCalendarEvent>>>()
+                .await;
+
+            let x = x.into_iter().collect::<Result<Vec<RichCalendarEvent>>>()?;
 
             return Ok(Json(x));
         }
