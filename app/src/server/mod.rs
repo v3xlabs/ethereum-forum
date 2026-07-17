@@ -91,13 +91,16 @@ pub async fn start_http(state: AppState) {
 
     let path = std::path::Path::new("./www");
 
+    let assets_endpoint = StaticFilesEndpoint::new(path.join("assets"));
     let spa_endpoint = StaticFilesEndpoint::new(path)
         .show_files_listing()
         .index_file("index.html")
         .fallback_to_index()
+        .no_cache_index()
         .with(opengraph);
 
     let app = Route::new()
+        .nest("/assets", assets_endpoint)
         .nest("/", spa_endpoint)
         .nest("/openapi.json", spec)
         .nest("/docs", get(get_openapi_docs))
