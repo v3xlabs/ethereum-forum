@@ -87,6 +87,7 @@ export default {
         },
     },
     plugins: [
+        require('@tailwindcss/container-queries'),
         function ({ addUtilities }) {
             const newUtilities = {
                 '.animation-delay-0': {
