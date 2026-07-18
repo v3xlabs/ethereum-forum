@@ -5,6 +5,7 @@ import { match } from 'ts-pattern';
 
 import { useEventsRecent, useEventsUpcoming } from '@/api/events';
 
+import { CalendarOverview } from './CalendarOverview';
 import { Meetings } from './Meetings';
 import { AgendaVideos } from './Videos';
 
@@ -16,8 +17,8 @@ export const AgendaContent: FC = () => {
     return (
         <>
             <div className="card">
-                <div className="flex justify-between">
-                    <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                    <div className="self-start">
                         <h2 className="text-lg font-bold">Protocol Agenda</h2>
                         <p>
                             the protocol agenda is a shared calendar that includes all meetings and
@@ -56,7 +57,7 @@ export const AgendaContent: FC = () => {
                     Upcoming
                 </button>
                 <button
-                    className={classNames('tab button', tab === 'recent' && 'active')}
+                    className={classNames('tab button', tab === 'videos' && 'active')}
                     onClick={() => setTab('recent')}
                 >
                     Recent
@@ -69,7 +70,12 @@ export const AgendaContent: FC = () => {
                 </button>
             </div>
             {match(tab)
-                .with('upcoming', () => <Meetings data={upcoming ?? []} key="upcoming" />)
+                .with('upcoming', () => (
+                    <div className="space-y-4">
+                        <CalendarOverview data={upcoming ?? []} />
+                        <Meetings data={upcoming ?? []} key="upcoming" />
+                    </div>
+                ))
                 .with('recent', () => <Meetings data={recent ?? []} key="recent" />)
                 .with('videos', () => <AgendaVideos />)
                 .exhaustive()}

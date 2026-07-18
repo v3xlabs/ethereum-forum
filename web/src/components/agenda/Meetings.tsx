@@ -5,10 +5,10 @@ import { FC, useMemo } from 'react';
 import { SiGithub, SiGooglemeet, SiYoutube, SiZoom } from 'react-icons/si';
 
 import { CalendarEvent } from '@/api/events';
-import { convertYoutubeUrlToThumbnailUrl, getOccurence } from '@/routes/pm/$issueId';
 
 import { TimeAgo } from '../TimeAgo';
 import { CalendarDays } from './CalendarDays';
+import { getYoutubeVideoId } from './Videos';
 
 export const Meetings: FC<{ data: CalendarEvent[] }> = ({ data }) => <CalendarDays data={data} />;
 
@@ -69,7 +69,7 @@ const MeetingStatus = ({ event }: { event: CalendarEvent }) => {
 
 const CompactMeetingButtons: FC<{
     event: CalendarEvent;
-    youtubeStream: string;
+    youtubeStream?: string;
 }> = ({ event, youtubeStream }) => {
     const showButtons =
         !!event.start && (isMeetingIn6Hours(event.start) || isMeetingLive(event.start));
@@ -116,7 +116,7 @@ const CompactMeetingButtons: FC<{
 
 const ExpandedMeetingButtons: FC<{
     event: CalendarEvent;
-    youtubeStream: string;
+    youtubeStream?: string;
 }> = ({ event, youtubeStream }) => {
     const showButtons =
         !!event.start && (isMeetingIn6Hours(event.start) || isMeetingLive(event.start));
@@ -158,8 +158,14 @@ const ExpandedMeetingButtons: FC<{
 };
 
 export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
-    const occurrence = getOccurence(event.pm_data, event.pm_number);
+    const occurrence =
+        event.pm_data && 'occurrences' in event.pm_data
+            ? event.pm_data.occurrences?.find(
+                  (candidate) => candidate.issue_number === event.pm_number
+              )
+            : undefined;
     const youtubeStream = occurrence?.youtube_streams?.[0]?.stream_url;
+    const youtubeVideoId = youtubeStream ? getYoutubeVideoId(youtubeStream) : null;
 
     const cardContent = (
         <>
@@ -169,18 +175,30 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
             </div>
 
             <div className="flex gap-2">
-                {/* yt link should be embedded */}
-                {youtubeStream && (
-                    <Link to={youtubeStream}>
-                        <img
-                            src={convertYoutubeUrlToThumbnailUrl(youtubeStream)}
-                            alt="YouTube Stream"
-                            className="w-60 aspect-video object-cover rounded"
-                        />
+                {youtubeStream && youtubeVideoId && (
+                    <Link
+                        to={youtubeStream}
+                        className="flex w-60 aspect-video shrink-0 items-center justify-center rounded bg-secondary text-sm text-secondary hover:bg-tertiary"
+                    >
+                        Watch on YouTube
                     </Link>
                 )}
                 <div className="space-y-1 break-all">
-                    <h3 className="font-bold">{event.summary}</h3>
+                    <h3 className="font-bold">
+                        {event.pm_number ? (
+                            <Link
+                                to="/pm/$issueId"
+                                params={{ issueId: event.pm_number.toString() }}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:underline"
+                            >
+                                {event.summary}
+                            </Link>
+                        ) : (
+                            event.summary
+                        )}
+                    </h3>
                     {event.description && <p>{parse(event.description)}</p>}
                 </div>
             </div>
@@ -189,20 +207,7 @@ export const MeetingCard = ({ event }: { event: CalendarEvent }) => {
         </>
     );
 
-    return event.pm_number ? (
-        <Link
-            to="/pm/$issueId"
-            params={{ issueId: event.pm_number?.toString() }}
-            target="_blank"
-            rel="noopener noreferrer"
-            title="View on GitHub"
-            className="card space-y-1 pointer block"
-        >
-            {cardContent}
-        </Link>
-    ) : (
-        <div className="card space-y-1">{cardContent}</div>
-    );
+    return <div className="card space-y-1">{cardContent}</div>;
 };
 
 export const DebugRichData = ({ event }: { event: unknown }) => {

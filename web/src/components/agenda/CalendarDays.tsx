@@ -13,7 +13,10 @@ const DayHeader: FC<{ date: string }> = ({ date }) => {
     if (isTomorrow(date)) prefix = 'Tomorrow';
 
     return (
-        <h2 className="text-base text-primary py-2 mt-2 inline-block">
+        <h2
+            id={`agenda-day-${format(date, 'yyyy-MM-dd')}`}
+            className="text-base text-primary py-2 mt-2 inline-block scroll-mt-12"
+        >
             <span className="font-semibold">{prefix} </span>
             <span className="font-normal text-primary/70">{format(date, 'EEEE')}</span>
         </h2>
