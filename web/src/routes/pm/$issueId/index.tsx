@@ -24,7 +24,7 @@ const RouteComponent = () => {
     const { issueId } = Route.useParams();
     const { data: pm } = usePM(Number(issueId));
     const occurence = getOccurence(pm as any, Number(issueId));
-    const { data: discoursePosts } = usePosts("magicians", occurence?.discourse_topic_id || '', 1);
+    const { data: discoursePosts } = usePosts('magicians', occurence?.discourse_topic_id || '', 1);
     const { data: githubPosts } = useGithubIssueComments(parseInt(issueId) || 0);
 
     const ghPosts = (Array.isArray(githubPosts) ? githubPosts : []).map((post) => ({
@@ -42,12 +42,9 @@ const RouteComponent = () => {
     const posts = [...(ghPosts ?? []), ...(dsPosts ?? [])];
 
     posts.forEach((post) => {
-        const youtubeLinks =
-            (post?.type === 'discourse'
-                ? post.post.cooked || ""
-                : post.post.body).match(
-                    /(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g
-                );
+        const youtubeLinks = (
+            post?.type === 'discourse' ? post.post.cooked || '' : post.post.body
+        ).match(/(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/[^\s"'<>)\]]+/g);
 
         if (
             youtubeLinks &&
@@ -62,15 +59,16 @@ const RouteComponent = () => {
                 if (!url) return;
 
                 const videoId = parseYoutubeUrl(url);
+
                 if (!videoId) return;
 
                 const alreadyExists = occurence.youtube_streams!.some(
-                    (stream) => stream.stream_url === "https://youtube.com/watch?v=" + videoId
+                    (stream) => stream.stream_url === 'https://youtube.com/watch?v=' + videoId
                 );
 
                 if (!alreadyExists) {
                     occurence.youtube_streams!.push({
-                        stream_url: "https://youtube.com/watch?v=" + videoId,
+                        stream_url: 'https://youtube.com/watch?v=' + videoId,
                         extra: {},
                     });
                 }

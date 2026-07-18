@@ -2,8 +2,10 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { createFileRoute, useLocation, useNavigate, useParams } from '@tanstack/react-router';
 import { FC, useEffect, useMemo, useState } from 'react';
 import { LuArrowRight, LuClipboard, LuListTree, LuLoader, LuShare } from 'react-icons/lu';
+import { toast } from 'sonner';
 import { match, P } from 'ts-pattern';
 
+import { useAuth } from '@/api';
 import {
     getWorkshopChat,
     useWorkshopChat,
@@ -24,8 +26,6 @@ import {
     updatePath,
 } from '@/util/messageTree';
 import { queryClient } from '@/util/query';
-import { useAuth } from '@/api';
-import { toast } from 'sonner';
 
 const suggestions = [
     'Find topics related to risc-v in the evm and evaluate me the opinions of all parties involved.',
@@ -441,7 +441,7 @@ const InputBox = ({
 export const ShareButton: FC<{ chatId: string; messageId: string }> = ({ chatId, messageId }) => {
     const { mutate: shareChat } = useWorkshopChatShare();
     const navigate = useNavigate();
-    const { user} = useAuth();
+    const { user } = useAuth();
 
     return (
         <Dialog.Root>

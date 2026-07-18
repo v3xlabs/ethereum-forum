@@ -6,6 +6,7 @@ export const CategoryTag = ({ tag }: { tag: string }) => {
     return (
         <div
             key={tag}
+            title={tag}
             className={classNames(
                 'text-sm text-white px-1 border border-primary relative bg-primary'
             )}

@@ -5,27 +5,18 @@ import { TopicList } from '@/components/topic/TopicList';
 import { TopicsTrending } from '@/components/topic/TopicsTrending';
 
 export const Route = createFileRoute('/')({
-    component: RouteComponent,
+    component: () => <RouteComponent />,
 });
 
-function RouteComponent() {
+const RouteComponent = () => {
     return (
         <>
-            {/* <div className="right-bar p-4"> */}
-            {/* <ProtocolAgendaUpcoming /> */}
-            {/* </div> */}
-            <div className="mx-auto w-full max-w-screen-lg pt-8 px-2 space-y-4">
-                <div className="space-y-4 mx-auto">
-                    {/* <div className="card flex-1 flex flex-col gap-1 h-fit col-span-full w-full">
-                        <h1 className="">Welcome to Ethereum Forum!</h1>
-                        <p className="text-secondary">
-                            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam, quos.
-                        </p>
-                    </div> */}
+            <div className="mx-auto w-full max-w-6xl space-y-6 px-3 pt-8">
+                <main className="space-y-6">
                     <TopicsTrending />
                     <TopicList />
-                </div>
-                <div className="w-full flex items-center justify-center gap-4 text-sm pb-8">
+                </main>
+                <footer className="flex w-full items-center justify-center gap-4 pb-8 text-sm">
                     <div className="flex items-center gap-1">
                         <a
                             href="/docs"
@@ -62,8 +53,8 @@ function RouteComponent() {
                         <LuGithub className="size-4" />
                         <span>Contribute</span>
                     </a>
-                </div>
+                </footer>
             </div>
         </>
     );
-}
+};

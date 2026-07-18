@@ -111,6 +111,27 @@ body {
     padding: 0;
 }
 
+.trending-track {
+    scrollbar-width: none;
+}
+
+.trending-track::-webkit-scrollbar {
+    height: 0;
+}
+
+.trending-track:hover {
+    scrollbar-width: thin;
+}
+
+.trending-track:hover::-webkit-scrollbar {
+    height: 0.5rem;
+}
+
+.trending-track > div > .card {
+    height: 100%;
+    box-shadow: none;
+}
+
 .button {
     @apply px-3 py-1.5 bg-primary text-primary hover:bg-tertiary hover:text-primary rounded-md;
 }
