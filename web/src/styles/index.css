@@ -179,7 +179,7 @@ input.input {
 
 html:not(.prose-page) {
     .left-bar {
-        @apply w-full md:max-w-[340px] h-full;
+        @apply w-[min(85vw,340px)] md:w-full md:max-w-[340px] h-full;
         @apply 3xl:overflow-y-auto;
     }
     .right-bar {
@@ -191,7 +191,7 @@ html:not(.prose-page) {
 html.prose-page {
     &:not(.prose-wide) {
         .left-bar {
-            @apply w-full md:max-w-[340px] h-full;
+            @apply w-[min(85vw,340px)] md:w-full md:max-w-[340px] h-full;
             @apply 2xl:overflow-y-auto;
         }
         .right-bar {
@@ -201,7 +201,7 @@ html.prose-page {
     }
     &.prose-wide {
         .left-bar {
-            @apply w-full md:max-w-[340px] h-full;
+            @apply w-[min(85vw,340px)] md:w-full md:max-w-[340px] h-full;
             @apply 3xl:overflow-y-auto;
         }
         .right-bar {
