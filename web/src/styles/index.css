@@ -111,20 +111,38 @@ body {
     padding: 0;
 }
 
-.trending-track {
-    scrollbar-width: none;
-}
-
 .trending-track::-webkit-scrollbar {
-    height: 0;
+    height: 0.375rem;
 }
 
-.trending-track:hover {
-    scrollbar-width: auto;
+.trending-track:not(:hover)::-webkit-scrollbar,
+.trending-track:not(:hover)::-webkit-scrollbar-thumb {
+    background-color: transparent;
 }
 
-.trending-track:hover::-webkit-scrollbar {
-    height: 0.5rem;
+@supports not selector(::-webkit-scrollbar) {
+    html {
+        scrollbar-color: rgb(var(--theme-bg-tertiary)) rgb(var(--theme-bg-secondary));
+    }
+
+    html.light {
+        scrollbar-color: rgb(var(--theme-border)) rgb(var(--theme-bg-secondary));
+    }
+
+    @media (prefers-color-scheme: light) {
+        html.system {
+            scrollbar-color: rgb(var(--theme-border)) rgb(var(--theme-bg-secondary));
+        }
+    }
+
+    .trending-track {
+        scrollbar-width: thin;
+        scrollbar-color: transparent transparent;
+    }
+
+    .trending-track:hover {
+        scrollbar-color: inherit;
+    }
 }
 
 .trending-track > div > .card {
