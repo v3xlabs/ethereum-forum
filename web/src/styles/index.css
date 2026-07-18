@@ -120,7 +120,7 @@ body {
 }
 
 .trending-track:hover {
-    scrollbar-width: thin;
+    scrollbar-width: auto;
 }
 
 .trending-track:hover::-webkit-scrollbar {
@@ -450,6 +450,18 @@ html.scrolled .only-after-scroll {
 }
 ::-webkit-scrollbar-thumb {
     @apply bg-tertiary;
+}
+
+html.light::-webkit-scrollbar-thumb,
+html.light *::-webkit-scrollbar-thumb {
+    @apply bg-grey;
+}
+
+@media (prefers-color-scheme: light) {
+    html.system::-webkit-scrollbar-thumb,
+    html.system *::-webkit-scrollbar-thumb {
+        @apply bg-grey;
+    }
 }
 
 .inline-onebox {
