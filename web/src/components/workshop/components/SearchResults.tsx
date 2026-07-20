@@ -1,10 +1,14 @@
 import classNames from 'classnames';
-import React, { useState } from 'react';
+import React, { FC, useState } from 'react';
 import { LuChevronDown, LuChevronLeft, LuHash, LuMessageSquare, LuSearch } from 'react-icons/lu';
+import { match } from 'ts-pattern';
+import { LoadingIcon } from 'yet-another-react-lightbox';
+
+import { Post, usePosts, useTopic } from '@/api';
 
 import { PostCard } from '../cards/PostCard';
 import { TopicCard } from '../cards/TopicCard';
-import type { Post, SearchEntity, SearchResult, TopicSummary } from '../types';
+import { SearchEntity, SearchResult, TopicSummary } from '../types';
 
 interface SearchResultsProps {
     data: SearchResult | SearchEntity[];
@@ -26,59 +30,52 @@ const getResultsMessage = (toolName: string, topicCount: number, postCount: numb
     }
 };
 
-// Transform search entity to topic/post format
-const transformSearchEntity = (entity: SearchEntity): TopicSummary | Post | null => {
-    if (entity.entity_type === 'topic') {
-        return {
-            id: entity.topic_id || 0,
-            title: entity.title || 'Untitled Topic',
-            posts_count: 0,
-            created_at: '',
-            last_posted_at: '',
-            views: 0,
-            like_count: 0,
-        };
-    }
+// basic implementation of hooks, change to ts pattern ?
+const Topics: FC<{ entity: SearchEntity }> = ({ entity }) => {
+    const query = useTopic(entity.discourse_id ?? 'magicians', (entity.topic_id ?? 0).toString());
 
-    if (entity.entity_type === 'post') {
-        return {
-            id: entity.post_id || 0,
-            topic_id: entity.topic_id || 0,
-            post_number: entity.post_number || 0,
-            cooked: entity.cooked || '',
-            created_at: '',
-            username: entity.username || 'Unknown User',
-        };
-    }
-
-    return null;
+    return match(query)
+        .with({ status: 'pending' }, () => <LoadingIcon />)
+        .with({ status: 'error' }, ({ error }) => (
+            <p className="text-red-500">Error: Topic not found {error.message}</p>
+        ))
+        .with(
+            { status: 'success' },
+            ({ data: topic }) => topic && <TopicCard topic={topic as TopicSummary} />
+        )
+        .exhaustive();
 };
 
-export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) => {
-    let topics: TopicSummary[] = [];
-    let posts: Post[] = [];
+const Posts: FC<{ entity: SearchEntity }> = ({ entity }) => {
+    const query = usePosts(
+        entity.discourse_id ?? 'magicians',
+        (entity.topic_id ?? 1).toString(),
+        1
+    );
 
+    return match(query)
+        .with({ status: 'pending' }, () => <LoadingIcon />)
+        .with({ status: 'error' }, ({ error }) => (
+            <p className="text-red-500">Error: Post not found {error.message}</p>
+        ))
+        .with({ status: 'success' }, ({ data: postData }) => {
+            const post = postData?.posts.find((p) => p.post_number === entity.post_number);
+
+            if (post) return <PostCard post={post as Post} entity={entity} />;
+        })
+        .exhaustive();
+};
+
+export const SearchResults: FC<SearchResultsProps> = ({ data, toolName }) => {
     // Individual expansion states for each section
     const [isTopicsExpanded, setIsTopicsExpanded] = useState(false);
     const [isPostsExpanded, setIsPostsExpanded] = useState(false);
 
-    // Handle different data formats
-    if (Array.isArray(data)) {
-        // SearchEntity[] format
-        data.forEach((entity) => {
-            const transformed = transformSearchEntity(entity);
+    // Filter topic & post search result entities
+    const entities: SearchEntity[] = Array.isArray(data) ? data : [];
 
-            if (transformed && entity.entity_type === 'topic') {
-                topics.push(transformed as TopicSummary);
-            } else if (transformed && entity.entity_type === 'post') {
-                posts.push(transformed as Post);
-            }
-        });
-    } else {
-        // SearchResult format
-        topics = data.topics || [];
-        posts = data.posts || [];
-    }
+    const topics = entities.filter((entity) => entity.entity_type === 'topic');
+    const posts = entities.filter((entity) => entity.entity_type === 'post');
 
     const topicCount = topics.length;
     const postCount = posts.length;
@@ -132,7 +129,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
                             )}
                         >
                             {topicsToShow.map((topic) => (
-                                <TopicCard key={topic.id} topic={topic} />
+                                <Topics key={topic.topic_id} entity={topic} />
                             ))}
                         </div>
                     )}
@@ -167,9 +164,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ data, toolName }) 
                                 hasManyPosts ? 'max-h-80 overflow-y-auto' : ''
                             )}
                         >
-                            {postsToShow.map((post) => (
-                                <PostCard key={post.id} post={post} />
-                            ))}
+                            {postsToShow.map(
+                                (post) => post && <Posts key={post.post_id} entity={post} />
+                            )}
                         </div>
                     )}
                 </div>
