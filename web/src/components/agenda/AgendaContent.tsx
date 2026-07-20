@@ -3,21 +3,23 @@ import { FC, useState } from 'react';
 import { LuCalendar } from 'react-icons/lu';
 import { match } from 'ts-pattern';
 
-import { useEventsRecent, useEventsUpcoming } from '@/api/events';
+import { useEvents, useEventsRecent, useEventsUpcoming } from '@/api/events';
 
+import { CalendarOverview } from './CalendarOverview';
 import { Meetings } from './Meetings';
 import { AgendaVideos } from './Videos';
 
 export const AgendaContent: FC = () => {
     const [tab, setTab] = useState<'upcoming' | 'recent' | 'videos'>('upcoming');
+    const { data: events } = useEvents();
     const { data: upcoming } = useEventsUpcoming();
     const { data: recent } = useEventsRecent();
 
     return (
         <>
             <div className="card">
-                <div className="flex justify-between">
-                    <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                    <div className="self-start">
                         <h2 className="text-lg font-bold">Protocol Agenda</h2>
                         <p>
                             the protocol agenda is a shared calendar that includes all meetings and
@@ -62,14 +64,19 @@ export const AgendaContent: FC = () => {
                     Recent
                 </button>
                 <button
-                    className={classNames('tab button', tab === 'recent' && 'active')}
+                    className={classNames('tab button', tab === 'videos' && 'active')}
                     onClick={() => setTab('videos')}
                 >
                     Videos
                 </button>
             </div>
             {match(tab)
-                .with('upcoming', () => <Meetings data={upcoming ?? []} key="upcoming" />)
+                .with('upcoming', () => (
+                    <div className="space-y-4">
+                        <CalendarOverview data={[...(recent ?? []), ...(events ?? [])]} />
+                        <Meetings data={upcoming ?? []} key="upcoming" />
+                    </div>
+                ))
                 .with('recent', () => <Meetings data={recent ?? []} key="recent" />)
                 .with('videos', () => <AgendaVideos />)
                 .exhaustive()}

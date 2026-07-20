@@ -1,74 +1,150 @@
-import { FC } from 'react';
-import LiteYouTubeEmbed from 'react-lite-youtube-embed';
+import { format, parseISO } from 'date-fns';
+import { FC, useState } from 'react';
+import { LuExternalLink, LuPlay } from 'react-icons/lu';
 
-import { useEventsRecent } from '@/api/events';
+import { CalendarEvent, useEventsRecent } from '@/api/events';
 
-const parseYoutubeUrl = (url: string) => {
-    if (!url) {
+export const getYoutubeVideoId = (url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        const hostname = parsedUrl.hostname.replace('www.', '');
+
+        if (hostname === 'youtu.be') return parsedUrl.pathname.slice(1).split('/')[0] || null;
+
+        if (hostname.endsWith('youtube.com')) {
+            return (
+                parsedUrl.searchParams.get('v') ||
+                parsedUrl.pathname.match(/\/(?:embed|live|shorts)\/([^/]+)/)?.[1] ||
+                null
+            );
+        }
+    } catch {
         return null;
-    }
-
-    if (url.includes('youtu.be/')) {
-        return url.split('youtu.be/')[1];
-    }
-
-    if (url.includes('v=')) {
-        return url.split('v=')[1];
     }
 
     return null;
 };
 
-// https://i3.ytimg.com/vi/YvlLhvICtbc/maxresdefault.jpg
-export const convertYoutubeUrlToThumbnailUrl = (url: string) => {
-    const videoId = parseYoutubeUrl(url);
+const getYoutubeThumbnailUrl = (videoId: string) =>
+    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
-    return `https://i3.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+type Video = {
+    videoId: string;
+    url: string;
+    title: string;
+    start?: string;
+    pmNumber?: number;
+};
+
+const getEventVideos = (event: CalendarEvent): Video[] => {
+    const meetingVideos = event.meetings
+        .filter((meeting) => meeting.type === 'Youtube')
+        .map((meeting) => meeting.link);
+    const occurrenceVideos =
+        event.pm_data && 'occurrences' in event.pm_data
+            ? (event.pm_data.occurrences ?? []).flatMap(
+                  (occurrence) =>
+                      occurrence.youtube_streams?.map((stream) => stream.stream_url) ?? []
+              )
+            : [];
+
+    return [...meetingVideos, ...occurrenceVideos].flatMap((url) => {
+        if (!url) return [];
+
+        const videoId = getYoutubeVideoId(url);
+
+        return videoId
+            ? [
+                  {
+                      videoId,
+                      url,
+                      title: event.summary || 'Protocol meeting',
+                      start: event.start,
+                      pmNumber: event.pm_number,
+                  },
+              ]
+            : [];
+    });
+};
+
+const VideoPreview: FC<{ video: Video }> = ({ video }) => {
+    const [hasThumbnail, setHasThumbnail] = useState(true);
+
+    return (
+        <div className="relative flex aspect-video items-center justify-center bg-secondary">
+            {hasThumbnail && (
+                <img
+                    src={getYoutubeThumbnailUrl(video.videoId)}
+                    alt=""
+                    className="size-full object-cover"
+                    loading="lazy"
+                    onError={() => setHasThumbnail(false)}
+                />
+            )}
+            <span className="absolute flex items-center gap-2 rounded-full border border-primary/50 bg-primary/90 px-3 py-1.5 text-sm text-primary transition-colors group-hover:bg-tertiary">
+                <LuPlay className="size-4 text-secondary" />
+                Watch recording
+            </span>
+        </div>
+    );
+};
+
+const getMeetingDetails = (video: Video) => {
+    const details = [
+        video.start ? format(parseISO(video.start), 'MMM d, yyyy HH:mm') : null,
+        video.pmNumber ? `PM #${video.pmNumber}` : null,
+    ].filter((detail): detail is string => Boolean(detail));
+
+    return details.join(' · ');
 };
 
 export const AgendaVideos: FC = () => {
-    // past events
-    // filter by youtube video only
     const { data: recent } = useEventsRecent();
-    const videos = recent?.filter(
-        (event) =>
-            event.meetings.some((meeting) => meeting.type.toLowerCase() === 'youtube') ||
-            // @ts-ignore
-            event.pm_data?.['occurrences']?.some((occurrence) => occurrence['youtube_streams'])
+    const allVideos = Array.from(
+        new Map(
+            (recent ?? []).flatMap(getEventVideos).map((video) => [video.videoId, video])
+        ).values()
     );
+    const videos = allVideos.slice(0, 24);
 
     return (
-        <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Videos</h2>
-            <hr className="border-t border-primary" />
-            <div className="card">
-                <p>This page is under construction.</p>
+        <div className="space-y-3">
+            <div className="flex items-baseline justify-between gap-3">
+                <div>
+                    <h2 className="text-lg font-bold">Recordings</h2>
+                    <p className="text-sm text-primary/70">Recent protocol meeting videos</p>
+                </div>
+                <span className="text-sm text-primary/70">
+                    {videos.length} of {allVideos.length} videos
+                </span>
             </div>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {videos?.map((event) => (
-                    <li key={'video' + event.uid} className="border p-2">
-                        <h3>{event.summary}</h3>
-                        <ul className="flex flex-col gap-2">
-                            {event.pm_data?.['occurrences']?.map((occurrence) => (
-                                <li key={occurrence.occurrence_id} className="card">
-                                    {JSON.stringify(occurrence['youtube_streams'])}
-                                    {occurrence['youtube_streams']?.map((stream) => (
-                                        <li key={stream.stream_url}>
-                                            <LiteYouTubeEmbed
-                                                id={parseYoutubeUrl(stream.stream_url || '') || ''}
-                                                title={'PM Meeting'} // For accessibility, never shown
-                                                adNetwork={false}
-                                                poster="maxresdefault"
-                                                cookie={false}
-                                            />{' '}
-                                        </li>
-                                    ))}
-                                </li>
-                            ))}
-                        </ul>
-                    </li>
-                ))}
-            </ul>
+            {videos.length === 0 ? (
+                <div className="card text-primary/70">No recent recordings are available.</div>
+            ) : (
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {videos.map((video) => (
+                        <li key={video.videoId} className="card no-padding overflow-hidden">
+                            <a
+                                href={video.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group block"
+                            >
+                                <VideoPreview video={video} />
+                                <div className="flex items-start justify-between gap-2 p-3">
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold">{video.title}</h3>
+                                        <p className="text-sm text-primary/70">
+                                            {getMeetingDetails(video)}
+                                        </p>
+                                    </div>
+                                    <LuExternalLink className="mt-0.5 shrink-0 text-primary/70" />
+                                </div>
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 };
