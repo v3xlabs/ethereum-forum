@@ -1,4 +1,5 @@
-import { FC } from 'react';
+import { format, parseISO } from 'date-fns';
+import { FC, useState } from 'react';
 import { LuExternalLink, LuPlay } from 'react-icons/lu';
 
 import { CalendarEvent, useEventsRecent } from '@/api/events';
@@ -24,10 +25,15 @@ export const getYoutubeVideoId = (url: string) => {
     return null;
 };
 
+const getYoutubeThumbnailUrl = (videoId: string) =>
+    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
 type Video = {
     videoId: string;
     url: string;
     title: string;
+    start?: string;
+    pmNumber?: number;
 };
 
 const getEventVideos = (event: CalendarEvent): Video[] => {
@@ -47,8 +53,49 @@ const getEventVideos = (event: CalendarEvent): Video[] => {
 
         const videoId = getYoutubeVideoId(url);
 
-        return videoId ? [{ videoId, url, title: event.summary || 'Protocol meeting' }] : [];
+        return videoId
+            ? [
+                  {
+                      videoId,
+                      url,
+                      title: event.summary || 'Protocol meeting',
+                      start: event.start,
+                      pmNumber: event.pm_number,
+                  },
+              ]
+            : [];
     });
+};
+
+const VideoPreview: FC<{ video: Video }> = ({ video }) => {
+    const [hasThumbnail, setHasThumbnail] = useState(true);
+
+    return (
+        <div className="relative flex aspect-video items-center justify-center bg-secondary">
+            {hasThumbnail && (
+                <img
+                    src={getYoutubeThumbnailUrl(video.videoId)}
+                    alt=""
+                    className="size-full object-cover"
+                    loading="lazy"
+                    onError={() => setHasThumbnail(false)}
+                />
+            )}
+            <span className="absolute flex items-center gap-2 rounded-full border border-primary/50 bg-primary/90 px-3 py-1.5 text-sm text-primary transition-colors group-hover:bg-tertiary">
+                <LuPlay className="size-4 text-secondary" />
+                Watch recording
+            </span>
+        </div>
+    );
+};
+
+const getMeetingDetails = (video: Video) => {
+    const details = [
+        video.start ? format(parseISO(video.start), 'MMM d, yyyy HH:mm') : null,
+        video.pmNumber ? `PM #${video.pmNumber}` : null,
+    ].filter((detail): detail is string => Boolean(detail));
+
+    return details.join(' · ');
 };
 
 export const AgendaVideos: FC = () => {
@@ -83,14 +130,14 @@ export const AgendaVideos: FC = () => {
                                 rel="noreferrer"
                                 className="group block"
                             >
-                                <div className="flex aspect-video items-center justify-center bg-secondary">
-                                    <span className="flex items-center gap-2 rounded-full border border-primary/50 bg-primary px-3 py-1.5 text-sm text-primary transition-colors group-hover:bg-tertiary">
-                                        <LuPlay className="size-4 text-secondary" />
-                                        Watch recording
-                                    </span>
-                                </div>
+                                <VideoPreview video={video} />
                                 <div className="flex items-start justify-between gap-2 p-3">
-                                    <h3 className="font-bold">{video.title}</h3>
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold">{video.title}</h3>
+                                        <p className="text-sm text-primary/70">
+                                            {getMeetingDetails(video)}
+                                        </p>
+                                    </div>
                                     <LuExternalLink className="mt-0.5 shrink-0 text-primary/70" />
                                 </div>
                             </a>
