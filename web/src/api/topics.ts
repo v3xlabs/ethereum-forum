@@ -8,6 +8,7 @@ import {
 import React from 'react';
 
 import { GithubIssueComment } from '@/types/github';
+import { queryClient } from '@/util/query';
 
 import { useApi } from './api';
 import { components } from './schema.gen';
@@ -269,3 +270,28 @@ export const useTopicSummaryStream = (discourse_id: string, topicId: number) => 
         startStream,
     };
 };
+
+export const useDeleteTopicSummary = () =>
+    useMutation({
+        mutationFn: async ({
+            discourse_id,
+            topicId,
+        }: {
+            discourse_id: string;
+            topicId: number;
+        }) => {
+            const response = await useApi('/admin/topic_summary', 'delete', {
+                query: {
+                    discourse_id,
+                    topic_id: topicId,
+                },
+            });
+
+            return response.data;
+        },
+        onSuccess: (_data, { discourse_id, topicId }) => {
+            queryClient.invalidateQueries({
+                queryKey: ['summary', discourse_id, topicId],
+            });
+        },
+    });
