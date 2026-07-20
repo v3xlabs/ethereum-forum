@@ -14,7 +14,7 @@ import { Tooltip } from '../tooltip/Tooltip';
 import { TrustLevel } from '../TrustLevel';
 import { Prose } from './Prose';
 
-export const TopicPost: FC<{ post: Post }> = ({ post }) => {
+export const TopicPost: FC<{ post: Post; discourseId: string }> = ({ post, discourseId }) => {
     const extra = post.extra as Record<string, unknown>;
     const displayName = (extra?.['display_username'] ||
         extra?.['name'] ||
@@ -96,7 +96,12 @@ export const TopicPost: FC<{ post: Post }> = ({ post }) => {
                 </div>
             </div>
             {post.cooked && (
-                <Prose content={post.cooked} topicId={post.topic_id} postId={post.post_id} />
+                <Prose
+                    content={post.cooked}
+                    topicId={post.topic_id}
+                    postId={post.post_id}
+                    discourseId={discourseId}
+                />
             )}
             {actionCode && (
                 <div className="text-sm border border-primary p-2">ACTION CODE: {actionCode}</div>
