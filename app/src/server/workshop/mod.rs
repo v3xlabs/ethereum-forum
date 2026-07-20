@@ -1,6 +1,8 @@
 use crate::models::topics::Topic;
 use crate::models::workshop::snapshot::{CreateChatSnapshotPayload, WorkshopSnapshotResponse};
-use crate::models::workshop::usage::{get_user_daily_usage, get_user_usage_by_model, get_user_usage_stats};
+use crate::models::workshop::usage::{
+    get_user_daily_usage, get_user_usage_by_model, get_user_usage_stats,
+};
 use crate::models::workshop::{
     chat::WorkshopChat,
     message::WorkshopMessage,
@@ -579,7 +581,8 @@ impl WorkshopApi {
         // First check if we already have a recent summary
         if let Ok(existing_summary) = sqlx::query_as!(
             crate::models::topics::TopicSummary,
-            "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
+            "SELECT * FROM topic_summaries WHERE discourse_id = $1 AND topic_id = $2 ORDER BY based_on DESC LIMIT 1",
+            discourse_id.0,
             topic_id.0
         )
         .fetch_optional(&state.database.pool)
@@ -751,12 +754,10 @@ impl WorkshopApi {
         let days = days.0.unwrap_or(30); // Default to 30 days
 
         // Get overall stats
-        let stats = get_user_usage_stats(user_id, &state)
-            .await
-            .map_err(|e| {
-                tracing::error!("Error getting user usage stats: {:?}", e);
-                poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR)
-            })?;
+        let stats = get_user_usage_stats(user_id, &state).await.map_err(|e| {
+            tracing::error!("Error getting user usage stats: {:?}", e);
+            poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR)
+        })?;
 
         // Get usage by model
         let by_model = get_user_usage_by_model(user_id, &state)
@@ -782,7 +783,7 @@ impl WorkshopApi {
     }
 
     /// /ws/share
-    /// 
+    ///
     /// Creates a new chat snapshot
     #[oai(path = "/ws/share", method = "post", tag = "ApiTags::Workshop")]
     async fn create_chat_snapshot(
@@ -805,7 +806,11 @@ impl WorkshopApi {
     /// /ws/share/:snapshot_id
     ///
     /// Get a chat snapshot by snapshot ID
-    #[oai(path = "/ws/share/:snapshot_id", method = "get", tag = "ApiTags::Workshop")]
+    #[oai(
+        path = "/ws/share/:snapshot_id",
+        method = "get",
+        tag = "ApiTags::Workshop"
+    )]
     async fn get_chat_snapshot(
         &self,
         state: Data<&AppState>,
@@ -821,9 +826,13 @@ impl WorkshopApi {
     }
 
     /// /ws/share/:snapshot_id/messages
-    /// 
+    ///
     /// Get all messages by snapshot ID
-    #[oai(path = "/ws/share/:snapshot_id/messages", method = "get", tag = "ApiTags::Workshop")]
+    #[oai(
+        path = "/ws/share/:snapshot_id/messages",
+        method = "get",
+        tag = "ApiTags::Workshop"
+    )]
     async fn get_chat_snapshot_messages(
         &self,
         state: Data<&AppState>,

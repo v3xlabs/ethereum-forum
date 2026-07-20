@@ -15,7 +15,7 @@ pub struct DiscourseLatestResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DiscourseLatestTopicList {
     // can_create_topic: bool,
-    more_topics_url: Option<String>, // if None, no more topics to fetch
+    pub more_topics_url: Option<String>, // if None, no more topics to fetch
     per_page: u32,
     // top_tags: Vec<String>,
     pub topics: Vec<DiscourseLatestTopic>,

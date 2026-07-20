@@ -1,4 +1,8 @@
-use std::{collections::{HashMap, HashSet}, sync::Arc, time::Duration};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::Duration,
+};
 
 use crate::{
     models::{
@@ -7,7 +11,7 @@ use crate::{
             topic::DiscourseTopicResponse,
             user::{DiscourseUserProfile, DiscourseUserSummaryResponse},
         },
-        topics::{post::Post, Topic},
+        topics::{Topic, post::Post},
     },
     state::AppState,
 };
@@ -16,7 +20,7 @@ use async_std::{
     channel::{Receiver, Sender},
     sync::Mutex,
 };
-use chrono::{DateTime, DurationRound, TimeDelta, Utc};
+use chrono::{DateTime, Utc};
 use moka::future::Cache;
 use poem_openapi::types::{ParseFromJSON, ToJSON, Type};
 use serde::{Deserialize, Serialize};
@@ -31,11 +35,56 @@ pub async fn fetch_latest_topics(discourse_url: &str) -> Result<DiscourseLatestR
     Ok(parsed)
 }
 
-pub async fn fetch_topic(discourse_url: &str, topic_id: TopicId, page: u32) -> Result<DiscourseTopicResponse, Error> {
-    let url = format!(
-        "{}/t/{}.json?page={}",
-        discourse_url, topic_id, page
-    );
+pub async fn fetch_latest_topics_paginated(
+    discourse_url: &str,
+    more_topics_url: Option<&str>,
+) -> Result<DiscourseLatestResponse, Error> {
+    let url = if let Some(more_url) = more_topics_url {
+        if more_url.starts_with("/latest?") {
+            let page_param = &more_url[8..]; // Remove "/latest?"
+            format!("{}/latest.json?{}", discourse_url, page_param)
+        } else if more_url.starts_with("/latest") {
+            format!("{}/latest.json", discourse_url)
+        } else {
+            format!("{}{}", discourse_url, more_url)
+        }
+    } else {
+        format!("{}/latest.json", discourse_url)
+    };
+
+    info!("Fetching URL: {}", url);
+
+    let response = reqwest::get(&url).await?;
+    let status = response.status();
+
+    if !status.is_success() {
+        return Err(anyhow::anyhow!(
+            "HTTP error {}: Failed to fetch {}",
+            status,
+            url
+        ));
+    }
+
+    let body: String = response.text().await?;
+
+    let parsed: DiscourseLatestResponse = serde_json::from_str(&body).map_err(|e| {
+        anyhow::anyhow!(
+            "JSON parsing error for {}: {}. Body starts with: {}",
+            url,
+            e,
+            &body[..std::cmp::min(200, body.len())]
+        )
+    })?;
+
+    Ok(parsed)
+}
+
+pub async fn fetch_topic(
+    discourse_url: &str,
+    topic_id: TopicId,
+    page: u32,
+) -> Result<DiscourseTopicResponse, Error> {
+    let url = format!("{}/t/{}.json?page={}", discourse_url, topic_id, page);
     let response = reqwest::get(url).await?;
     let body = response.text().await?;
     let parsed: DiscourseTopicResponse = serde_json::from_str(&body)?;
@@ -99,7 +148,7 @@ pub struct DiscourseService {
 impl DiscourseService {
     pub fn new(configs: Vec<DiscourseConfig>) -> Self {
         let mut indexers = HashMap::new();
-        
+
         for config in configs {
             let indexer = Arc::new(DiscourseIndexer::new(config.clone()));
             indexers.insert(config.discourse_id.clone(), indexer);
@@ -123,26 +172,36 @@ impl DiscourseService {
             let indexer_clone = Arc::clone(indexer);
             let state_clone = state.clone();
             let discourse_id_clone = discourse_id.clone();
-            
+
             async_std::task::spawn(async move {
                 indexer_clone.run(state_clone).await;
             });
-            
+
             info!("Started indexer for discourse: {}", discourse_id_clone);
         }
     }
 
-    pub async fn enqueue(&self, discourse_id: &str, topic_id: TopicId, page: u32) -> Result<(), Error> {
+    pub async fn enqueue(
+        &self,
+        discourse_id: &str,
+        topic_id: TopicId,
+        page: u32,
+    ) -> Result<(), Error> {
         if let Some(indexer) = self.indexers.get(discourse_id) {
             indexer.enqueue(topic_id, page).await;
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Discourse instance '{}' not found", discourse_id))
+            Err(anyhow::anyhow!(
+                "Discourse instance '{}' not found",
+                discourse_id
+            ))
         }
     }
 
     pub fn get_discourse_url(&self, discourse_id: &str) -> Option<String> {
-        self.indexers.get(discourse_id).map(|indexer| indexer.config.url.clone())
+        self.indexers
+            .get(discourse_id)
+            .map(|indexer| indexer.config.url.clone())
     }
 
     pub async fn fetch_discourse_user_cached(
@@ -150,13 +209,15 @@ impl DiscourseService {
         discourse_id: &str,
         username: &str,
     ) -> Result<LResult<DiscourseUserProfile>, Error> {
-        let discourse_url = self.get_discourse_url(discourse_id)
+        let discourse_url = self
+            .get_discourse_url(discourse_id)
             .ok_or_else(|| anyhow::anyhow!("Discourse instance '{}' not found", discourse_id))?;
-        
+
         let cache_key = format!("{}:{}", discourse_id, username);
         let username = username.to_string();
-        
-        Ok(self.user_profile_cache
+
+        Ok(self
+            .user_profile_cache
             .get_with(cache_key, async move {
                 match Self::fetch_discourse_user(&discourse_url, &username).await {
                     Ok(user) => LResult::Success(user),
@@ -171,13 +232,15 @@ impl DiscourseService {
         discourse_id: &str,
         username: &str,
     ) -> Result<LResult<DiscourseUserSummaryResponse>, Error> {
-        let discourse_url = self.get_discourse_url(discourse_id)
+        let discourse_url = self
+            .get_discourse_url(discourse_id)
             .ok_or_else(|| anyhow::anyhow!("Discourse instance '{}' not found", discourse_id))?;
-        
+
         let cache_key = format!("{}:{}", discourse_id, username);
         let username = username.to_string();
-        
-        Ok(self.user_summary_cache
+
+        Ok(self
+            .user_summary_cache
             .get_with(cache_key, async move {
                 match Self::fetch_discourse_user_summary(&discourse_url, &username).await {
                     Ok(user) => LResult::Success(user),
@@ -187,7 +250,10 @@ impl DiscourseService {
             .await)
     }
 
-    pub async fn fetch_discourse_user(discourse_url: &str, username: &str) -> anyhow::Result<DiscourseUserProfile> {
+    pub async fn fetch_discourse_user(
+        discourse_url: &str,
+        username: &str,
+    ) -> anyhow::Result<DiscourseUserProfile> {
         let url = format!("{}/u/{}.json", discourse_url, username);
         let response = reqwest::get(url).await?;
         let body = response.text().await?;
@@ -201,7 +267,7 @@ impl DiscourseService {
     ) -> Result<DiscourseUserSummaryResponse> {
         let url = format!("{}/u/{}/summary.json", discourse_url, username);
         let response = reqwest::get(url).await?;
-        
+
         // Check if the response is a 404 (profile hidden or user not found)
         if response.status() == reqwest::StatusCode::NOT_FOUND {
             // Return an empty summary response for hidden profiles
@@ -213,7 +279,7 @@ impl DiscourseService {
                 user_summary: None,
             });
         }
-        
+
         let body = response.text().await?;
         let parsed: DiscourseUserSummaryResponse = serde_json::from_str(&body)?;
         Ok(parsed)
@@ -240,21 +306,45 @@ impl DiscourseIndexer {
     }
 
     pub async fn run(self: Arc<Self>, state: AppState) {
-        // Start periodic fetching using this indexer instance
         let state_clone = state.clone();
         let indexer_clone = Arc::clone(&self);
-        async_std::task::spawn(async move {
-            indexer_clone.fetch_periodically(&state_clone).await;
-        });
+        let topic_count = sqlx::query!(
+            "SELECT COUNT(*) as count FROM topics WHERE discourse_id = $1",
+            self.config.discourse_id
+        )
+        .fetch_one(&state.database.pool)
+        .await
+        .map(|row| row.count.unwrap_or(0))
+        .unwrap_or(0);
 
-        info!("Started indexer for {}, awaiting requests", self.config.discourse_id);
+        if topic_count == 0 {
+            async_std::task::spawn(async move {
+                indexer_clone.fetch_all_topics(&state_clone).await;
+            });
+        } else {
+            info!(
+                "Skipping full topics fetch because topics already exist for {}",
+                self.config.discourse_id
+            );
+        }
+
+        info!(
+            "Started indexer for {}, awaiting requests",
+            self.config.discourse_id
+        );
 
         // Process topic indexing requests
         while let Ok(request) = self.topic_rx.recv().await {
-            info!("Processing request for {}: {:?}", self.config.discourse_id, request);
+            info!(
+                "Processing request for {}: {:?}",
+                self.config.discourse_id, request
+            );
 
             if let Ok(topic) = fetch_topic(&self.config.url, request.topic_id, request.page).await {
-                let existing_topic = Topic::get_by_topic_id(&self.config.discourse_id, topic.id, &state).await.ok();
+                let existing_topic =
+                    Topic::get_by_topic_id(&self.config.discourse_id, topic.id, &state)
+                        .await
+                        .ok();
                 let existing_messages = if let Some(existing) = &existing_topic {
                     Post::count_by_topic_id(&self.config.discourse_id, existing.topic_id, &state)
                         .await
@@ -396,54 +486,153 @@ impl DiscourseIndexer {
     }
 
     pub async fn enqueue(&self, topic_id: TopicId, page: u32) {
-        info!("Enqueuing topic {:?} page {} for {}", topic_id, page, self.config.discourse_id);
+        info!(
+            "Enqueuing topic {:?} page {} for {}",
+            topic_id, page, self.config.discourse_id
+        );
         let mut set = self.topic_lock.lock().await;
         let key = (topic_id, page);
         if set.insert(key) {
             let _ = self
                 .topic_tx
-                .send(DiscourseTopicIndexRequest { 
-                    topic_id, 
-                    page 
-                })
+                .send(DiscourseTopicIndexRequest { topic_id, page })
                 .await;
-            info!("Enqueued topic {:?} page {} for {}", topic_id, page, self.config.discourse_id);
+            info!(
+                "Enqueued topic {:?} page {} for {}",
+                topic_id, page, self.config.discourse_id
+            );
         } else {
-            info!("Topic {:?} page {} is already enqueued for {}, skipping", topic_id, page, self.config.discourse_id);
+            info!(
+                "Topic {:?} page {} is already enqueued for {}, skipping",
+                topic_id, page, self.config.discourse_id
+            );
         }
     }
 
-    pub async fn fetch_latest(&self, state: &AppState) -> anyhow::Result<()> {
+    pub async fn fetch_all_topics(&self, state: &AppState) {
+        info!(
+            "Starting complete topic fetch for {}",
+            self.config.discourse_id
+        );
+        let mut more_topics_url: Option<String> = None;
+        let mut page_count = 0;
+        let mut total_topics = 0;
+        let mut topics_queued = 0;
+
+        loop {
+            match fetch_latest_topics_paginated(&self.config.url, more_topics_url.as_deref()).await
+            {
+                Ok(response) => {
+                    page_count += 1;
+                    let topics_in_page = response.topic_list.topics.len();
+                    total_topics += topics_in_page;
+
+                    info!(
+                        "Fetched page {} for {} with {} topics (total: {})",
+                        page_count, self.config.discourse_id, topics_in_page, total_topics
+                    );
+
+                    if let Some(ref next_url) = response.topic_list.more_topics_url {
+                        info!(
+                            "Next page URL for {}: {}",
+                            self.config.discourse_id, next_url
+                        );
+                    } else {
+                        info!("No more pages for {}", self.config.discourse_id);
+                    }
+
+                    for topic in response.topic_list.topics {
+                        let should_queue = match Topic::get_by_topic_id(
+                            &self.config.discourse_id,
+                            topic.id,
+                            state,
+                        )
+                        .await
+                        {
+                            Ok(existing_topic) => {
+                                let existing_posts = Post::count_by_topic_id(
+                                    &self.config.discourse_id,
+                                    topic.id,
+                                    state,
+                                )
+                                .await
+                                .unwrap_or(0);
+
+                                existing_posts != topic.posts_count
+                                    || existing_topic.post_count != topic.posts_count
+                            }
+                            Err(_) => true,
+                        };
+
+                        if should_queue {
+                            info!(
+                                "Topic ({}) for {}: {:?} - queuing for indexing",
+                                topic.id, self.config.discourse_id, topic.title
+                            );
+                            self.enqueue(topic.id, 1).await;
+                            topics_queued += 1;
+                        } else {
+                            info!(
+                                "Topic ({}) for {}: {:?} - already up to date, skipping",
+                                topic.id, self.config.discourse_id, topic.title
+                            );
+                        }
+                    }
+
+                    info!(
+                        "Page {} complete: {} topics queued out of {} on this page",
+                        page_count, topics_queued, topics_in_page
+                    );
+
+                    if let Some(next_url) = response.topic_list.more_topics_url {
+                        more_topics_url = Some(next_url);
+
+                        info!(
+                            "Waiting 2 seconds before next page for {}",
+                            self.config.discourse_id
+                        );
+                        async_std::task::sleep(Duration::from_secs(2)).await;
+                    } else {
+                        info!(
+                            "Completed topic fetch for {} - {} pages, {} total topics, {} queued for indexing",
+                            self.config.discourse_id, page_count, total_topics, topics_queued
+                        );
+                        break;
+                    }
+                }
+                Err(e) => {
+                    error!(
+                        "Error fetching topics page {} for {}: {:?}",
+                        page_count + 1,
+                        self.config.discourse_id,
+                        e
+                    );
+
+                    info!(
+                        "Waiting 5 seconds before retry for {}",
+                        self.config.discourse_id
+                    );
+                    async_std::task::sleep(Duration::from_secs(5)).await;
+
+                    break;
+                }
+            }
+        }
+    }
+
+    pub async fn fetch_latest(&self, _state: &AppState) -> anyhow::Result<()> {
         let topics = fetch_latest_topics(&self.config.url).await?;
 
         for topic in topics.topic_list.topics {
-            info!("Topic ({}) for {}: {:?}", topic.id, self.config.discourse_id, topic.title);
+            info!(
+                "Topic ({}) for {}: {:?}",
+                topic.id, self.config.discourse_id, topic.title
+            );
             self.enqueue(topic.id, 1).await;
             info!("Queued for {}", self.config.discourse_id);
         }
 
         Ok(())
-    }
-
-    pub async fn fetch_periodically(&self, state: &AppState) {
-        loop {
-            match self.fetch_latest(state).await {
-                Ok(_) => {
-                    info!("Fetched latest topics for {}", self.config.discourse_id);
-                }
-                Err(e) => {
-                    error!("Error fetching latest topics for {}: {:?}", self.config.discourse_id, e);
-                }
-            }
-
-            let now = Utc::now();
-            let next = now.duration_round_up(TimeDelta::minutes(30)).unwrap();
-
-            info!("Next fetch for {} at: {:?}", self.config.discourse_id, next);
-
-            let duration = next.signed_duration_since(now);
-            async_std::task::sleep(Duration::from_secs(duration.num_seconds() as u64)).await;
-        }
     }
 }
 
@@ -469,7 +658,9 @@ mod tests {
 
     #[async_std::test]
     async fn test_fetch_latest_topics() {
-        let result = fetch_latest_topics("https://ethereum-magicians.org").await.unwrap();
+        let result = fetch_latest_topics("https://ethereum-magicians.org")
+            .await
+            .unwrap();
         // assert!(result.topic_list.topics.len() > 0);
 
         println!("Active Users: {:?}", result.users.len());
