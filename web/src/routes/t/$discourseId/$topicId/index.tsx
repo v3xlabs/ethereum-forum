@@ -1,8 +1,7 @@
-import * as Dialog from '@radix-ui/react-dialog';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { parseISO } from 'date-fns';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { FiEye, FiHeart, FiMessageSquare } from 'react-icons/fi';
 import {
     LuGithub,
@@ -17,21 +16,28 @@ import {
     LuSignalMedium,
     LuSignalZero,
     LuWandSparkles,
-    LuX,
     LuYoutube,
 } from 'react-icons/lu';
 import { PiReceipt } from 'react-icons/pi';
 import { SiEthereum, SiOpenai, SiReddit } from 'react-icons/si';
 import { toast } from 'sonner';
 
-import { getTopic, usePostsInfinite, useTopic, useTopicRefresh } from '@/api/topics';
+import {
+    getTopic,
+    useCachedTopicSummary,
+    usePostsInfinite,
+    useTopic,
+    useTopicRefresh,
+} from '@/api/topics';
 import { CategoryTag } from '@/components/CategoryTag';
 import { DiscourseInstanceName } from '@/components/DiscourseInstanceIcon';
 import { ExpandableList } from '@/components/list/ExpandableList';
 import { TimeAgo } from '@/components/TimeAgo';
 import { ImageLightbox } from '@/components/topic/Prose';
 import { TopicPost } from '@/components/topic/TopicPost';
-import { StreamingSummary } from '@/components/topics/StreamingSummary';
+import { SummaryTabId } from '@/components/topics/StreamingSummary';
+import { SummaryPanel } from '@/components/topics/SummaryPanel';
+import { SummaryRail } from '@/components/topics/SummaryRail';
 import { UpDownScroller } from '@/components/UpDown';
 import { decodeCategory } from '@/util/category';
 import { mapDiscourseInstanceUrl } from '@/util/discourse';
@@ -75,6 +81,12 @@ type RelevantLink = {
 function RouteComponent() {
     const { discourseId, topicId } = Route.useParams();
     const { data: topic } = useTopic(discourseId, topicId);
+    // The slide-over is owned here so its lifetime is independent of the
+    // button/rail entries, which mount and unmount as summary freshness changes.
+    const [summaryPanel, setSummaryPanel] = useState<{
+        mode: 'generate' | 'cached';
+        initialTab?: SummaryTabId;
+    } | null>(null);
 
     const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } = usePostsInfinite(
         discourseId,
@@ -173,35 +185,36 @@ function RouteComponent() {
                             </div>
                         </li>
                         {topic?.topic_id && (
-                            <li className="space-y-1.5 mt-1">
-                                <Dialog.Root>
-                                    <Dialog.Trigger asChild>
-                                        <button className="w-full text-left flex items-center gap-2 button button-purple">
-                                            <LuWandSparkles />
-                                            View Summary
-                                        </button>
-                                    </Dialog.Trigger>
-                                    <Dialog.Portal>
-                                        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-40 data-[state=open]:animate-overlayShow overflow-y-scroll grid place-items-center">
-                                            <Dialog.Content className="z-50 relative my-10 max-w-3xl shadow-[var(--shadow-6)] focus:outline-none data-[state=open]:animate-contentShow mx-auto w-full p-6 bg-primary space-y-4">
-                                                <Dialog.Title className="text-xl font-bold">
-                                                    Topic Summary
-                                                </Dialog.Title>
-                                                <StreamingSummary
-                                                    discourseId={discourseId}
-                                                    topicId={topic.topic_id}
-                                                />
-                                                <Dialog.Close className="absolute top-2 right-2 -translate-y-1/2 hover:bg-secondary rounded-full p-1">
-                                                    <LuX className="size-5" />
-                                                </Dialog.Close>
-                                            </Dialog.Content>
-                                        </Dialog.Overlay>
-                                    </Dialog.Portal>
-                                </Dialog.Root>
-                            </li>
+                            <GenerateSummaryButton
+                                discourseId={discourseId}
+                                topicId={topic.topic_id}
+                                lastPostAt={topic.last_post_at ?? null}
+                                onOpen={() => setSummaryPanel({ mode: 'generate' })}
+                            />
                         )}
                     </ul>
                 </div>
+                {topic?.topic_id && (
+                    <SummaryRail
+                        discourseId={discourseId}
+                        topicId={topic.topic_id}
+                        onOpenSection={(tab) =>
+                            setSummaryPanel({ mode: 'cached', initialTab: tab })
+                        }
+                    />
+                )}
+                {topic?.topic_id && summaryPanel && (
+                    <SummaryPanel
+                        discourseId={discourseId}
+                        topicId={topic.topic_id}
+                        open
+                        onOpenChange={(open) => {
+                            if (!open) setSummaryPanel(null);
+                        }}
+                        mode={summaryPanel.mode}
+                        initialTab={summaryPanel.initialTab}
+                    />
+                )}
                 {/* Links */}
                 {standards_links.length > 0 && (
                     <ExpandableList title="Standards Links" maxItems={4}>
@@ -317,6 +330,43 @@ function RouteComponent() {
         </div>
     );
 }
+
+// Shown only while there is no summary yet or new posts have arrived since the
+// cached one; a fresh summary is reachable through the Summary rail rows.
+const GenerateSummaryButton = ({
+    discourseId,
+    topicId,
+    lastPostAt,
+    onOpen,
+}: {
+    discourseId: string;
+    topicId: number;
+    lastPostAt: string | null;
+    onOpen: () => void;
+}) => {
+    const { data: cached, isFetched } = useCachedTopicSummary(discourseId, topicId);
+
+    if (!isFetched) return null;
+
+    const isFresh =
+        !!cached &&
+        !!lastPostAt &&
+        parseISO(cached.based_on).getTime() === parseISO(lastPostAt).getTime();
+
+    if (isFresh) return null;
+
+    return (
+        <li className="space-y-1.5 mt-1">
+            <button
+                className="w-full text-left flex items-center gap-2 button button-purple"
+                onClick={onOpen}
+            >
+                <LuWandSparkles />
+                {cached ? 'Update Summary' : 'View Summary'}
+            </button>
+        </li>
+    );
+};
 
 const RelevantLink = ({ link }: { link: RelevantLink }) => {
     let icon = undefined;

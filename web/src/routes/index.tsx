@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { LuBook, LuGithub, LuWandSparkles } from 'react-icons/lu';
 
+import { ActivityDigest } from '@/components/topic/ActivityDigest';
 import { TopicList } from '@/components/topic/TopicList';
 import { TopicsTrending } from '@/components/topic/TopicsTrending';
 
@@ -13,6 +14,7 @@ const RouteComponent = () => {
         <>
             <div className="mx-auto w-full max-w-6xl space-y-6 px-3 pt-8">
                 <main className="space-y-6">
+                    <ActivityDigest />
                     <TopicsTrending />
                     <TopicList />
                 </main>

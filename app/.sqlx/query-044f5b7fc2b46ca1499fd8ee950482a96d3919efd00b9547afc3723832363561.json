@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM activity_digests WHERE digest_id = (SELECT digest_id FROM activity_digests ORDER BY created_at DESC LIMIT 1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "044f5b7fc2b46ca1499fd8ee950482a96d3919efd00b9547afc3723832363561"
+}

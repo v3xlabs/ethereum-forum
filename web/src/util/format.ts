@@ -49,6 +49,34 @@ export const formatBigNumber = (num: number) => {
     return num;
 };
 
+export const formatTokens = (n: number | null | undefined): string => {
+    if (n === null || n === undefined) return '—';
+
+    if (n < 1000) return n.toString();
+
+    if (n < 10_000) return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+
+    if (n < 1_000_000) return `${Math.round(n / 1000)}k`;
+
+    if (n < 10_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+
+    return `${Math.round(n / 1_000_000)}M`;
+};
+
+export const formatDurationMs = (ms: number | null | undefined): string => {
+    if (ms === null || ms === undefined) return '—';
+
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+
+    if (ms < 60_000) return `${(ms / 1000).toFixed(1).replace(/\.0$/, '')}s`;
+
+    const totalSeconds = Math.round(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+};
+
 // Text processing
 export const truncateText = (text: string, maxLength: number = 200) => {
     if (text.length <= maxLength) return text;

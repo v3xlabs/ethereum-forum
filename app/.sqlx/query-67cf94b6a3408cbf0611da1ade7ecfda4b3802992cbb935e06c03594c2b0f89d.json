@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM posts WHERE discourse_id = $1 AND topic_id = $2 AND created_at > NOW() - INTERVAL '3 days' ORDER BY created_at DESC LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "post_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "cooked",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "post_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "extra",
+        "type_info": "Json"
+      },
+      {
+        "ordinal": 7,
+        "name": "post_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "discourse_id",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "67cf94b6a3408cbf0611da1ade7ecfda4b3802992cbb935e06c03594c2b0f89d"
+}

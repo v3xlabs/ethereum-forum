@@ -18,7 +18,7 @@ icalendar = { version = "0.16.13", features = [
   "serde_json",
 ] }
 moka = { version = "0.12.10", features = ["future"] }
-async-openai = "0.28.0"
+async-openai = "0.29"
 # MCP client using reqwest for streamable HTTP communication
 thiserror = "1.0"
 opentelemetry = { version = "0.28.0", features = ["trace"] }

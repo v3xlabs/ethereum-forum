@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO llm_memory (term, content, sources)\n               VALUES ($1, $2, $3)\n               ON CONFLICT (term) DO UPDATE SET content = $2, sources = $3, updated_at = NOW()\n               RETURNING entry_id, term, content, sources, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "entry_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "term",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "sources",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "3fc6c10f58ef1f6c1425cf12a93f570ff30640cc3ff4ecb36012dc04faab58c3"
+}

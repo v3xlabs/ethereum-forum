@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO topic_summaries (discourse_id, topic_id, based_on, based_on_post_number, summary_text, summary_json, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int4",
+        "Timestamptz",
+        "Int4",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f3988f3892bded8131efed1490a8340f247a8b5c6b5534cc80ee32dc7ec7ea29"
+}

@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(AVG(total_tokens::float8), 0.0) FROM llm_runs WHERE total_tokens IS NOT NULL",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "coalesce",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "760fa17271f09bfce41f2bb767faf0c9a808d4bc04ce77865feae4c19267caea"
+}

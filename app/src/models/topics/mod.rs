@@ -43,7 +43,9 @@ pub struct TopicSummary {
     pub discourse_id: String,
     pub topic_id: i32,
     pub based_on: DateTime<Utc>,
+    pub based_on_post_number: Option<i32>,
     pub summary_text: String,
+    pub summary_json: Option<serde_json::Value>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -138,6 +140,17 @@ impl Topic {
         Ok(topics)
     }
 
+    pub async fn get_digest_candidates(state: &AppState) -> Result<Vec<Self>, sqlx::Error> {
+        let topics = query_as!(
+            Self,
+            "SELECT * FROM topics WHERE last_post_at > NOW() - INTERVAL '3 days' ORDER BY view_count DESC, last_post_at DESC LIMIT 12"
+        )
+        .fetch_all(&state.database.pool)
+        .await?;
+
+        Ok(topics)
+    }
+
     pub async fn get_by_topic_id(
         discourse_id: &str,
         topic_id: i32,
@@ -171,146 +184,9 @@ impl Topic {
         topic_id: i32,
         state: &AppState,
     ) -> Result<TopicSummary, HttpError> {
-        let summary = query_as!(
-            TopicSummary,
-            "SELECT * FROM topic_summaries WHERE discourse_id = $1 AND topic_id = $2 ORDER BY based_on DESC LIMIT 1",
-            discourse_id,
-            topic_id
-        )
-        .fetch_optional(&state.database.pool)
-        .await?;
-
-        let topic = match Topic::get_by_topic_id(discourse_id, topic_id, state).await {
-            Ok(topic) => topic,
-            Err(_) => {
-                return Err(sqlx::Error::RowNotFound)?;
-            }
-        };
-
-        let summary = match summary {
-            Some(s) => s,
-            None => {
-                return Self::create_new_summary(discourse_id, topic_id, state, &topic).await;
-            }
-        };
-
-        let based_on = topic
-            .last_post_at
-            .map(|dt| dt.timestamp())
-            .unwrap_or_else(|| Utc::now().timestamp());
-
-        // Check if the existing summary is still current
-        if summary.based_on.timestamp() == based_on as i64 {
-            return Ok(summary);
-        }
-
-        // Check if there's already an ongoing streaming generation for this topic
-        if let Some(_ongoing_prompt) = state
-            .workshop
-            .get_ongoing_summary_prompt(discourse_id, topic_id)
+        crate::modules::llm::summary::get_or_generate_summary(discourse_id, topic_id, state)
             .await
-        {
-            // There's already a streaming generation in progress, return the old summary for now
-            // The client should check for streaming updates
-            return Ok(summary);
-        }
-
-        Self::create_new_summary(discourse_id, topic_id, state, &topic).await
-    }
-
-    async fn create_new_summary(
-        discourse_id: &str,
-        topic_id: i32,
-        state: &AppState,
-        topic: &Topic,
-    ) -> Result<TopicSummary, HttpError> {
-        info!(
-            "Generating new summary for topic {} on {}",
-            topic_id, discourse_id
-        );
-
-        // Check if there's already an ongoing streaming generation
-        if let Some(ongoing_prompt) = state
-            .workshop
-            .get_ongoing_summary_prompt(discourse_id, topic_id)
-            .await
-        {
-            // Wait for the ongoing prompt to complete
-            match ongoing_prompt.await_completion().await {
-                Ok(summary_text) => {
-                    // The summary should already be saved by the background task, but let's check
-                    if let Ok(existing_summary) = query_as!(
-                        TopicSummary,
-                        "SELECT * FROM topic_summaries WHERE topic_id = $1 ORDER BY based_on DESC LIMIT 1",
-                        topic_id
-                    ).fetch_optional(&state.database.pool).await {
-                        if let Some(summary) = existing_summary {
-                            return Ok(summary);
-                        }
-                    }
-
-                    // Fallback: save the summary ourselves if not already saved
-                    let based_on = topic
-                        .last_post_at
-                        .map(|dt| dt.timestamp())
-                        .unwrap_or_else(|| Utc::now().timestamp());
-
-                    let based_on_datetime =
-                        DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
-
-                    let summary = query_as!(
-                        TopicSummary,
-                        "INSERT INTO topic_summaries (discourse_id, topic_id, based_on, summary_text, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *",
-                        discourse_id,
-                        topic_id,
-                        based_on_datetime,
-                        summary_text
-                    )
-                    .fetch_one(&state.database.pool)
-                    .await?;
-
-                    return Ok(summary);
-                }
-                Err(e) => {
-                    info!(
-                        "Ongoing prompt failed, falling back to direct generation: {}",
-                        e
-                    );
-                    // Fall through to direct generation
-                }
-            }
-        }
-
-        // No ongoing prompt or it failed, use direct generation (non-streaming)
-        let summary =
-            crate::modules::workshop::WorkshopService::create_workshop_summary(topic, &state)
-                .await?;
-
-        let based_on = topic
-            .last_post_at
-            .map(|dt| dt.timestamp())
-            .unwrap_or_else(|| Utc::now().timestamp());
-
-        let based_on_datetime =
-            DateTime::from_timestamp(based_on as i64, 0).unwrap_or_else(|| Utc::now());
-
-        let summary = query_as!(
-            TopicSummary,
-            "INSERT INTO topic_summaries (discourse_id, topic_id, based_on, summary_text, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *",
-            discourse_id,
-            topic_id,
-            based_on_datetime,
-            summary
-            )
-            .fetch_one(&state.database.pool)
-            .await?;
-
-        info!(
-            "Created new summary for topic_id: {} with summary_id: {}",
-            topic_id, summary.summary_id
-        );
-
-        Ok(summary)
+            .map_err(Into::into)
     }
 }
 

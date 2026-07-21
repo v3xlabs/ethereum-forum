@@ -11,20 +11,28 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin/route'
 import { Route as IndexImport } from './routes/index'
 import { Route as SIndexImport } from './routes/s/index'
 import { Route as RIndexImport } from './routes/r/index'
 import { Route as CIndexImport } from './routes/c/index'
-import { Route as ChatUsageImport } from './routes/chat/usage'
-import { Route as ChatChatIdImport } from './routes/chat/$chatId'
+import { Route as AdminIndexImport } from './routes/admin/index'
+import { Route as AdminRunsImport } from './routes/admin/runs'
+import { Route as AdminPromptsImport } from './routes/admin/prompts'
+import { Route as AdminMemoryImport } from './routes/admin/memory'
+import { Route as AdminActionsImport } from './routes/admin/actions'
 import { Route as PmIssueIdIndexImport } from './routes/pm/$issueId/index'
-import { Route as ChatUsageIndexImport } from './routes/chat/usage/index'
 import { Route as SsoProviderIdCallbackImport } from './routes/sso/$providerId/callback'
-import { Route as ChatShareSnapshotIdImport } from './routes/chat/share/$snapshotId'
 import { Route as UDiscourseIdUserIdIndexImport } from './routes/u/$discourseId/$userId/index'
 import { Route as TDiscourseIdTopicIdIndexImport } from './routes/t/$discourseId/$topicId/index'
 
 // Create/Update Routes
+
+const AdminRouteRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -50,16 +58,34 @@ const CIndexRoute = CIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ChatUsageRoute = ChatUsageImport.update({
-  id: '/chat/usage',
-  path: '/chat/usage',
-  getParentRoute: () => rootRoute,
+const AdminIndexRoute = AdminIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 
-const ChatChatIdRoute = ChatChatIdImport.update({
-  id: '/chat/$chatId',
-  path: '/chat/$chatId',
-  getParentRoute: () => rootRoute,
+const AdminRunsRoute = AdminRunsImport.update({
+  id: '/runs',
+  path: '/runs',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+
+const AdminPromptsRoute = AdminPromptsImport.update({
+  id: '/prompts',
+  path: '/prompts',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+
+const AdminMemoryRoute = AdminMemoryImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+
+const AdminActionsRoute = AdminActionsImport.update({
+  id: '/actions',
+  path: '/actions',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 
 const PmIssueIdIndexRoute = PmIssueIdIndexImport.update({
@@ -68,21 +94,9 @@ const PmIssueIdIndexRoute = PmIssueIdIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const ChatUsageIndexRoute = ChatUsageIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ChatUsageRoute,
-} as any)
-
 const SsoProviderIdCallbackRoute = SsoProviderIdCallbackImport.update({
   id: '/sso/$providerId/callback',
   path: '/sso/$providerId/callback',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ChatShareSnapshotIdRoute = ChatShareSnapshotIdImport.update({
-  id: '/chat/share/$snapshotId',
-  path: '/chat/share/$snapshotId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -109,19 +123,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/chat/$chatId': {
-      id: '/chat/$chatId'
-      path: '/chat/$chatId'
-      fullPath: '/chat/$chatId'
-      preLoaderRoute: typeof ChatChatIdImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRoute
     }
-    '/chat/usage': {
-      id: '/chat/usage'
-      path: '/chat/usage'
-      fullPath: '/chat/usage'
-      preLoaderRoute: typeof ChatUsageImport
-      parentRoute: typeof rootRoute
+    '/admin/actions': {
+      id: '/admin/actions'
+      path: '/actions'
+      fullPath: '/admin/actions'
+      preLoaderRoute: typeof AdminActionsImport
+      parentRoute: typeof AdminRouteImport
+    }
+    '/admin/memory': {
+      id: '/admin/memory'
+      path: '/memory'
+      fullPath: '/admin/memory'
+      preLoaderRoute: typeof AdminMemoryImport
+      parentRoute: typeof AdminRouteImport
+    }
+    '/admin/prompts': {
+      id: '/admin/prompts'
+      path: '/prompts'
+      fullPath: '/admin/prompts'
+      preLoaderRoute: typeof AdminPromptsImport
+      parentRoute: typeof AdminRouteImport
+    }
+    '/admin/runs': {
+      id: '/admin/runs'
+      path: '/runs'
+      fullPath: '/admin/runs'
+      preLoaderRoute: typeof AdminRunsImport
+      parentRoute: typeof AdminRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexImport
+      parentRoute: typeof AdminRouteImport
     }
     '/c/': {
       id: '/c/'
@@ -144,26 +186,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SIndexImport
       parentRoute: typeof rootRoute
     }
-    '/chat/share/$snapshotId': {
-      id: '/chat/share/$snapshotId'
-      path: '/chat/share/$snapshotId'
-      fullPath: '/chat/share/$snapshotId'
-      preLoaderRoute: typeof ChatShareSnapshotIdImport
-      parentRoute: typeof rootRoute
-    }
     '/sso/$providerId/callback': {
       id: '/sso/$providerId/callback'
       path: '/sso/$providerId/callback'
       fullPath: '/sso/$providerId/callback'
       preLoaderRoute: typeof SsoProviderIdCallbackImport
       parentRoute: typeof rootRoute
-    }
-    '/chat/usage/': {
-      id: '/chat/usage/'
-      path: '/'
-      fullPath: '/chat/usage/'
-      preLoaderRoute: typeof ChatUsageIndexImport
-      parentRoute: typeof ChatUsageImport
     }
     '/pm/$issueId/': {
       id: '/pm/$issueId/'
@@ -191,28 +219,38 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
-interface ChatUsageRouteChildren {
-  ChatUsageIndexRoute: typeof ChatUsageIndexRoute
+interface AdminRouteRouteChildren {
+  AdminActionsRoute: typeof AdminActionsRoute
+  AdminMemoryRoute: typeof AdminMemoryRoute
+  AdminPromptsRoute: typeof AdminPromptsRoute
+  AdminRunsRoute: typeof AdminRunsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
-const ChatUsageRouteChildren: ChatUsageRouteChildren = {
-  ChatUsageIndexRoute: ChatUsageIndexRoute,
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminActionsRoute: AdminActionsRoute,
+  AdminMemoryRoute: AdminMemoryRoute,
+  AdminPromptsRoute: AdminPromptsRoute,
+  AdminRunsRoute: AdminRunsRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
-const ChatUsageRouteWithChildren = ChatUsageRoute._addFileChildren(
-  ChatUsageRouteChildren,
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
 )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
-  '/chat/usage': typeof ChatUsageRouteWithChildren
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/actions': typeof AdminActionsRoute
+  '/admin/memory': typeof AdminMemoryRoute
+  '/admin/prompts': typeof AdminPromptsRoute
+  '/admin/runs': typeof AdminRunsRoute
+  '/admin/': typeof AdminIndexRoute
   '/c': typeof CIndexRoute
   '/r': typeof RIndexRoute
   '/s': typeof SIndexRoute
-  '/chat/share/$snapshotId': typeof ChatShareSnapshotIdRoute
   '/sso/$providerId/callback': typeof SsoProviderIdCallbackRoute
-  '/chat/usage/': typeof ChatUsageIndexRoute
   '/pm/$issueId': typeof PmIssueIdIndexRoute
   '/t/$discourseId/$topicId': typeof TDiscourseIdTopicIdIndexRoute
   '/u/$discourseId/$userId': typeof UDiscourseIdUserIdIndexRoute
@@ -220,13 +258,15 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
+  '/admin/actions': typeof AdminActionsRoute
+  '/admin/memory': typeof AdminMemoryRoute
+  '/admin/prompts': typeof AdminPromptsRoute
+  '/admin/runs': typeof AdminRunsRoute
+  '/admin': typeof AdminIndexRoute
   '/c': typeof CIndexRoute
   '/r': typeof RIndexRoute
   '/s': typeof SIndexRoute
-  '/chat/share/$snapshotId': typeof ChatShareSnapshotIdRoute
   '/sso/$providerId/callback': typeof SsoProviderIdCallbackRoute
-  '/chat/usage': typeof ChatUsageIndexRoute
   '/pm/$issueId': typeof PmIssueIdIndexRoute
   '/t/$discourseId/$topicId': typeof TDiscourseIdTopicIdIndexRoute
   '/u/$discourseId/$userId': typeof UDiscourseIdUserIdIndexRoute
@@ -235,14 +275,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/chat/$chatId': typeof ChatChatIdRoute
-  '/chat/usage': typeof ChatUsageRouteWithChildren
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/admin/actions': typeof AdminActionsRoute
+  '/admin/memory': typeof AdminMemoryRoute
+  '/admin/prompts': typeof AdminPromptsRoute
+  '/admin/runs': typeof AdminRunsRoute
+  '/admin/': typeof AdminIndexRoute
   '/c/': typeof CIndexRoute
   '/r/': typeof RIndexRoute
   '/s/': typeof SIndexRoute
-  '/chat/share/$snapshotId': typeof ChatShareSnapshotIdRoute
   '/sso/$providerId/callback': typeof SsoProviderIdCallbackRoute
-  '/chat/usage/': typeof ChatUsageIndexRoute
   '/pm/$issueId/': typeof PmIssueIdIndexRoute
   '/t/$discourseId/$topicId/': typeof TDiscourseIdTopicIdIndexRoute
   '/u/$discourseId/$userId/': typeof UDiscourseIdUserIdIndexRoute
@@ -252,41 +294,47 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/chat/$chatId'
-    | '/chat/usage'
+    | '/admin'
+    | '/admin/actions'
+    | '/admin/memory'
+    | '/admin/prompts'
+    | '/admin/runs'
+    | '/admin/'
     | '/c'
     | '/r'
     | '/s'
-    | '/chat/share/$snapshotId'
     | '/sso/$providerId/callback'
-    | '/chat/usage/'
     | '/pm/$issueId'
     | '/t/$discourseId/$topicId'
     | '/u/$discourseId/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/chat/$chatId'
+    | '/admin/actions'
+    | '/admin/memory'
+    | '/admin/prompts'
+    | '/admin/runs'
+    | '/admin'
     | '/c'
     | '/r'
     | '/s'
-    | '/chat/share/$snapshotId'
     | '/sso/$providerId/callback'
-    | '/chat/usage'
     | '/pm/$issueId'
     | '/t/$discourseId/$topicId'
     | '/u/$discourseId/$userId'
   id:
     | '__root__'
     | '/'
-    | '/chat/$chatId'
-    | '/chat/usage'
+    | '/admin'
+    | '/admin/actions'
+    | '/admin/memory'
+    | '/admin/prompts'
+    | '/admin/runs'
+    | '/admin/'
     | '/c/'
     | '/r/'
     | '/s/'
-    | '/chat/share/$snapshotId'
     | '/sso/$providerId/callback'
-    | '/chat/usage/'
     | '/pm/$issueId/'
     | '/t/$discourseId/$topicId/'
     | '/u/$discourseId/$userId/'
@@ -295,12 +343,10 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ChatChatIdRoute: typeof ChatChatIdRoute
-  ChatUsageRoute: typeof ChatUsageRouteWithChildren
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   CIndexRoute: typeof CIndexRoute
   RIndexRoute: typeof RIndexRoute
   SIndexRoute: typeof SIndexRoute
-  ChatShareSnapshotIdRoute: typeof ChatShareSnapshotIdRoute
   SsoProviderIdCallbackRoute: typeof SsoProviderIdCallbackRoute
   PmIssueIdIndexRoute: typeof PmIssueIdIndexRoute
   TDiscourseIdTopicIdIndexRoute: typeof TDiscourseIdTopicIdIndexRoute
@@ -309,12 +355,10 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ChatChatIdRoute: ChatChatIdRoute,
-  ChatUsageRoute: ChatUsageRouteWithChildren,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   CIndexRoute: CIndexRoute,
   RIndexRoute: RIndexRoute,
   SIndexRoute: SIndexRoute,
-  ChatShareSnapshotIdRoute: ChatShareSnapshotIdRoute,
   SsoProviderIdCallbackRoute: SsoProviderIdCallbackRoute,
   PmIssueIdIndexRoute: PmIssueIdIndexRoute,
   TDiscourseIdTopicIdIndexRoute: TDiscourseIdTopicIdIndexRoute,
@@ -332,12 +376,10 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/chat/$chatId",
-        "/chat/usage",
+        "/admin",
         "/c/",
         "/r/",
         "/s/",
-        "/chat/share/$snapshotId",
         "/sso/$providerId/callback",
         "/pm/$issueId/",
         "/t/$discourseId/$topicId/",
@@ -347,14 +389,35 @@ export const routeTree = rootRoute
     "/": {
       "filePath": "index.tsx"
     },
-    "/chat/$chatId": {
-      "filePath": "chat/$chatId.tsx"
-    },
-    "/chat/usage": {
-      "filePath": "chat/usage.tsx",
+    "/admin": {
+      "filePath": "admin/route.tsx",
       "children": [
-        "/chat/usage/"
+        "/admin/actions",
+        "/admin/memory",
+        "/admin/prompts",
+        "/admin/runs",
+        "/admin/"
       ]
+    },
+    "/admin/actions": {
+      "filePath": "admin/actions.tsx",
+      "parent": "/admin"
+    },
+    "/admin/memory": {
+      "filePath": "admin/memory.tsx",
+      "parent": "/admin"
+    },
+    "/admin/prompts": {
+      "filePath": "admin/prompts.tsx",
+      "parent": "/admin"
+    },
+    "/admin/runs": {
+      "filePath": "admin/runs.tsx",
+      "parent": "/admin"
+    },
+    "/admin/": {
+      "filePath": "admin/index.tsx",
+      "parent": "/admin"
     },
     "/c/": {
       "filePath": "c/index.tsx"
@@ -365,15 +428,8 @@ export const routeTree = rootRoute
     "/s/": {
       "filePath": "s/index.tsx"
     },
-    "/chat/share/$snapshotId": {
-      "filePath": "chat/share/$snapshotId.tsx"
-    },
     "/sso/$providerId/callback": {
       "filePath": "sso/$providerId/callback.tsx"
-    },
-    "/chat/usage/": {
-      "filePath": "chat/usage/index.tsx",
-      "parent": "/chat/usage"
     },
     "/pm/$issueId/": {
       "filePath": "pm/$issueId/index.tsx"

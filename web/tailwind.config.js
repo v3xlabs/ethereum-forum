@@ -61,8 +61,18 @@ export default {
                 'pulse-ring-delay-2': 'pulseRing 1.5s linear infinite 1s',
                 overlayShow: 'overlayShow 250ms cubic-bezier(0.16, 1, 0.3, 1)',
                 contentShow: 'contentShow 250ms cubic-bezier(0.16, 1, 0.3, 1)',
+                fadeSlideIn: 'fadeSlideIn 300ms cubic-bezier(0.16, 1, 0.3, 1)',
+                slideInRight: 'slideInRight 250ms cubic-bezier(0.16, 1, 0.3, 1)',
             },
             keyframes: {
+                fadeSlideIn: {
+                    from: { opacity: '0', transform: 'translateY(4px)' },
+                    to: { opacity: '1', transform: 'translateY(0)' },
+                },
+                slideInRight: {
+                    from: { transform: 'translateX(100%)' },
+                    to: { transform: 'translateX(0)' },
+                },
                 pulseRing: {
                     '0%': { transform: 'scale(0.8)', opacity: 1 },
                     '70%': { transform: 'scale(1.8)', opacity: 0 },

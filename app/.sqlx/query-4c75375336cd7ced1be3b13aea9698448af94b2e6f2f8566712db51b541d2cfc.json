@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS \"date!\",\n                      run_type,\n                      COALESCE(SUM(prompt_tokens), 0)::bigint AS \"prompt_tokens!\",\n                      COALESCE(SUM(completion_tokens), 0)::bigint AS \"completion_tokens!\",\n                      COALESCE(SUM(total_tokens), 0)::bigint AS \"total_tokens!\",\n                      COUNT(*)::bigint AS \"runs!\",\n                      (COUNT(*) FILTER (WHERE outcome != 'success'))::bigint AS \"failures!\"\n               FROM llm_runs\n               WHERE created_at >= NOW() - make_interval(days => $1)\n               GROUP BY 1, 2\n               ORDER BY 1 ASC, 2 ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "date!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "run_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "prompt_tokens!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "completion_tokens!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "total_tokens!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "runs!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "failures!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      false,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "4c75375336cd7ced1be3b13aea9698448af94b2e6f2f8566712db51b541d2cfc"
+}

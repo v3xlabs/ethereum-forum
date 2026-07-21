@@ -145,6 +145,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/t/{discourse_id}/{topic_id}/summary/cached": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /t/:discourse_id/:topic_id/summary/cached
+         * @description Latest cached summary, read-only: never triggers generation, 404 when none exists
+         */
+        get: operations["get_cached_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/t/{discourse_id}/{topic_id}/summary/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /t/:discourse_id/:topic_id/summary/stream
+         * @description SSE stream of an ongoing (or just finished) summary generation
+         */
+        get: operations["get_summary_stream"];
+        put?: never;
+        /**
+         * /t/:discourse_id/:topic_id/summary/stream
+         * @description Start summary generation for a topic (or coalesce onto an ongoing one)
+         */
+        post: operations["start_summary_stream"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * /digest
+         * @description Get the latest forum activity digest
+         */
+        get: operations["get_digest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users": {
         parameters: {
             query?: never;
@@ -618,491 +682,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/ws/t/{discourse_id}/{topic_id}/summary/to-chat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * /ws/t/:discourse_id/:topic_id/summary/to-chat
-         * @description Create a new chat from a topic summary
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    discourse_id: string;
-                    topic_id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopMessage"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/chat": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/chat
-         * @description Get all chats
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopChat"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/models": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/models
-         * @description Get available models for the user
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["AvailableModelsResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/chat/{chat_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/chat/:chat_id
-         * @description Get a chat
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    chat_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopChatPayload"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * /ws/chat/:chat_id
-         * @description Send a message
-         *     Specify parent_message as query param to send a reply
-         */
-        post: {
-            parameters: {
-                query?: {
-                    parent_message?: string;
-                };
-                header?: never;
-                path: {
-                    chat_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["WorkshopChatInput"];
-                };
-            };
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopMessage"];
-                    };
-                };
-            };
-        };
-        /**
-         * /ws/chat/:chat_id
-         * @description Delete a chat and all associated messages and snapshots
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    chat_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": unknown;
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/chat/{chat_id}/{message_id}/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/chat/:chat_id/:message_id/stream
-         * @description Get SSE stream for message generation
-         */
-        get: {
-            parameters: {
-                query?: {
-                    token?: string;
-                };
-                header?: never;
-                path: {
-                    chat_id: string;
-                    message_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/event-stream": components["schemas"]["StreamingResponse"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/t/{discourse_id}/{topic_id}/summary/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/t/:discourse_id/:topic_id/summary/stream
-         * @description Get SSE stream for topic summary generation
-         *     Endpoint does not require authentication
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    discourse_id: string;
-                    topic_id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "text/event-stream": components["schemas"]["StreamingResponse"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * /ws/t/:discourse_id/:topic_id/summary/stream
-         * @description Trigger summary generation and start streaming (or coalesce if already running)
-         *     Endpoint does not require authentication
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    discourse_id: string;
-                    topic_id: number;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": unknown;
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/usage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/usage
-         * @description Get current user's usage statistics
-         */
-        get: {
-            parameters: {
-                query?: {
-                    days?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["UserUsageResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/share": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * /ws/share
-         * @description Creates a new chat snapshot
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["CreateChatSnapshotPayload"];
-                };
-            };
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopSnapshot"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/share/{snapshot_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/share/:snapshot_id
-         * @description Get a chat snapshot by snapshot ID
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    snapshot_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopSnapshotResponse"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ws/share/{snapshot_id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * /ws/share/:snapshot_id/messages
-         * @description Get all messages by snapshot ID
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    snapshot_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json; charset=utf-8": components["schemas"]["WorkshopMessage"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/search": {
         parameters: {
             query?: never;
@@ -1150,10 +729,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * /admin/reindex
-         * @description Trigger a full reindex of all topics and posts from database to Meilisearch
-         */
+        /** /admin/reindex */
         post: {
             parameters: {
                 query?: never;
@@ -1188,10 +764,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * /admin/stats
-         * @description Get indexing statistics
-         */
+        /** /admin/stats */
         get: {
             parameters: {
                 query?: never;
@@ -1221,18 +794,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/usage": {
+    "/admin/digest": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * /admin/usage
-         * @description Get workshop usage statistics for all users
-         */
-        get: {
+        get?: never;
+        put?: never;
+        /** /admin/digest */
+        post: {
             parameters: {
                 query?: never;
                 header?: {
@@ -1248,14 +820,31 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json; charset=utf-8": components["schemas"]["AdminUsageResponse"];
+                        "application/json; charset=utf-8": components["schemas"]["ActivityDigest"];
                     };
                 };
             };
         };
-        put?: never;
-        post?: never;
-        delete?: never;
+        /** /admin/digest */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -1271,6 +860,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
+        /** /admin/topic_summary */
         delete: {
             parameters: {
                 query: {
@@ -1293,6 +883,486 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/system-prompt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/system-prompt */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["SystemPromptResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/memory */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmMemory"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** /admin/llm/memory */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LlmMemoryEntry"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmMemory"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/memory/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** /admin/llm/memory/:entry_id */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path: {
+                    entry_id: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/memory/staging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/memory/staging */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                };
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmMemoryStaging"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    run_type?: string;
+                    limit?: number;
+                    offset?: number;
+                };
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmRun"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/runs/:run_id */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path: {
+                    run_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmRun"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/metrics */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["AdminMetricsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/usage */
+        get: {
+            parameters: {
+                query?: {
+                    days?: number;
+                };
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmUsageResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/per-model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/per-model */
+        get: {
+            parameters: {
+                query?: {
+                    days?: number;
+                };
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmModelStatsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/snapshots */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmMemorySnapshot"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/curator/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** /admin/llm/curator/trigger */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["CuratorTriggerResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/llm/curator/last": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/curator/last */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LlmRun"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1348,6 +1418,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityDigest */
+        ActivityDigest: {
+            /** Format: int32 */
+            digest_id: number;
+            /** Format: date-time */
+            period_start: string;
+            /** Format: date-time */
+            period_end: string;
+            digest_text: string;
+            topics_included?: unknown;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** AdminMetricsResponse */
+        AdminMetricsResponse: {
+            /** Format: int64 */
+            total_runs: number;
+            /** Format: double */
+            success_rate: number;
+            /** Format: double */
+            avg_duration_ms: number;
+            /** Format: double */
+            avg_total_tokens: number;
+            runs_by_type: unknown;
+            runs_by_day: unknown;
+            /** Format: int64 */
+            total_tokens_all_time: number;
+        };
         /** AdminStatsResponse */
         AdminStatsResponse: {
             /** Format: int64 */
@@ -1357,20 +1455,6 @@ export interface components {
             /** Format: int64 */
             meilisearch_documents?: number;
         };
-        /** AdminUsageResponse */
-        AdminUsageResponse: {
-            /** Format: int32 */
-            total_users: number;
-            /** Format: int64 */
-            total_tokens: number;
-            /** Format: int64 */
-            total_prompt_tokens: number;
-            /** Format: int64 */
-            total_completion_tokens: number;
-            /** Format: int64 */
-            total_reasoning_tokens: number;
-            users: components["schemas"]["UserUsageOverview"][];
-        };
         /** AuthResponse */
         AuthResponse: {
             token: string;
@@ -1378,38 +1462,18 @@ export interface components {
             /** Format: int64 */
             expires_at: number;
         };
-        /** AvailableModel */
-        AvailableModel: {
-            id: string;
-            name: string;
-            provider: string;
-            is_default: boolean;
+        /** CuratorOutput */
+        CuratorOutput: {
+            memory_updates: components["schemas"]["MemoryUpdate"][];
+            memory_removals: string[];
+            snapshot_summary: string;
+            action_log: string;
         };
-        /** AvailableModelsResponse */
-        AvailableModelsResponse: {
-            models: components["schemas"]["AvailableModel"][];
-            default_model: string;
-        };
-        /** CreateChatSnapshotPayload */
-        CreateChatSnapshotPayload: {
-            /** Format: uuid */
-            chat_id: string;
-            /** Format: uuid */
-            message_id: string;
-        };
-        /** DailyUsage */
-        DailyUsage: {
-            date: string;
-            /** Format: int64 */
-            prompt_tokens: number;
-            /** Format: int64 */
-            completion_tokens: number;
-            /** Format: int64 */
-            total_tokens: number;
-            /** Format: int64 */
-            reasoning_tokens: number;
-            /** Format: int64 */
-            message_count: number;
+        /** CuratorTriggerResponse */
+        CuratorTriggerResponse: {
+            success: boolean;
+            message: string;
+            output?: components["schemas"]["CuratorOutput"];
         };
         /** DiscourseBadge */
         DiscourseBadge: {
@@ -1654,6 +1718,127 @@ export interface components {
         GoogleMeetingData: {
             link: string;
         };
+        /** LlmMemory */
+        LlmMemory: {
+            /** Format: int32 */
+            entry_id: number;
+            term: string;
+            content: string;
+            /** @description Array of `MemoryLink` objects: where this term's definition comes from. */
+            sources?: unknown;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** LlmMemoryEntry */
+        LlmMemoryEntry: {
+            /** Format: int32 */
+            entry_id: number;
+            term: string;
+            content: string;
+            sources?: unknown;
+        };
+        /** LlmMemorySnapshot */
+        LlmMemorySnapshot: {
+            /** Format: int32 */
+            snapshot_id: number;
+            /** Format: int32 */
+            version: number;
+            memory_snapshot: unknown;
+            /** Format: uuid */
+            curator_run_id?: string;
+            summary?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * LlmMemoryStaging
+         * @description A staged glossary candidate written by a summarizer/digest run via
+         *     `note_candidate`. The curator is the only thing that promotes these into
+         *     `llm_memory`, so summarizer prompts are never polluted by unverified
+         *     candidates.
+         */
+        LlmMemoryStaging: {
+            /** Format: int32 */
+            staging_id: number;
+            term: string;
+            content: string;
+            source_discourse_id?: string;
+            /** Format: int32 */
+            source_topic_id?: number;
+            /** Format: int32 */
+            source_post_number?: number;
+            link_reason?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** LlmModelStats */
+        LlmModelStats: {
+            model: string;
+            /** Format: int64 */
+            runs: number;
+            /** Format: double */
+            avg_prompt_tokens: number;
+            /** Format: double */
+            avg_completion_tokens: number;
+            /** Format: double */
+            avg_total_tokens: number;
+            /** Format: int64 */
+            total_tokens: number;
+        };
+        /** LlmModelStatsResponse */
+        LlmModelStatsResponse: {
+            models: components["schemas"]["LlmModelStats"][];
+        };
+        /** LlmRun */
+        LlmRun: {
+            /** Format: uuid */
+            run_id: string;
+            run_type: string;
+            discourse_id?: string;
+            /** Format: int32 */
+            topic_id?: number;
+            /** Format: int32 */
+            prompt_tokens?: number;
+            /** Format: int32 */
+            completion_tokens?: number;
+            /** Format: int32 */
+            total_tokens?: number;
+            /** Format: int32 */
+            reasoning_tokens?: number;
+            model_used?: string;
+            /** Format: int32 */
+            tool_calls?: number;
+            /** Format: int32 */
+            tool_rounds?: number;
+            /** Format: int32 */
+            duration_ms?: number;
+            outcome: string;
+            error?: string;
+            metadata?: unknown;
+            trace?: unknown;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /** LlmUsageDay */
+        LlmUsageDay: {
+            date: string;
+            run_type: string;
+            model_used: string;
+            /** Format: int64 */
+            prompt_tokens: number;
+            /** Format: int64 */
+            completion_tokens: number;
+            /** Format: int64 */
+            total_tokens: number;
+            /** Format: int64 */
+            runs: number;
+            /** Format: int64 */
+            failures: number;
+        };
+        /** LlmUsageResponse */
+        LlmUsageResponse: {
+            days: components["schemas"]["LlmUsageDay"][];
+        };
         /** LoginResponse */
         LoginResponse: {
             redirect_url: string;
@@ -1680,19 +1865,11 @@ export interface components {
              */
             type: "Zoom";
         } & components["schemas"]["ZoomMeetingData"];
-        /** ModelUsage */
-        ModelUsage: {
-            model_name: string;
-            /** Format: int64 */
-            prompt_tokens: number;
-            /** Format: int64 */
-            completion_tokens: number;
-            /** Format: int64 */
-            total_tokens: number;
-            /** Format: int64 */
-            reasoning_tokens: number;
-            /** Format: int64 */
-            message_count: number;
+        /** MemoryUpdate */
+        MemoryUpdate: {
+            term: string;
+            content: string;
+            sources?: unknown;
         };
         PMMeetingData: components["schemas"]["PMRecurringMeeting"] | components["schemas"]["PMOneOffMeeting"];
         /** PMOccurrence */
@@ -1826,15 +2003,31 @@ export interface components {
         };
         /** SearchResponse */
         SearchResponse: Record<string, never>;
-        /** @enum {string} */
-        StreamingEntryType: "Content" | "ToolCallStart" | "ToolCallResult" | "ToolCallError";
         /** StreamingResponse */
         StreamingResponse: {
             content: string;
             is_complete: boolean;
+            /** @description Discard all previously received content; generation restarted. */
+            is_reset: boolean;
             error?: string;
-            entry_type: components["schemas"]["StreamingEntryType"];
-            tool_call?: components["schemas"]["ToolCallEntry"];
+            tool_activity?: string;
+            tool_call?: components["schemas"]["ToolCallUpdate"];
+        };
+        /** SummaryStartResponse */
+        SummaryStartResponse: {
+            status: components["schemas"]["SummaryStartStatus"];
+            /** Format: int32 */
+            topic_id: number;
+            discourse_id: string;
+            summary?: string;
+        };
+        /** @enum {string} */
+        SummaryStartStatus: "existing" | "started" | "ongoing";
+        /** SystemPromptResponse */
+        SystemPromptResponse: {
+            summary_prompt: string;
+            digest_prompt: string;
+            curator_prompt: string;
         };
         /** TokenValidationResponse */
         TokenValidationResponse: {
@@ -1843,16 +2036,19 @@ export interface components {
             /** Format: int64 */
             expires_at?: number;
         };
-        /** ToolCallEntry */
-        ToolCallEntry: {
-            tool_name: string;
-            tool_id: string;
-            arguments?: string;
-            result?: string;
-            status: components["schemas"]["ToolCallStatus"];
+        /**
+         * ToolCallUpdate
+         * @description Progress of a single tool invocation made by the model, streamed to
+         *     subscribers as it starts and again when it resolves (matched by `call_id`).
+         */
+        ToolCallUpdate: {
+            call_id: string;
+            tool: string;
+            label: string;
+            /** @description "running", "ok", or "error" */
+            status: string;
+            detail?: string;
         };
-        /** @enum {string} */
-        ToolCallStatus: "Starting" | "Executing" | "Success" | "Error";
         /** Topic */
         Topic: {
             discourse_id: string;
@@ -1886,7 +2082,10 @@ export interface components {
             topic_id: number;
             /** Format: date-time */
             based_on: string;
+            /** Format: int32 */
+            based_on_post_number?: number;
             summary_text: string;
+            summary_json?: unknown;
             /** Format: date-time */
             created_at: string;
         };
@@ -1925,110 +2124,6 @@ export interface components {
             /** Format: int64 */
             expires_at: number;
             token_expiring_soon: boolean;
-        };
-        /** UserUsageOverview */
-        UserUsageOverview: {
-            /** Format: uuid */
-            user_id: string;
-            username?: string;
-            /** Format: int64 */
-            total_tokens: number;
-            /** Format: int64 */
-            prompt_tokens: number;
-            /** Format: int64 */
-            completion_tokens: number;
-            /** Format: int64 */
-            reasoning_tokens: number;
-            /** Format: int64 */
-            message_count: number;
-        };
-        /** UserUsageResponse */
-        UserUsageResponse: {
-            stats: components["schemas"]["UserUsageStats"];
-            by_model: components["schemas"]["ModelUsage"][];
-            daily_usage: components["schemas"]["DailyUsage"][];
-        };
-        /** UserUsageStats */
-        UserUsageStats: {
-            /** Format: int64 */
-            total_prompt_tokens: number;
-            /** Format: int64 */
-            total_completion_tokens: number;
-            /** Format: int64 */
-            total_tokens: number;
-            /** Format: int64 */
-            total_reasoning_tokens: number;
-            /** Format: int64 */
-            message_count: number;
-        };
-        /** WorkshopChat */
-        WorkshopChat: {
-            /** Format: uuid */
-            chat_id: string;
-            /** Format: uuid */
-            user_id: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at: string;
-            /** Format: date-time */
-            deleted_at?: string;
-            summary?: string;
-            /** Format: uuid */
-            last_message_id?: string;
-        };
-        /** WorkshopChatInput */
-        WorkshopChatInput: {
-            message: string;
-            model?: string;
-        };
-        /** WorkshopChatPayload */
-        WorkshopChatPayload: {
-            /** Format: uuid */
-            chat_id: string;
-            chat: components["schemas"]["WorkshopChat"];
-            messages: components["schemas"]["WorkshopMessage"][];
-        };
-        /** WorkshopMessage */
-        WorkshopMessage: {
-            /** Format: uuid */
-            message_id: string;
-            /** Format: uuid */
-            chat_id: string;
-            sender_role: string;
-            message: string;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: uuid */
-            parent_message_id?: string;
-            streaming_events?: unknown;
-            /** Format: int32 */
-            prompt_tokens?: number;
-            /** Format: int32 */
-            completion_tokens?: number;
-            /** Format: int32 */
-            total_tokens?: number;
-            /** Format: int32 */
-            reasoning_tokens?: number;
-            model_used?: string;
-        };
-        /** WorkshopSnapshot */
-        WorkshopSnapshot: {
-            /** Format: uuid */
-            snapshot_id: string;
-            /** Format: uuid */
-            chat_id: string;
-            /** Format: uuid */
-            user_id: string;
-            /** Format: uuid */
-            message_id: string;
-            /** Format: date-time */
-            created_at: string;
-        };
-        /** WorkshopSnapshotResponse */
-        WorkshopSnapshotResponse: {
-            snapshot: components["schemas"]["WorkshopSnapshot"];
-            messages: components["schemas"]["WorkshopMessage"][];
         };
         /** YoutubeMeetingData */
         YoutubeMeetingData: {
@@ -2136,6 +2231,95 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["TopicSummary"];
+                };
+            };
+        };
+    };
+    get_cached_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discourse_id: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TopicSummary"];
+                };
+            };
+        };
+    };
+    get_summary_stream: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discourse_id: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["StreamingResponse"][];
+                };
+            };
+        };
+    };
+    start_summary_stream: {
+        parameters: {
+            query?: {
+                force?: boolean;
+            };
+            header?: {
+                "X-Admin-Key"?: string;
+            };
+            path: {
+                discourse_id: string;
+                topic_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SummaryStartResponse"];
+                };
+            };
+        };
+    };
+    get_digest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ActivityDigest"];
                 };
             };
         };

@@ -18,10 +18,7 @@ use tracing::info;
 use user::UserApi;
 use webhooks::WebhookApi;
 
-use crate::{
-    server::{search::SearchApi, workshop::WorkshopApi},
-    state::AppState,
-};
+use crate::{server::search::SearchApi, state::AppState};
 // use tracing_mw::TraceId;
 
 pub mod admin;
@@ -35,7 +32,6 @@ pub mod search;
 pub mod topic;
 pub mod user;
 pub mod webhooks;
-pub mod workshop;
 
 #[derive(Tags)]
 pub enum ApiTags {
@@ -45,8 +41,6 @@ pub enum ApiTags {
     User,
     /// Events Related Operations
     Events,
-    /// Workshop Related Operations
-    Workshop,
     /// Search Related Operations
     Search,
     /// Admin Related Operations
@@ -57,14 +51,7 @@ pub enum ApiTags {
 
 fn get_api(_state: AppState) -> impl OpenApi {
     (
-        TopicApi,
-        UserApi,
-        EventsApi,
-        PMApi,
-        WorkshopApi,
-        SearchApi,
-        AdminApi,
-        WebhookApi,
+        TopicApi, UserApi, EventsApi, PMApi, SearchApi, AdminApi, WebhookApi,
     )
 }
 

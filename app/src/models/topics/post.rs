@@ -28,7 +28,7 @@ pub struct Post {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct WorkshopPost {
+pub struct SummaryPost {
     pub discourse_id: String,
     pub post_id: i32,
     pub user_id: i32,
@@ -42,8 +42,8 @@ pub struct WorkshopPost {
     pub cooked: Option<String>,
 }
 
-impl From<Post> for WorkshopPost {
-    fn from(post: Post) -> WorkshopPost {
+impl From<Post> for SummaryPost {
+    fn from(post: Post) -> SummaryPost {
         Self {
             discourse_id: post.discourse_id,
             post_id: post.post_id,
@@ -103,23 +103,65 @@ impl Post {
         size: Option<i32>,
         state: &AppState,
     ) -> Result<(Vec<Self>, bool), sqlx::Error> {
-        let size = size.unwrap_or(POSTS_PER_PAGE as i32);
-        let offset = (page - 1) * size;
+        let size = size.unwrap_or(POSTS_PER_PAGE as i32).min(1000);
+        if page < 1 {
+            return Ok((vec![], false));
+        }
+        let offset = (page as i64 - 1) * size as i64;
+        let limit = size as i64 + 1;
         let posts = query_as!(
             Self,
             "SELECT * FROM posts WHERE discourse_id = $1 AND topic_id = $2 ORDER BY post_number ASC LIMIT $3 OFFSET $4",
             discourse_id,
             topic_id,
-            (size + 1) as i64,
-            offset as i64
+            limit,
+            offset
         )
         .fetch_all(&state.database.pool)
         .await?;
 
-        let has_more = posts.len() == size as usize + 1;
+        let has_more = posts.len() == limit as usize;
         let posts = posts.into_iter().take(size as usize).collect();
 
         Ok((posts, has_more))
+    }
+
+    pub async fn find_by_post_number_range(
+        discourse_id: &str,
+        topic_id: i32,
+        from_post: i32,
+        to_post: i32,
+        state: &AppState,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        let limit = (to_post - from_post + 1).min(20).max(1);
+        query_as!(
+            Self,
+            "SELECT * FROM posts WHERE discourse_id = $1 AND topic_id = $2 AND post_number >= $3 AND post_number <= $4 ORDER BY post_number ASC LIMIT $5",
+            discourse_id,
+            topic_id,
+            from_post,
+            to_post,
+            limit as i64
+        )
+        .fetch_all(&state.database.pool)
+        .await
+    }
+
+    pub async fn find_recent_by_topic(
+        discourse_id: &str,
+        topic_id: i32,
+        limit: i64,
+        state: &AppState,
+    ) -> Result<Vec<Self>, sqlx::Error> {
+        query_as!(
+            Self,
+            "SELECT * FROM posts WHERE discourse_id = $1 AND topic_id = $2 AND created_at > NOW() - INTERVAL '3 days' ORDER BY created_at DESC LIMIT $3",
+            discourse_id,
+            topic_id,
+            limit
+        )
+        .fetch_all(&state.database.pool)
+        .await
     }
 
     pub async fn count_by_topic_id(

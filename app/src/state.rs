@@ -3,10 +3,10 @@ use crate::{
     modules::{
         discourse::{self, DiscourseService},
         ical::{self, ICalConfig},
+        llm::LlmService,
         meili,
         pm::PMModule,
         sso::SSOService,
-        workshop::WorkshopService,
     },
     tmp::CacheService,
 };
@@ -27,7 +27,7 @@ pub struct AppStateInner {
     pub discourse: DiscourseService,
     pub pm: PMModule,
     pub sso: Option<SSOService>,
-    pub workshop: WorkshopService,
+    pub llm: Option<LlmService>,
     pub cache: CacheService,
     pub meili: Option<meili::Client>,
 }
@@ -35,7 +35,6 @@ pub struct AppStateInner {
 impl AppStateInner {
     /// # Panics
     /// Panics if the environment variables for the database configuration are not set.
-    /// Panics if the OpenAI-compatible API key or base URL for the intelligence is not set.
     pub async fn init() -> Self {
         // Load configuration from environment variables
         let database_config = Figment::new()
@@ -45,7 +44,7 @@ impl AppStateInner {
 
         let database = Database::init(&database_config).await;
 
-        let workshop = WorkshopService::init().await;
+        let llm = LlmService::from_env();
 
         let cache = CacheService::default();
 
@@ -78,7 +77,7 @@ impl AppStateInner {
             cache,
             discourse,
             pm,
-            workshop,
+            llm,
             sso,
             meili,
         }

@@ -9,7 +9,7 @@ import React from 'react';
 
 import { GithubIssueComment } from '@/types/github';
 
-import { useApi } from './api';
+import { baseUrl, useApi } from './api';
 import { components } from './schema.gen';
 
 // Get the Post type from schema
@@ -90,21 +90,6 @@ export const getPosts = (discourse_id: string, topicId: string, page: number) =>
         },
     });
 
-export const getTopicSummary = (discourse_id: string, topicId: number) =>
-    queryOptions({
-        queryKey: ['summary', discourse_id, topicId],
-        queryFn: async () => {
-            const response = await useApi('/t/{discourse_id}/{topic_id}/summary', 'get', {
-                path: {
-                    discourse_id,
-                    topic_id: topicId,
-                },
-            });
-
-            return response.data;
-        },
-    });
-
 export const getPostsInfinite = (discourse_id: string, topicId: string) =>
     infiniteQueryOptions({
         queryKey: ['posts', discourse_id, topicId, 'infinite'],
@@ -143,84 +128,192 @@ export const useGithubIssueComments = (issueId: number) =>
 export const usePosts = (discourse_id: string, topicId: string, page: number) =>
     useQuery(getPosts(discourse_id, topicId, page));
 
-export const useTopicSummary = (discourse_id: string, topicId: number) =>
-    useQuery(getTopicSummary(discourse_id, topicId));
-
 export const usePostsInfinite = (discourse_id: string, topicId: string) =>
     useInfiniteQuery(getPostsInfinite(discourse_id, topicId));
+
+export type SummaryStartResponse = components['schemas']['SummaryStartResponse'];
+
+export type SummaryStartResult =
+    | { state: 'ok'; response: SummaryStartResponse }
+    | { state: 'unavailable' };
+
+export type SummaryToolCallStatus = 'running' | 'ok' | 'error';
+
+export type SummaryToolCall = {
+    call_id: string;
+    tool: string;
+    label: string;
+    status: SummaryToolCallStatus;
+    detail?: string | null;
+};
+
+export type SummaryActivity =
+    | { kind: 'phase'; activityKey: string; label: string }
+    | { kind: 'tool'; activityKey: string; call: SummaryToolCall };
+
+export type SummaryStreamEvent = components['schemas']['StreamingResponse'] & {
+    tool_activity?: string | null;
+    is_reset?: boolean;
+    tool_call?: {
+        call_id: string;
+        tool: string;
+        label: string;
+        status: string;
+        detail?: string | null;
+    } | null;
+};
+
+const isToolCallStatus = (status: string): status is SummaryToolCallStatus =>
+    status === 'running' || status === 'ok' || status === 'error';
+
+export type ActivityDigestTopic = {
+    discourse_id: string;
+    topic_id: number;
+    title: string;
+    slug: string;
+};
+
+// topics_included is a JSONB column typed `unknown` in the generated schema;
+// the backend writes it as ActivityDigestTopic[].
+export type ActivityDigest = Omit<components['schemas']['ActivityDigest'], 'topics_included'> & {
+    topics_included: ActivityDigestTopic[] | null;
+};
 
 export const useStartTopicSummaryStream = () =>
     useMutation({
         mutationFn: async ({
             discourse_id,
             topicId,
+            force = false,
         }: {
             discourse_id: string;
             topicId: number;
-        }) => {
-            const response = await fetch(`/api/ws/t/${discourse_id}/${topicId}/summary/stream`, {
+            force?: boolean;
+        }): Promise<SummaryStartResult> => {
+            const adminKey = localStorage.getItem('admin_key');
+            const headers: Record<string, string> =
+                force && adminKey ? { 'X-Admin-Key': adminKey } : {};
+            const streamUrl = new URL(`t/${discourse_id}/${topicId}/summary/stream`, baseUrl);
+
+            if (force) {
+                streamUrl.searchParams.set('force', 'true');
+            }
+
+            const response = await fetch(streamUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
             });
+
+            if (response.status === 503) {
+                return { state: 'unavailable' };
+            }
 
             if (!response.ok) {
                 throw new Error('Failed to start summary stream');
             }
 
-            const data = await response.json();
+            const data: SummaryStartResponse = await response.json();
 
-            return data as {
-                status: 'existing' | 'ongoing' | 'started';
-                topic_id: number;
-                summary?: string;
-            };
+            return { state: 'ok', response: data };
         },
     });
 
+const applyToolCall = (
+    activities: SummaryActivity[],
+    toolCall: NonNullable<SummaryStreamEvent['tool_call']>
+): SummaryActivity[] => {
+    const call: SummaryToolCall = {
+        call_id: toolCall.call_id,
+        tool: toolCall.tool,
+        label: toolCall.label,
+        status: isToolCallStatus(toolCall.status) ? toolCall.status : 'running',
+        detail: toolCall.detail,
+    };
+    const activityKey = `tool-${call.call_id}`;
+    const existingIndex = activities.findIndex((a) => a.activityKey === activityKey);
+
+    if (existingIndex === -1) {
+        return [...activities, { kind: 'tool', activityKey, call }];
+    }
+
+    return activities.map((activity, index) =>
+        index === existingIndex ? { kind: 'tool', activityKey, call } : activity
+    );
+};
+
 // Hook for streaming topic summary
 export const useTopicSummaryStream = (discourse_id: string, topicId: number) => {
-    const [data, setData] = React.useState<components['schemas']['StreamingResponse'][]>([]);
+    const [content, setContent] = React.useState('');
+    const [activities, setActivities] = React.useState<SummaryActivity[]>([]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
     const [isComplete, setIsComplete] = React.useState(false);
     const [isStreaming, setIsStreaming] = React.useState(false);
     const hasReceivedDataRef = React.useRef(false);
+    const phaseCounterRef = React.useRef(0);
+    const eventSourceRef = React.useRef<EventSource | null>(null);
+
+    React.useEffect(
+        () => () => {
+            eventSourceRef.current?.close();
+        },
+        []
+    );
 
     const startStream = React.useCallback(() => {
         if (isStreaming) return;
 
-        // Reset state
-        setData([]);
+        setContent('');
+        setActivities([]);
         setIsLoading(true);
         setError(null);
         setIsComplete(false);
         setIsStreaming(true);
         hasReceivedDataRef.current = false;
 
-        const eventSource = new EventSource(`/api/ws/t/${discourse_id}/${topicId}/summary/stream`);
+        const eventSource = new EventSource(
+            new URL(`t/${discourse_id}/${topicId}/summary/stream`, baseUrl)
+        );
+
+        eventSourceRef.current = eventSource;
 
         eventSource.onopen = () => {
-            console.log('Summary EventSource connection opened');
             setIsLoading(false);
         };
 
         eventSource.onmessage = (event) => {
             try {
-                const response: components['schemas']['StreamingResponse'] = JSON.parse(event.data);
+                const response: SummaryStreamEvent = JSON.parse(event.data);
 
                 hasReceivedDataRef.current = true;
-                setData((prev) => [...prev, response]);
 
-                // Check if the response indicates completion or error
+                if (response.is_reset) {
+                    setContent('');
+                }
+
+                if (response.content) {
+                    setContent((prev) => prev + response.content);
+                }
+
+                if (response.tool_activity) {
+                    const label = response.tool_activity;
+                    const activityKey = `phase-${phaseCounterRef.current++}`;
+
+                    setActivities((prev) => [...prev, { kind: 'phase', activityKey, label }]);
+                }
+
+                if (response.tool_call) {
+                    const toolCall = response.tool_call;
+
+                    setActivities((prev) => applyToolCall(prev, toolCall));
+                }
+
                 if (response.is_complete) {
+                    if (response.error) {
+                        setError(response.error);
+                    }
+
                     setIsComplete(true);
-                    setIsStreaming(false);
-                    eventSource.close();
-                } else if (response.error) {
-                    setIsComplete(true);
-                    setError(response.error);
                     setIsStreaming(false);
                     eventSource.close();
                 }
@@ -233,10 +326,7 @@ export const useTopicSummaryStream = (discourse_id: string, topicId: number) => 
             }
         };
 
-        eventSource.onerror = (event) => {
-            console.error('Summary EventSource error:', event);
-
-            // Only show error if we haven't received any data yet
+        eventSource.onerror = () => {
             if (!hasReceivedDataRef.current) {
                 setError('Connection error occurred');
             }
@@ -246,22 +336,11 @@ export const useTopicSummaryStream = (discourse_id: string, topicId: number) => 
             setIsStreaming(false);
             eventSource.close();
         };
-
-        // Store event source for cleanup
-        return () => {
-            eventSource.close();
-            setIsStreaming(false);
-        };
-    }, [topicId, isStreaming]);
-
-    // Combine all content from the responses
-    const combinedContent = React.useMemo(() => {
-        return data.map((response) => response.content).join('');
-    }, [data]);
+    }, [discourse_id, topicId, isStreaming]);
 
     return {
-        data,
-        combinedContent,
+        combinedContent: content,
+        activities,
         isLoading,
         error,
         isComplete,
@@ -269,3 +348,61 @@ export const useTopicSummaryStream = (discourse_id: string, topicId: number) => 
         startStream,
     };
 };
+
+export type CachedTopicSummary = {
+    summary_text: string;
+    based_on: string;
+    based_on_post_number?: number | null;
+    created_at?: string;
+};
+
+export const getCachedTopicSummary = (discourse_id: string, topicId: number) =>
+    queryOptions({
+        queryKey: ['topic-summary-cached', discourse_id, topicId],
+        queryFn: async (): Promise<CachedTopicSummary | null> => {
+            const response = await fetch(
+                new URL(`t/${discourse_id}/${topicId}/summary/cached`, baseUrl)
+            );
+
+            if (response.status === 404) {
+                return null;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch cached summary');
+            }
+
+            const data: CachedTopicSummary = await response.json();
+
+            return data;
+        },
+        staleTime: 60 * 1000,
+        retry: 1,
+    });
+
+export const useCachedTopicSummary = (discourse_id: string, topicId: number) =>
+    useQuery(getCachedTopicSummary(discourse_id, topicId));
+
+export const getActivityDigest = () =>
+    queryOptions({
+        queryKey: ['digest'],
+        queryFn: async (): Promise<ActivityDigest | null> => {
+            const response = await fetch(new URL('digest', baseUrl));
+
+            if (response.status === 404) {
+                return null;
+            }
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch activity digest');
+            }
+
+            const data: ActivityDigest = await response.json();
+
+            return data;
+        },
+        staleTime: 5 * 60 * 1000,
+        retry: 1,
+    });
+
+export const useActivityDigest = () => useQuery(getActivityDigest());

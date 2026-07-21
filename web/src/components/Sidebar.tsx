@@ -1,41 +1,62 @@
 import { Link } from '@tanstack/react-router';
-import { FC } from 'react';
-import { LuBook, LuCalendar, LuExternalLink, LuHouse, LuNewspaper } from 'react-icons/lu';
+import { FC, useMemo } from 'react';
+import {
+    LuBook,
+    LuCalendar,
+    LuExternalLink,
+    LuHouse,
+    LuNewspaper,
+    LuSettings,
+} from 'react-icons/lu';
 import { SiEthereum } from 'react-icons/si';
 
 import { useApp } from '../hooks/context';
 import { ProseWidthSwitcher } from './preferences/ProseWidthSwitcher';
 import { ThemeSwitcher } from './preferences/ThemeSwitcher';
 
-export const NAV_ITEMS = [
-    {
-        title: 'Home',
-        href: '/',
-        short: 'Everything',
-        icon: <LuHouse />,
-    },
-    {
-        title: 'Protocol Agenda',
-        href: '/c',
-        short: 'Calendar',
-        icon: <LuCalendar />,
-    },
-    {
-        title: 'Standards',
-        href: '/s',
-        short: 'EIPs & ERCs',
-        icon: <LuBook />,
-    },
-    {
-        title: 'Roadmap',
-        href: '/r',
-        short: 'Hardforks',
-        icon: <LuNewspaper />,
-    },
-];
-
 export const Sidebar: FC = () => {
     const { isSidebarOpen } = useApp();
+    const hasAdmin = typeof window !== 'undefined' && !!localStorage.getItem('admin_key');
+
+    const navItems = useMemo(() => {
+        const items = [
+            {
+                title: 'Home',
+                href: '/',
+                short: 'Everything',
+                icon: <LuHouse />,
+            },
+            {
+                title: 'Protocol Agenda',
+                href: '/c',
+                short: 'Calendar',
+                icon: <LuCalendar />,
+            },
+            {
+                title: 'Standards',
+                href: '/s',
+                short: 'EIPs & ERCs',
+                icon: <LuBook />,
+            },
+            {
+                title: 'Roadmap',
+                href: '/r',
+                short: 'Hardforks',
+                icon: <LuNewspaper />,
+            },
+        ];
+
+        if (hasAdmin) {
+            items.push({
+                title: 'Admin',
+                href: '/admin',
+                short: 'Settings',
+                icon: <LuSettings />,
+            });
+        }
+
+        return items;
+    }, [hasAdmin]);
 
     return (
         <div
@@ -69,7 +90,7 @@ export const Sidebar: FC = () => {
                         </div>
                     </div>
                     <ul className="overflow-hidden space-y-1">
-                        {NAV_ITEMS.map((item) => (
+                        {navItems.map((item) => (
                             <li key={item.href} className="group">
                                 {item.href === '/r' ? (
                                     <a

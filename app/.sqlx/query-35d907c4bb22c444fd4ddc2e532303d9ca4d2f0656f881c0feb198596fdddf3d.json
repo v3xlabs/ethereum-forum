@@ -1,0 +1,118 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM llm_runs WHERE run_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "run_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "run_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "discourse_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "prompt_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "completion_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "total_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "reasoning_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "model_used",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "tool_calls",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "tool_rounds",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "duration_ms",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "error",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "trace",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "35d907c4bb22c444fd4ddc2e532303d9ca4d2f0656f881c0feb198596fdddf3d"
+}

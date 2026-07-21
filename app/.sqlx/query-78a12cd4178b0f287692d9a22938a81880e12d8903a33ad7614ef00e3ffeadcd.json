@@ -1,0 +1,120 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM llm_runs WHERE run_type = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "run_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "run_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "discourse_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "prompt_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "completion_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "total_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "reasoning_tokens",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "model_used",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "tool_calls",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "tool_rounds",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "duration_ms",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 12,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "error",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 16,
+        "name": "trace",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      false,
+      true
+    ]
+  },
+  "hash": "78a12cd4178b0f287692d9a22938a81880e12d8903a33ad7614ef00e3ffeadcd"
+}

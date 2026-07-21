@@ -1,0 +1,1 @@
+ALTER TABLE llm_runs ADD COLUMN trace JSONB;

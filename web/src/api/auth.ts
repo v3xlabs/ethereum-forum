@@ -145,7 +145,6 @@ export const useAuth = () => {
                 token: null,
                 isAuthenticated: false,
             });
-            queryClient.invalidateQueries({ queryKey: ['workshop'] });
         };
 
         window.addEventListener('auth-cleared', handleAuthCleared);
@@ -235,9 +234,6 @@ export const useLogin = () => {
                 token: data.token,
                 isAuthenticated: true,
             });
-
-            // Invalidate related queries
-            queryClient.invalidateQueries({ queryKey: ['workshop'] });
         },
     });
 };
@@ -262,7 +258,6 @@ export const useLogout = () => {
             });
 
             // Clear all queries that might depend on authentication
-            queryClient.invalidateQueries({ queryKey: ['workshop'] });
             queryClient.clear(); // Clear entire cache to be safe
         },
     });
