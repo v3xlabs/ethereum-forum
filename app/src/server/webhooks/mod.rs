@@ -128,6 +128,7 @@ impl WebhookApi {
         let instance = match discourse_id.0.as_str() {
             "http://localhost" => "magicians",
             "https://ethereum-magicians.org" => "magicians",
+            "https://ethresear.ch" => "research",
             _ => {
                 return Err(poem::Error::from_string(
                     "Invalid Discourse instance",
