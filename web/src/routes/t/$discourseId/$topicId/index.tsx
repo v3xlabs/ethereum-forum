@@ -293,7 +293,11 @@ function RouteComponent() {
                             {data.pages?.map((page, i) => (
                                 <Fragment key={i}>
                                     {page.posts?.map((post) => (
-                                        <TopicPost key={post.post_id} post={post} />
+                                        <TopicPost
+                                            key={post.post_id}
+                                            post={post}
+                                            discourseId={discourseId}
+                                        />
                                     ))}
                                 </Fragment>
                             ))}
