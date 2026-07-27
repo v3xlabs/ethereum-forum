@@ -46,7 +46,6 @@
         "cmdk": "^1.1.1",
         "cx": "^25.3.1",
         "date-fns": "^4.1.0",
-        "eslint-config-prettier": "^10.1.2",
         "html-react-parser": "^5.2.5",
         "leaflet": "^1.9.4",
         "openapi-hooks": "0.0.6",
@@ -73,21 +72,22 @@
     "devDependencies": {
         "@eslint/js": "^9.23.0",
         "@types/lodash": "^4.17.16",
-        "@typescript-eslint/eslint-plugin": "^8.28.0",
-        "@typescript-eslint/parser": "^8.28.0",
-        "eslint": "^9.23.0",
+        "@typescript-eslint/eslint-plugin": "^8.65.0",
+        "@typescript-eslint/parser": "^8.65.0",
+        "eslint": "^10.8.0",
         "eslint-plugin-import": "^2.31.0",
         "eslint-plugin-jsx-a11y": "^6.10.2",
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-prettier": "^5.2.6",
-        "eslint-plugin-react": "^7.37.4",
+        "eslint-plugin-react-x": "^5.18.0",
         "eslint-plugin-simple-import-sort": "^12.1.1",
-        "eslint-plugin-sonarjs": "^3.0.2",
+        "eslint-plugin-sonarjs": "^3.0.7",
         "eslint-plugin-unicorn": "^58.0.0",
-        "eslint-plugin-unused-imports": "^4.1.4",
+        "eslint-plugin-unused-imports": "^4.4.1",
+        "eslint-plugin-v3xlabs": "^1.8.1",
         "globals": "^16.0.0",
         "openapi-typescript": "^7.6.1",
         "prettier": "^3.5.3",
-        "typescript-eslint": "^8.28.0"
+        "typescript-eslint": "^8.65.0"
     }
 }
