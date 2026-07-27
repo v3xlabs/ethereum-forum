@@ -105,9 +105,7 @@ impl WorkshopService {
             Post::find_by_topic_id(&topic.discourse_id, topic.topic_id, 1, Some(512), state).await;
 
         let (posts, _) = posts.unwrap_or_default();
-        let posts: Vec<WorkshopPost> = posts.into_iter().map(|x| {
-            x.into()
-        }).collect();
+        let posts: Vec<WorkshopPost> = posts.into_iter().map(|x| x.into()).collect();
 
         let messages = vec![
             state.workshop.prompts.summerize.clone(),
@@ -436,9 +434,7 @@ impl WorkshopService {
         let posts =
             Post::find_by_topic_id(&topic.discourse_id, topic.topic_id, 1, Some(512), state).await;
         let (posts, _) = posts.unwrap_or_default();
-        let posts: Vec<WorkshopPost> = posts.into_iter().map(|x| {
-            x.into()
-        }).collect();
+        let posts: Vec<WorkshopPost> = posts.into_iter().map(|x| x.into()).collect();
 
         let messages = vec![
             state.workshop.prompts.summerize.clone(),

@@ -5,7 +5,11 @@ import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { useAuth } from '@/api/auth';
-import { useStartTopicSummaryStream, useTopicSummaryStream } from '@/api/topics';
+import {
+    useDeleteTopicSummary,
+    useStartTopicSummaryStream,
+    useTopicSummaryStream,
+} from '@/api/topics';
 import { useWorkshopCreateChatFromSummary } from '@/api/workshop';
 
 interface StreamingSummaryProps {
@@ -22,6 +26,7 @@ export const StreamingSummary: React.FC<StreamingSummaryProps> = ({ discourseId,
 
     const navigate = useNavigate();
     const { mutateAsync: createChatFromSummary } = useWorkshopCreateChatFromSummary();
+    const { mutateAsync: deleteTopicSummary } = useDeleteTopicSummary();
 
     const { mutateAsync: startSummaryGeneration } = useStartTopicSummaryStream();
     const hasStartedRef = React.useRef(false);
@@ -114,6 +119,49 @@ export const StreamingSummary: React.FC<StreamingSummaryProps> = ({ discourseId,
                                 }
                             >
                                 Open in chat
+                            </button>
+                        )}
+                        {localStorage.getItem('forum.ethereum.adminKey') && (
+                            <button
+                                className="button"
+                                onClick={async () => {
+                                    try {
+                                        const key = localStorage.getItem('forum.ethereum.adminKey');
+
+                                        if (!key) {
+                                            console.warn(
+                                                'No admin key found, cannot regenerate summary'
+                                            );
+
+                                            return;
+                                        }
+
+                                        await deleteTopicSummary({
+                                            discourse_id: discourseId,
+                                            topicId,
+                                        });
+
+                                        setExistingSummary(null);
+                                        setShowExisting(false);
+                                        hasStartedRef.current = false;
+
+                                        const response = await startSummaryGeneration({
+                                            discourse_id: discourseId,
+                                            topicId,
+                                        });
+
+                                        if (
+                                            response.status === 'ongoing' ||
+                                            response.status === 'started'
+                                        ) {
+                                            startStream();
+                                        }
+                                    } catch (error) {
+                                        console.error('Error regenerating summary:', error);
+                                    }
+                                }}
+                            >
+                                Regenerate
                             </button>
                         )}
                     </div>

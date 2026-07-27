@@ -353,8 +353,11 @@ impl AdminApi {
         match result {
             Ok(query_result) => {
                 if query_result.rows_affected() > 0 {
+                    let summary_key = format!("summary-{}-{}", discourse_id.0, topic_id.0);
+                    state.workshop.ongoing_prompts.remove(&summary_key).await;
+
                     info!(
-                        "Successfully deleted topic summary for topic_id {}",
+                        "Successfully deleted topic summary for topic_id {} and cleared cache",
                         topic_id.0
                     );
                     Ok(())
