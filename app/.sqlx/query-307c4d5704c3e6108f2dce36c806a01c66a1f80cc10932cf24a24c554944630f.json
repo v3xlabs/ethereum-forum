@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COALESCE(model_used, 'unknown') AS \"model!\",\n                      COUNT(*)::bigint AS \"runs!\",\n                      COALESCE(AVG(prompt_tokens::float8), 0.0) AS \"avg_prompt_tokens!\",\n                      COALESCE(AVG(completion_tokens::float8), 0.0) AS \"avg_completion_tokens!\",\n                      COALESCE(AVG(total_tokens::float8), 0.0) AS \"avg_total_tokens!\",\n                      COALESCE(SUM(total_tokens::bigint), 0)::bigint AS \"total_tokens!\"\n               FROM llm_runs\n               WHERE created_at >= NOW() - make_interval(days => $1)\n                 AND outcome != 'running'\n               GROUP BY 1\n               ORDER BY COALESCE(SUM(total_tokens), 0) DESC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "model!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "runs!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "avg_prompt_tokens!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "avg_completion_tokens!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "avg_total_tokens!",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "total_tokens!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "307c4d5704c3e6108f2dce36c806a01c66a1f80cc10932cf24a24c554944630f"
+}

@@ -13,8 +13,9 @@ use crate::models::digest::ActivityDigest;
 use crate::models::llm::{LlmRun, LlmRunDraft};
 use crate::models::topics::{Topic, post::Post};
 use crate::modules::llm::executor::{self, ToolDef};
-use crate::modules::llm::recorder::RunRecorder;
+use crate::modules::llm::recorder::{CompletionPayload, RunRecorder};
 use crate::modules::llm::tokens::truncate_messages_to_token_limit;
+use crate::modules::telemetry::{TraceSpec, run_session};
 use crate::state::AppState;
 
 pub const DIGEST_PROMPT: &str = include_str!("./prompts/digest.md");
@@ -136,8 +137,28 @@ fn build_shared_memory_section(state: &AppState) -> String {
     crate::modules::llm::render_memory_section(&memory, budget)
 }
 
+/// Emits the run to Langfuse, returning the trace id for `llm_runs`.
+fn emit_trace(
+    recorder: &RunRecorder,
+    state: &AppState,
+    output: Option<&str>,
+    error: Option<&str>,
+) -> Option<String> {
+    state.telemetry.as_ref().map(|telemetry| {
+        telemetry
+            .emit(TraceSpec {
+                session_id: Some(run_session("digest", recorder.context().trace_id)),
+                tags: vec!["digest".to_string()],
+                output: output.map(str::to_string),
+                error: error.map(str::to_string),
+                ..recorder.trace_spec("digest")
+            })
+            .to_string()
+    })
+}
+
 pub async fn generate_and_store(state: &AppState) -> Result<ActivityDigest, DigestError> {
-    let mut recorder = RunRecorder::new();
+    let mut recorder = RunRecorder::new(state.telemetry.as_ref().map_or(0, |t| t.max_payload_chars()));
     let running_run = LlmRun::insert_running("digest", None, None, state)
         .await
         .ok();
@@ -164,6 +185,12 @@ pub async fn generate_and_store(state: &AppState) -> Result<ActivityDigest, Dige
                         outcome: "failure",
                         error: Some(e.to_string()),
                         trace: Some(recorder.trace_json()),
+                        langfuse_trace_id: emit_trace(
+                            &recorder,
+                            state,
+                            None,
+                            Some(&e.to_string()),
+                        ),
                         ..Default::default()
                     },
                     state,
@@ -304,6 +331,7 @@ async fn generate_and_store_inner(
         ..Default::default()
     };
 
+    let captured_input = recorder.capture_request(&request.messages, request.tools.as_deref());
     let completion_started = std::time::Instant::now();
     let completion = llm
         .client
@@ -312,19 +340,23 @@ async fn generate_and_store_inner(
         .await
         .map_err(|e| DigestError::Generation(e.to_string()))?;
 
-    recorder.record_completion(
-        "digest generation",
-        &llm.digest_model(),
-        completion.usage.as_ref(),
-        completion_started.elapsed().as_millis() as u64,
-    );
-
     let digest_text = completion
         .choices
         .first()
         .and_then(|choice| choice.message.content.clone())
         .filter(|content| !content.trim().is_empty())
         .ok_or_else(|| DigestError::Generation("model returned no content".to_string()))?;
+
+    recorder.record_completion(
+        "digest generation",
+        &llm.digest_model(),
+        completion.usage.as_ref(),
+        completion_started.elapsed().as_millis() as u64,
+        CompletionPayload {
+            input: captured_input,
+            output: recorder.capture_text(&digest_text),
+        },
+    );
 
     let topics_included = serde_json::Value::Array(
         topics
@@ -363,6 +395,7 @@ async fn generate_and_store_inner(
             duration_ms: recorder.duration_ms(),
             outcome: "success",
             trace: Some(recorder.trace_json()),
+            langfuse_trace_id: emit_trace(recorder, state, Some(&digest_text), None),
             ..Default::default()
         },
         state,

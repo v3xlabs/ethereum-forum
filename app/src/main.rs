@@ -14,9 +14,9 @@ pub mod tmp;
 #[async_std::main]
 pub async fn main() -> Result<(), Error> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    let telemetry = modules::telemetry::init();
 
-    let state = state::AppStateInner::init().await;
+    let state = state::AppStateInner::init(telemetry).await;
     let state = Arc::new(state);
 
     let discourse_state = state.clone();
@@ -42,8 +42,14 @@ pub async fn main() -> Result<(), Error> {
             modules::llm::curator::run_periodically(curator_state).await;
         }
     });
-    let server_handle = async_std::task::spawn(server::start_http(state));
+    let server_handle = async_std::task::spawn(server::start_http(state.clone()));
 
     join!(server_handle, discourse_handle, digest_handle, curator_handle);
+
+    // A globally held provider is never dropped, so buffered spans are lost
+    // without an explicit drain.
+    if let Some(telemetry) = &state.telemetry {
+        telemetry.shutdown();
+    }
     Ok(())
 }

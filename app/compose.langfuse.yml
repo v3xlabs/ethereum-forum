@@ -1,0 +1,170 @@
+# Langfuse LLM tracing stack. Opt-in, separate from the base dev stack:
+#
+#   docker compose -f compose.langfuse.yml up -d
+#
+# UI on http://localhost:3100. The credentials below are local-development
+# values and every one of them must be overridden before this is deployed
+# anywhere reachable.
+#
+# Ports differ from upstream Langfuse: the app binds 3000 and the ethforum
+# stack binds 5432, so langfuse-web moves to 3100 and its postgres to 5433.
+name: langfuse
+
+x-langfuse-env: &langfuse-env
+  NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3100}
+  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
+  SALT: ${LANGFUSE_SALT:-ethforum-local-dev-salt}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-1f8e3c7a5b9d2e4f6a8c0b1d3e5f7a9c2d4e6f8b0a1c3d5e7f9b2a4c6d8e0f13}
+  TELEMETRY_ENABLED: ${LANGFUSE_TELEMETRY_ENABLED:-false}
+  CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+  CLICKHOUSE_URL: http://clickhouse:8123
+  CLICKHOUSE_USER: clickhouse
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-ethforum-local-dev-clickhouse}
+  CLICKHOUSE_CLUSTER_ENABLED: "false"
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-ethforum-local-dev-minio}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-ethforum-local-dev-minio}
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_AUTH: ${REDIS_AUTH:-ethforum-local-dev-redis}
+  REDIS_TLS_ENABLED: "false"
+
+services:
+  langfuse-worker:
+    image: docker.io/langfuse/langfuse-worker:4
+    restart: always
+    depends_on: &langfuse-depends-on
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:3030:3030
+    environment:
+      <<: *langfuse-env
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+
+  langfuse-web:
+    image: docker.io/langfuse/langfuse:4
+    restart: always
+    depends_on: *langfuse-depends-on
+    ports:
+      - 3100:3000
+    environment:
+      <<: *langfuse-env
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ethforum-local-dev-nextauth}
+      # Browser-facing, so it must be the host-published minio address.
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:9090
+      # Bootstraps the org, project, user and API keys so app/.env is
+      # reproducible and no manual UI step is needed on a fresh volume.
+      LANGFUSE_INIT_ORG_ID: ethereum-forum
+      LANGFUSE_INIT_ORG_NAME: Ethereum Forum
+      LANGFUSE_INIT_PROJECT_ID: ethereum-forum
+      LANGFUSE_INIT_PROJECT_NAME: ethereum-forum
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ethforum-local-dev}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ethforum-local-dev}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-dev@ethereum.forum}
+      LANGFUSE_INIT_USER_NAME: ${LANGFUSE_INIT_USER_NAME:-dev}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ethforum-local-dev}
+
+  clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:25.12
+    restart: always
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-ethforum-local-dev-clickhouse}
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    ports:
+      - 127.0.0.1:8123:8123
+      - 127.0.0.1:9000:9000
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  minio:
+    image: cgr.dev/chainguard/minio
+    restart: always
+    entrypoint: sh
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-ethforum-local-dev-minio}
+    ports:
+      - 9090:9000
+      - 127.0.0.1:9091:9001
+    volumes:
+      - langfuse_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  redis:
+    image: docker.io/redis:7
+    restart: always
+    command: >
+      --requirepass ${REDIS_AUTH:-ethforum-local-dev-redis}
+      --maxmemory-policy noeviction
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - langfuse_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  postgres:
+    image: docker.io/postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - 127.0.0.1:5433:5432
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  langfuse_postgres_data:
+    driver: local
+  langfuse_clickhouse_data:
+    driver: local
+  langfuse_clickhouse_logs:
+    driver: local
+  langfuse_minio_data:
+    driver: local
+  langfuse_redis_data:
+    driver: local

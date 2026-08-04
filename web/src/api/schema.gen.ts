@@ -1063,6 +1063,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/llm/langfuse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** /admin/llm/langfuse */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Admin-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json; charset=utf-8": components["schemas"]["LangfuseInfo"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/llm/runs": {
         parameters: {
             query?: never;
@@ -1718,6 +1755,12 @@ export interface components {
         GoogleMeetingData: {
             link: string;
         };
+        /** LangfuseInfo */
+        LangfuseInfo: {
+            /** @description Deep-link template with `{trace_id}` as the placeholder, or `None` when
+             *     Langfuse is not configured. */
+            trace_url_template?: string;
+        };
         /** LlmMemory */
         LlmMemory: {
             /** Format: int32 */
@@ -1816,6 +1859,7 @@ export interface components {
             error?: string;
             metadata?: unknown;
             trace?: unknown;
+            langfuse_trace_id?: string;
             /** Format: date-time */
             created_at: string;
         };

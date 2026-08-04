@@ -87,6 +87,11 @@
         "ordinal": 16,
         "name": "trace",
         "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 17,
+        "name": "langfuse_trace_id",
+        "type_info": "Text"
       }
     ],
     "parameters": {
@@ -112,6 +117,7 @@
       true,
       true,
       false,
+      true,
       true
     ]
   },

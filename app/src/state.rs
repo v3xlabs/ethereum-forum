@@ -7,6 +7,7 @@ use crate::{
         meili,
         pm::PMModule,
         sso::SSOService,
+        telemetry::Telemetry,
     },
     tmp::CacheService,
 };
@@ -30,12 +31,13 @@ pub struct AppStateInner {
     pub llm: Option<LlmService>,
     pub cache: CacheService,
     pub meili: Option<meili::Client>,
+    pub telemetry: Option<Telemetry>,
 }
 
 impl AppStateInner {
     /// # Panics
     /// Panics if the environment variables for the database configuration are not set.
-    pub async fn init() -> Self {
+    pub async fn init(telemetry: Option<Telemetry>) -> Self {
         // Load configuration from environment variables
         let database_config = Figment::new()
             .merge(Env::prefixed("DATABASE_"))
@@ -80,6 +82,7 @@ impl AppStateInner {
             llm,
             sso,
             meili,
+            telemetry,
         }
     }
 }

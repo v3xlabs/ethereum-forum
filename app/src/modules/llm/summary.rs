@@ -17,9 +17,10 @@ use crate::models::llm::{LlmRun, LlmRunDraft};
 use crate::models::topics::post::{Post, SummaryPost};
 use crate::models::topics::{Topic, TopicSummary};
 use crate::modules::llm::executor::{self, ToolDef};
-use crate::modules::llm::recorder::RunRecorder;
+use crate::modules::llm::recorder::{CompletionPayload, RunRecorder};
 use crate::modules::llm::streams::SharedStream;
 use crate::modules::llm::tokens::{estimate_tokens_in_text, truncate_messages_to_token_limit};
+use crate::modules::telemetry::{TraceContext, TraceSpec, run_session};
 use crate::state::AppState;
 
 pub const SUMMARY_PROMPT: &str = include_str!("./prompts/summary.md");
@@ -277,12 +278,15 @@ pub async fn start_topic_summary(
     topic: &Topic,
     state: &AppState,
     force: bool,
+    parent: Option<TraceContext>,
 ) -> Result<(SharedStream, bool), SummaryError> {
     let llm = state.llm.as_ref().ok_or(SummaryError::Unconfigured)?;
     let key = summary_key(&topic.discourse_id, topic.topic_id);
 
     let (stream, created) = llm.streams.get_or_create(&key, SharedStream::default).await;
     if !created {
+        // Coalesced onto a run someone else started, which already has a
+        // parent (or none). A run cannot belong to two traces.
         return Ok((stream, false));
     }
 
@@ -291,7 +295,11 @@ pub async fn start_topic_summary(
     let spawned_stream = stream.clone();
 
     task::spawn(async move {
-        let mut recorder = RunRecorder::new();
+        let mut recorder =
+            RunRecorder::new(state.telemetry.as_ref().map_or(0, |t| t.max_payload_chars()));
+        if let Some(parent) = parent {
+            recorder = recorder.nested_under(parent);
+        }
         let running_run = LlmRun::insert_running(
             "summary",
             Some(&topic.discourse_id),
@@ -309,25 +317,7 @@ pub async fn start_topic_summary(
             Err(e) => {
                 tracing::error!(topic_id = topic.topic_id, "summary generation failed: {e}");
                 recorder.note(format!("failed: {e}"));
-                let usage = recorder.usage.clone();
-                let draft = LlmRunDraft {
-                    run_type: "summary",
-                    discourse_id: Some(topic.discourse_id.clone()),
-                    topic_id: Some(topic.topic_id),
-                    prompt_tokens: (!usage.is_empty()).then_some(usage.prompt_tokens as i32),
-                    completion_tokens: (!usage.is_empty())
-                        .then_some(usage.completion_tokens as i32),
-                    reasoning_tokens: (usage.reasoning_tokens > 0)
-                        .then_some(usage.reasoning_tokens as i32),
-                    model_used: state.llm.as_ref().map(|l| l.config.model.clone()),
-                    tool_calls: Some(recorder.tool_call_count()),
-                    tool_rounds: Some(recorder.rounds as i32),
-                    duration_ms: recorder.duration_ms(),
-                    outcome: "failure",
-                    error: Some(e.to_string()),
-                    metadata: None,
-                    trace: Some(recorder.trace_json()),
-                };
+                let draft = summary_run_draft(&topic, &recorder, &state, None, Some(&e.to_string()));
                 finalize_run(run_id, draft, &state).await;
                 spawned_stream.finish(Err(e.to_string()), None).await;
                 if let Some(llm) = &state.llm {
@@ -544,6 +534,7 @@ async fn run_with_tools(
         ..Default::default()
     };
 
+    let captured_input = recorder.capture_request(&request.messages, request.tools.as_deref());
     let started = std::time::Instant::now();
     let (content, usage) = stream_completion(&llm.client, request, stream)
         .await
@@ -553,6 +544,10 @@ async fn run_with_tools(
         &llm.config.model,
         usage.as_ref(),
         started.elapsed().as_millis() as u64,
+        CompletionPayload {
+            input: captured_input,
+            output: recorder.capture_text(&content),
+        },
     );
     Ok(content)
 }
@@ -614,6 +609,7 @@ async fn fold_chunks(
 
         let is_last = i == section_count - 1;
         let section_label = format!("fold section {}/{section_count}", i + 1);
+        let captured_input = recorder.capture_request(&request.messages, request.tools.as_deref());
         let started = std::time::Instant::now();
 
         if is_last {
@@ -625,6 +621,10 @@ async fn fold_chunks(
                 &llm.config.model,
                 usage.as_ref(),
                 started.elapsed().as_millis() as u64,
+                CompletionPayload {
+                    input: captured_input,
+                    output: recorder.capture_text(&content),
+                },
             );
             return Ok(content);
         }
@@ -636,18 +636,22 @@ async fn fold_chunks(
             .await
             .map_err(|e| SummaryError::Generation(e.to_string()))?;
 
-        recorder.record_completion(
-            &section_label,
-            &llm.config.model,
-            completion.usage.as_ref(),
-            started.elapsed().as_millis() as u64,
-        );
-
         accumulated_summary = completion
             .choices
             .first()
             .and_then(|c| c.message.content.clone())
             .unwrap_or_default();
+
+        recorder.record_completion(
+            &section_label,
+            &llm.config.model,
+            completion.usage.as_ref(),
+            started.elapsed().as_millis() as u64,
+            CompletionPayload {
+                input: captured_input,
+                output: recorder.capture_text(&accumulated_summary),
+            },
+        );
     }
 
     Err(SummaryError::Generation("no posts to summarize".to_string()))
@@ -699,8 +703,37 @@ async fn persist_summary(
     }
 }
 
-fn summary_run_draft(topic: &Topic, recorder: &RunRecorder, state: &AppState) -> LlmRunDraft {
+/// Builds the `llm_runs` row for a finished summary run, emitting the matching
+/// Langfuse trace as a side effect so the two stay linked by `langfuse_trace_id`.
+fn summary_run_draft(
+    topic: &Topic,
+    recorder: &RunRecorder,
+    state: &AppState,
+    output: Option<&str>,
+    error: Option<&str>,
+) -> LlmRunDraft {
     let usage = &recorder.usage;
+    let langfuse_trace_id = state.telemetry.as_ref().map(|telemetry| {
+        telemetry
+            .emit(TraceSpec {
+                // Groups every summarization of this thread over time into one
+                // replayable Langfuse session.
+                session_id: Some(run_session(
+                    &format!("summary:{}:{}", topic.discourse_id, topic.topic_id),
+                    recorder.context().trace_id,
+                )),
+                tags: vec!["summary".to_string()],
+                metadata: vec![
+                    ("discourse_id".to_string(), topic.discourse_id.clone()),
+                    ("topic_id".to_string(), topic.topic_id.to_string()),
+                ],
+                input: Some(topic.title.clone()),
+                output: output.map(str::to_string),
+                error: error.map(str::to_string),
+                ..recorder.trace_spec("summary")
+            })
+            .to_string()
+    });
     LlmRunDraft {
         run_type: "summary",
         discourse_id: Some(topic.discourse_id.clone()),
@@ -712,10 +745,11 @@ fn summary_run_draft(topic: &Topic, recorder: &RunRecorder, state: &AppState) ->
         tool_calls: Some(recorder.tool_call_count()),
         tool_rounds: Some(recorder.rounds as i32),
         duration_ms: recorder.duration_ms(),
-        outcome: "success",
-        error: None,
+        outcome: if error.is_some() { "failure" } else { "success" },
+        error: error.map(str::to_string),
         metadata: None,
         trace: Some(recorder.trace_json()),
+        langfuse_trace_id,
     }
 }
 
@@ -741,11 +775,7 @@ async fn store_summary(topic: &Topic, summary_text: &str, recorder: RunRecorder,
         tracing::error!(topic_id = topic.topic_id, "summary rejected: {reason}");
         finalize_run(
             run_id,
-            LlmRunDraft {
-                outcome: "failure",
-                error: Some(reason),
-                ..summary_run_draft(topic, &recorder, state)
-            },
+            summary_run_draft(topic, &recorder, state, None, Some(&reason)),
             state,
         )
         .await;
@@ -763,17 +793,18 @@ async fn store_summary(topic: &Topic, summary_text: &str, recorder: RunRecorder,
     match result {
         Ok(_) => {
             tracing::info!(topic_id = topic.topic_id, "stored topic summary");
-            finalize_run(run_id, summary_run_draft(topic, &recorder, state), state).await;
+            finalize_run(
+                run_id,
+                summary_run_draft(topic, &recorder, state, Some(&cleaned), None),
+                state,
+            )
+            .await;
         }
         Err(e) => {
             tracing::error!(topic_id = topic.topic_id, "failed to store summary: {e}");
             finalize_run(
                 run_id,
-                LlmRunDraft {
-                    outcome: "failure",
-                    error: Some(e.to_string()),
-                    ..summary_run_draft(topic, &recorder, state)
-                },
+                summary_run_draft(topic, &recorder, state, None, Some(&e.to_string())),
                 state,
             )
             .await;
@@ -785,6 +816,7 @@ pub async fn get_or_generate_summary(
     discourse_id: &str,
     topic_id: i32,
     state: &AppState,
+    parent: Option<TraceContext>,
 ) -> Result<TopicSummary, SummaryError> {
     let topic = Topic::get_by_topic_id(discourse_id, topic_id, state)
         .await
@@ -799,7 +831,7 @@ pub async fn get_or_generate_summary(
         return stale.ok_or(SummaryError::Unconfigured);
     }
 
-    let (stream, _) = start_topic_summary(&topic, state, false).await?;
+    let (stream, _) = start_topic_summary(&topic, state, false, parent).await?;
     let content = stream
         .await_completion()
         .await

@@ -46,6 +46,13 @@ pub struct SystemPromptResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize, Object)]
+pub struct LangfuseInfo {
+    /// Deep-link template with `{trace_id}` as the placeholder, or `None` when
+    /// Langfuse is not configured.
+    pub trace_url_template: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Object)]
 pub struct SystemPromptUpdate {
     pub prompt_type: String,
     pub content: String,
@@ -566,6 +573,22 @@ impl AdminApi {
         Ok(Json(entries))
     }
 
+
+    /// /admin/llm/langfuse
+    #[oai(path = "/admin/llm/langfuse", method = "get", tag = "ApiTags::Admin")]
+    async fn get_langfuse_info(
+        &self,
+        state: Data<&AppState>,
+        #[oai(name = "X-Admin-Key")] admin_key: Header<Option<String>>,
+    ) -> Result<Json<LangfuseInfo>> {
+        Self::verify_admin_key(admin_key.0)?;
+        Ok(Json(LangfuseInfo {
+            trace_url_template: state
+                .telemetry
+                .as_ref()
+                .and_then(|t| t.trace_url_template()),
+        }))
+    }
 
     #[oai(path = "/admin/llm/runs", method = "get", tag = "ApiTags::Admin")]
     async fn get_runs(

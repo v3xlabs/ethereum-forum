@@ -7,7 +7,8 @@ use async_openai::types::{
 };
 use serde_json::Value;
 
-use crate::modules::llm::recorder::RunRecorder;
+use crate::modules::llm::recorder::{CompletionPayload, RunRecorder, ToolCallRecord};
+use crate::modules::telemetry::TraceContext;
 use crate::modules::llm::streams::{SharedStream, ToolCallUpdate};
 use crate::state::AppState;
 
@@ -143,6 +144,7 @@ pub async fn run_tool_loop_with_messages(
             ..Default::default()
         };
 
+        let captured_input = recorder.capture_request(&messages, Some(&tools));
         let completion_started = std::time::Instant::now();
         let completion = client
             .chat()
@@ -153,14 +155,6 @@ pub async fn run_tool_loop_with_messages(
                 format!("completion failed: {e}")
             })?;
 
-        recorder.rounds += 1;
-        recorder.record_completion(
-            &format!("tool round {}", round + 1),
-            &model,
-            completion.usage.as_ref(),
-            completion_started.elapsed().as_millis() as u64,
-        );
-
         let choice = completion
             .choices
             .first()
@@ -168,6 +162,21 @@ pub async fn run_tool_loop_with_messages(
             .clone();
 
         let msg = choice.message;
+
+        recorder.rounds += 1;
+        recorder.record_completion(
+            &format!("tool round {}", round + 1),
+            &model,
+            completion.usage.as_ref(),
+            completion_started.elapsed().as_millis() as u64,
+            CompletionPayload {
+                input: captured_input,
+                // The whole message, not just content: content is null on a
+                // tool-calling round and the tool_calls array is the payload
+                // Langfuse renders and indexes.
+                output: recorder.capture_response(&msg),
+            },
+        );
 
         if let Some(tool_calls) = msg.tool_calls {
             let mut tool_results = Vec::new();
@@ -195,8 +204,15 @@ pub async fn run_tool_loop_with_messages(
 
                 let tool = tool_impls.iter().find(|t| t.name() == fname);
                 let call_started = std::time::Instant::now();
+                // Assigned before the tool runs so a run it triggers can nest
+                // under this specific call rather than the run as a whole.
+                let call_context = recorder.context().child();
+                let ctx = ToolContext {
+                    state,
+                    parent: Some(call_context),
+                };
                 let result = match tool {
-                    Some(t) => t.call(args.clone(), state).await,
+                    Some(t) => t.call(args.clone(), &ctx).await,
                     None => Err(format!("unknown tool: {fname}")),
                 };
                 let call_duration_ms = call_started.elapsed().as_millis() as u64;
@@ -206,15 +222,17 @@ pub async fn run_tool_loop_with_messages(
                     Err(error) => ("error".to_string(), Some(error.clone()), None),
                 };
 
-                recorder.record_tool_call(
-                    fname,
-                    &label,
-                    &status,
-                    detail.as_deref(),
+                recorder.record_tool_call(ToolCallRecord {
+                    tool: fname,
+                    span_id: call_context.span_id,
+                    call_id: &tc.id,
+                    label: &label,
+                    status: &status,
+                    detail: detail.as_deref(),
                     output,
-                    &args,
-                    call_duration_ms,
-                );
+                    args: &args,
+                    duration_ms: call_duration_ms,
+                });
 
                 if let Some(events) = events {
                     events
@@ -267,12 +285,19 @@ pub async fn run_tool_loop_with_messages(
     Err("tool loop exceeded max rounds".into())
 }
 
+/// What a tool needs from the run invoking it. `parent` is the calling run's
+/// span, so a tool that starts another LLM run can nest it under this trace.
+pub struct ToolContext<'a> {
+    pub state: &'a AppState,
+    pub parent: Option<TraceContext>,
+}
+
 #[async_trait::async_trait]
 pub trait LlmTool: Send + Sync {
     fn name(&self) -> &'static str;
     fn description(&self) -> &'static str;
     fn parameters(&self) -> Value;
-    async fn call(&self, args: Value, state: &AppState) -> Result<String, String>;
+    async fn call(&self, args: Value, ctx: &ToolContext<'_>) -> Result<String, String>;
 }
 
 pub(crate) mod builtin {
@@ -282,7 +307,6 @@ pub(crate) mod builtin {
     use crate::{
         models::topics::{post::Post, Topic},
         modules::discourse::ForumSearchDocument,
-        state::AppState,
     };
 
     pub struct GetTopicSummary;
@@ -303,10 +327,11 @@ pub(crate) mod builtin {
                 "required": ["discourse_id", "topic_id"]
             })
         }
-        async fn call(&self, args: Value, state: &AppState) -> Result<String, String> {
+        async fn call(&self, args: Value, ctx: &super::ToolContext<'_>) -> Result<String, String> {
+            let state = ctx.state;
             let did = args["discourse_id"].as_str().ok_or("missing discourse_id")?;
             let tid = args["topic_id"].as_i64().ok_or("missing topic_id")? as i32;
-            Topic::get_summary_by_topic_id(did, tid, state)
+            Topic::get_summary_by_topic_id(did, tid, state, ctx.parent)
                 .await
                 .map(|s| s.summary_text)
                 .map_err(|e| format!("summary not available: {e}"))
@@ -331,7 +356,8 @@ pub(crate) mod builtin {
                 "required": ["discourse_id", "topic_id"]
             })
         }
-        async fn call(&self, args: Value, state: &AppState) -> Result<String, String> {
+        async fn call(&self, args: Value, ctx: &super::ToolContext<'_>) -> Result<String, String> {
+            let state = ctx.state;
             let did = args["discourse_id"].as_str().ok_or("missing discourse_id")?;
             let tid = args["topic_id"].as_i64().ok_or("missing topic_id")? as i32;
             let topic = Topic::get_by_topic_id(did, tid, state).await.map_err(|e| format!("topic not found: {e}"))?;
@@ -370,7 +396,8 @@ pub(crate) mod builtin {
                 "required": ["discourse_id", "topic_id", "from_post", "to_post"]
             })
         }
-        async fn call(&self, args: Value, state: &AppState) -> Result<String, String> {
+        async fn call(&self, args: Value, ctx: &super::ToolContext<'_>) -> Result<String, String> {
+            let state = ctx.state;
             let did = args["discourse_id"].as_str().ok_or("missing discourse_id")?;
             let tid = args["topic_id"].as_i64().ok_or("missing topic_id")? as i32;
             let from = args["from_post"].as_i64().ok_or("missing from_post")? as i32;
@@ -406,7 +433,8 @@ pub(crate) mod builtin {
                 "required": ["query"]
             })
         }
-        async fn call(&self, args: Value, state: &AppState) -> Result<String, String> {
+        async fn call(&self, args: Value, ctx: &super::ToolContext<'_>) -> Result<String, String> {
+            let state = ctx.state;
             let query = args["query"].as_str().ok_or("missing query")?;
             let limit = args["limit"].as_i64().unwrap_or(10) as usize;
             let Some(meili) = &state.meili else { return Err("Meilisearch not configured".into()) };
@@ -444,7 +472,8 @@ pub(crate) mod builtin {
                 "required": ["term", "content"]
             })
         }
-        async fn call(&self, args: Value, state: &AppState) -> Result<String, String> {
+        async fn call(&self, args: Value, ctx: &super::ToolContext<'_>) -> Result<String, String> {
+            let state = ctx.state;
             let term = args["term"].as_str().ok_or("missing term")?;
             let content = args["content"].as_str().ok_or("missing content")?;
             let source_discourse_id = args["source_discourse_id"].as_str();

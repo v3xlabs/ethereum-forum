@@ -198,7 +198,7 @@ impl TopicApi {
     ) -> Result<Json<TopicSummary>> {
         let topic_id = topic_id.0;
 
-        let summary = summary::get_or_generate_summary(&discourse_id, topic_id, &state)
+        let summary = summary::get_or_generate_summary(&discourse_id, topic_id, &state, None)
             .await
             .map_err(|e| {
                 tracing::error!("Error getting topic summary: {:?}", e);
@@ -305,7 +305,7 @@ impl TopicApi {
             return Err(poem::Error::from_status(StatusCode::SERVICE_UNAVAILABLE));
         }
 
-        let (_stream, created) = summary::start_topic_summary(&topic, &state, force)
+        let (_stream, created) = summary::start_topic_summary(&topic, &state, force, None)
             .await
             .map_err(|e| {
                 tracing::error!("Error starting summary generation: {:?}", e);

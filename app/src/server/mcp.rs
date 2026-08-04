@@ -72,7 +72,7 @@ impl ForumTools {
     /// - "What is topic 1234 about?" → Use this tool with topic_id=1234
     /// - "Can you summarize the discussion on EIP-4844?" → First search for the topic, then summarize it
     async fn get_topic_summary(&self, discourse_id: String, topic_id: i32) -> Text<String> {
-        match Topic::get_summary_by_topic_id(&discourse_id, topic_id, &self.state).await {
+        match Topic::get_summary_by_topic_id(&discourse_id, topic_id, &self.state, None).await {
             Ok(summary) => Text(summary.summary_text),
             Err(err) => Text(format!("error: {err}")),
         }

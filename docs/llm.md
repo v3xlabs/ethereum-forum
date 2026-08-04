@@ -164,3 +164,109 @@ into every run — without the model ever mentioning it.
   budget, completion cap, tool-call/turn caps, per-result cap, memory cap.
 - Persist per-run metadata (tokens in/out, tool calls, duration, outcome) to a
   small `llm_runs` table for tuning and cost visibility.
+
+## Tracing (Langfuse)
+
+`llm_runs` stays the source of truth: the curator reads recent runs as prompt
+input, and the admin metrics endpoints aggregate over it. Langfuse sits
+alongside it as an export target, linked by `llm_runs.langfuse_trace_id`.
+
+What Langfuse adds over the admin run viewer: the actual prompts and
+completions (deliberately never written to `llm_runs.trace`, which stays
+payload-free), USD cost, cross-run dashboards, and sessions that group every
+run for a thread.
+
+### Running it
+
+```
+docker compose -f app/compose.langfuse.yml up -d
+```
+
+UI on <http://localhost:3100>. Ports differ from upstream Langfuse because the
+app binds 3000 and the base stack binds 5432, so `langfuse-web` moves to 3100
+and its Postgres to 5433. The `LANGFUSE_INIT_*` variables bootstrap the org,
+project, user and API keys, so a fresh volume needs no manual UI step.
+
+**The credentials in `compose.langfuse.yml` are local-development defaults.**
+`SALT`, `ENCRYPTION_KEY`, `NEXTAUTH_SECRET`, `REDIS_AUTH`, and the MinIO and
+ClickHouse passwords must all be overridden before deploying anywhere
+reachable.
+
+### Wiring
+
+Set `LANGFUSE_HOST`, `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` (see
+`.env.example`). Leaving them unset disables tracing entirely and skips prompt
+capture, exactly like `LlmService` degrades without `LLM_API_KEY`.
+
+Spans are built retroactively in `modules::telemetry` from `RunRecorder`'s
+recorded timings, so tracing adds no control flow to the LLM paths. Transport
+is OTLP over HTTP — Langfuse does not accept gRPC. Every OpenTelemetry crate
+must stay on one version (currently 0.29, the version poem requires); a split
+graph means two `global` statics and silently dropped telemetry.
+
+Cost stays blank until a model definition matching the configured model name is
+added in the Langfuse UI, since built-in pricing is matched by regex against
+provider-style names.
+
+### Payload shapes the UI depends on
+
+Langfuse derives tool definitions and tool calls by *parsing* the captured
+input and output — no attribute carries them. Three constraints follow, and
+breaking any of them silently degrades the UI to raw text rather than erroring:
+
+- Captured input must be `{"messages": [...], "tools": [...]}`. A bare message
+  array still renders as a conversation but yields no tool definitions.
+- A tool-calling round must capture the **whole** response message, not its
+  `content` — content is null exactly when the model calls tools. `tool_calls`
+  must keep the nested `{function: {name, arguments}}` form with `arguments` as
+  a string; a flat form with object arguments fails Langfuse's schema and drops
+  the entire conversation view.
+- Truncation happens per string *inside* the payload
+  (`RunRecorder::capture_value`). Truncating the serialized JSON leaves it
+  unparseable, which is exactly the silent-fallback case above.
+
+Tool executions are emitted as `langfuse.observation.type = "tool"` with
+`gen_ai.tool.name` and `gen_ai.tool.call.id`, which gives them the wrench icon
+and tool filtering.
+
+### Traces, sessions and nesting
+
+A trace id is unique per run and is generated in `RunRecorder::new`, not at
+export time, so work a run triggers can attach to it while the run is still
+going.
+
+Sessions group traces and are deliberately *not* unique:
+
+| Run | Session | Groups |
+|---|---|---|
+| summary | `{discourse_id}:{topic_id}` | every regeneration of one thread |
+| digest | `digest:{ISO week}` | that week's digests |
+| curator | `curator:{ISO week}` | that week's curator runs |
+
+Background jobs are bucketed by week so a session stays navigable instead of
+accumulating every run ever made.
+
+A summary that a digest or curator triggers through `get_topic_summary` is
+emitted **inside the caller's trace**, nested under the specific tool-call
+span, so the whole cascade reads as one timeline. Two consequences to know:
+
+- `llm_runs` is no longer 1:1 with traces — every run in the cascade shares the
+  parent's `langfuse_trace_id`, so the admin deep link opens the parent trace
+  (which contains the nested spans).
+- A nested summary does not appear under its own topic session; it lives in the
+  caller's.
+
+Nesting only applies when the caller actually *started* the run. A run that
+coalesced onto an in-flight generation keeps its own trace, because a run
+cannot belong to two traces.
+
+### Why a regeneration may produce no trace
+
+Two guards short-circuit before any LLM work, and both are correct. The
+`status` field in the start-summary response says which fired:
+
+- `existing` — a fresh cached summary was returned. Regeneration needs
+  `?force=true` (a **query** parameter, plus the admin key), not a body field.
+- `ongoing` — coalesced onto an in-flight run.
+
+Only `started` produces a new run, and therefore a new trace.

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM llm_memory_staging WHERE term = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d7b1be2fd6bd1c4a20e9059825b14b380ebe544f9d058aafc5c72ee47a417207"
+}

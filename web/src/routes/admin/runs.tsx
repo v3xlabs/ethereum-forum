@@ -5,13 +5,22 @@ import {
     LuChevronDown,
     LuChevronRight,
     LuCpu,
+    LuExternalLink,
     LuInfo,
     LuLoader,
     LuTriangle,
     LuX,
 } from 'react-icons/lu';
 
-import { LlmRun, LlmRunTraceEvent, parseTrace, useLlmRunDetail, useLlmRuns } from '@/api/admin';
+import {
+    langfuseTraceUrl,
+    LlmRun,
+    LlmRunTraceEvent,
+    parseTrace,
+    useLangfuseInfo,
+    useLlmRunDetail,
+    useLlmRuns,
+} from '@/api/admin';
 import { TimeAgo } from '@/components/TimeAgo';
 import { formatDurationMs, formatTokens } from '@/util/format';
 
@@ -92,6 +101,7 @@ const TraceEventRow = ({ event }: { event: LlmRunTraceEvent }) => {
 
 const RunDetail = ({ runId }: { runId: string }) => {
     const { data: run, isLoading, error } = useLlmRunDetail(runId);
+    const { data: langfuseInfo } = useLangfuseInfo();
 
     if (isLoading) {
         return (
@@ -110,6 +120,7 @@ const RunDetail = ({ runId }: { runId: string }) => {
     if (!run) return null;
 
     const trace = parseTrace(run.trace);
+    const traceUrl = langfuseTraceUrl(langfuseInfo, run.langfuse_trace_id);
 
     return (
         <div className="space-y-4 py-2 text-sm">
@@ -141,7 +152,20 @@ const RunDetail = ({ runId }: { runId: string }) => {
                 </div>
             )}
             <div className="space-y-1">
-                <div className="font-medium text-primary/60">Trace</div>
+                <div className="flex items-center gap-3">
+                    <span className="font-medium text-primary/60">Trace</span>
+                    {traceUrl && (
+                        <a
+                            href={traceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary/60 hover:text-primary underline"
+                        >
+                            <LuExternalLink className="w-3 h-3" />
+                            View in Langfuse
+                        </a>
+                    )}
+                </div>
                 {trace === null || trace.length === 0 ? (
                     <div className="text-primary/40">No trace recorded for this run.</div>
                 ) : (

@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO llm_memory_staging\n               (term, content, source_discourse_id, source_topic_id, source_post_number, link_reason)\n               VALUES ($1, $2, $3, $4, $5, $6)\n               RETURNING staging_id, term, content, source_discourse_id, source_topic_id,\n                         source_post_number, link_reason, created_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "staging_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "term",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "source_discourse_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "source_topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "source_post_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "link_reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "05264f5bd0e9613f27e6727c238366b53e86b1e03595e77983a2adc2112bff29"
+}

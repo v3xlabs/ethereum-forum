@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "INSERT INTO llm_runs\n               (run_type, discourse_id, topic_id, prompt_tokens, completion_tokens, total_tokens,\n                reasoning_tokens, model_used, tool_calls, tool_rounds, duration_ms, outcome, error, metadata, trace)\n               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)\n               RETURNING run_id, run_type, discourse_id, topic_id, prompt_tokens, completion_tokens,\n                         total_tokens, reasoning_tokens, model_used, tool_calls, tool_rounds,\n                         duration_ms, outcome, error, metadata, trace, created_at",
+  "query": "INSERT INTO llm_runs\n               (run_type, discourse_id, topic_id, prompt_tokens, completion_tokens, total_tokens,\n                reasoning_tokens, model_used, tool_calls, tool_rounds, duration_ms, outcome, error, metadata, trace,\n                langfuse_trace_id)\n               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n               RETURNING run_id, run_type, discourse_id, topic_id, prompt_tokens, completion_tokens,\n                         total_tokens, reasoning_tokens, model_used, tool_calls, tool_rounds,\n                         duration_ms, outcome, error, metadata, trace, langfuse_trace_id, created_at",
   "describe": {
     "columns": [
       {
@@ -85,6 +85,11 @@
       },
       {
         "ordinal": 16,
+        "name": "langfuse_trace_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 17,
         "name": "created_at",
         "type_info": "Timestamptz"
       }
@@ -105,7 +110,8 @@
         "Text",
         "Text",
         "Jsonb",
-        "Jsonb"
+        "Jsonb",
+        "Text"
       ]
     },
     "nullable": [
@@ -125,8 +131,9 @@
       true,
       true,
       true,
+      true,
       false
     ]
   },
-  "hash": "a6c69f63ec50e0d6753bef87984c2ff59c4338c3e288c31bb0e63f7f9c71d097"
+  "hash": "0fbecba073110b9ad2a9e09564bb9e5832f417e884864edc49be8e55ec79903e"
 }

@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE llm_runs\n               SET prompt_tokens = $2, completion_tokens = $3, total_tokens = $4,\n                   reasoning_tokens = $5, model_used = $6, tool_calls = $7, tool_rounds = $8,\n                   duration_ms = $9, outcome = $10, error = $11, metadata = $12, trace = $13,\n                   langfuse_trace_id = $14\n               WHERE run_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Text",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fd1615ede78f31a8e09d266a55fc06cb1d00bfa2877f273af6ceebcd90676a11"
+}

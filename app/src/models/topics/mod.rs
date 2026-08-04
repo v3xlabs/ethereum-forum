@@ -179,12 +179,15 @@ impl Topic {
         Ok(post)
     }
 
+    /// `parent` nests any generation this triggers under the calling run's
+    /// trace; pass `None` outside an LLM run.
     pub async fn get_summary_by_topic_id(
         discourse_id: &str,
         topic_id: i32,
         state: &AppState,
+        parent: Option<crate::modules::telemetry::TraceContext>,
     ) -> Result<TopicSummary, HttpError> {
-        crate::modules::llm::summary::get_or_generate_summary(discourse_id, topic_id, state)
+        crate::modules::llm::summary::get_or_generate_summary(discourse_id, topic_id, state, parent)
             .await
             .map_err(Into::into)
     }

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM llm_runs WHERE run_id = $1 AND outcome = 'running'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b8f92d97ce696e2039fb207119535cf0e8add6a27c09c61c2b145c411499020c"
+}

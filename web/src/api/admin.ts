@@ -60,7 +60,21 @@ export interface LlmRun {
     metadata: unknown | null;
     created_at: string;
     trace?: unknown;
+    langfuse_trace_id: string | null;
 }
+
+export type LangfuseInfo = {
+    /** Deep-link template with `{trace_id}` as the placeholder. */
+    trace_url_template: string | null;
+};
+
+export const langfuseTraceUrl = (
+    info: LangfuseInfo | undefined,
+    traceId: string | null
+): string | null =>
+    info?.trace_url_template && traceId
+        ? info.trace_url_template.replace('{trace_id}', traceId)
+        : null;
 
 export type LlmRunTraceEvent =
     | {
@@ -293,6 +307,14 @@ export const useSystemPrompts = () =>
                 { method: 'GET' }
             ),
         enabled: !!ADMIN_KEY(),
+    });
+
+export const useLangfuseInfo = () =>
+    useQuery({
+        queryKey: ['admin', 'langfuse'],
+        queryFn: () => adminFetch<LangfuseInfo>('admin/llm/langfuse', { method: 'GET' }),
+        enabled: !!ADMIN_KEY(),
+        staleTime: Infinity,
     });
 
 export const useLlmRuns = (runType?: string) =>

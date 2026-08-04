@@ -9,8 +9,9 @@ use serde_json::json;
 
 use crate::models::llm::{LlmMemory, LlmMemorySnapshot, LlmMemoryStaging, LlmRun, LlmRunDraft};
 use crate::modules::llm::executor::{self, ToolDef};
-use crate::modules::llm::recorder::RunRecorder;
+use crate::modules::llm::recorder::{CompletionPayload, RunRecorder};
 use crate::modules::llm::tokens::truncate_messages_to_token_limit;
+use crate::modules::telemetry::{TraceSpec, run_session};
 use crate::state::AppState;
 
 pub const CURATOR_PROMPT: &str = include_str!("./prompts/curator.md");
@@ -86,8 +87,28 @@ fn make_tool_defs() -> Vec<ToolDef> {
     ]
 }
 
+/// Emits the run to Langfuse, returning the trace id for `llm_runs`.
+fn emit_trace(
+    recorder: &RunRecorder,
+    state: &AppState,
+    output: Option<&str>,
+    error: Option<&str>,
+) -> Option<String> {
+    state.telemetry.as_ref().map(|telemetry| {
+        telemetry
+            .emit(TraceSpec {
+                session_id: Some(run_session("curator", recorder.context().trace_id)),
+                tags: vec!["curator".to_string()],
+                output: output.map(str::to_string),
+                error: error.map(str::to_string),
+                ..recorder.trace_spec("curator")
+            })
+            .to_string()
+    })
+}
+
 pub async fn run_curator(state: &AppState) -> Result<CuratorOutput, CuratorError> {
-    let mut recorder = RunRecorder::new();
+    let mut recorder = RunRecorder::new(state.telemetry.as_ref().map_or(0, |t| t.max_payload_chars()));
     let running_run = LlmRun::insert_running("curator", None, None, state)
         .await
         .ok();
@@ -114,6 +135,12 @@ pub async fn run_curator(state: &AppState) -> Result<CuratorOutput, CuratorError
                         outcome: "failure",
                         error: Some(e.to_string()),
                         trace: Some(recorder.trace_json()),
+                        langfuse_trace_id: emit_trace(
+                            &recorder,
+                            state,
+                            None,
+                            Some(&e.to_string()),
+                        ),
                         ..Default::default()
                     },
                     state,
@@ -351,6 +378,7 @@ async fn run_curator_inner(
         ..Default::default()
     };
 
+    let captured_input = recorder.capture_request(&request.messages, request.tools.as_deref());
     let completion_started = std::time::Instant::now();
     let completion = llm
         .client
@@ -359,18 +387,22 @@ async fn run_curator_inner(
         .await
         .map_err(|e| CuratorError::Run(e.to_string()))?;
 
-    recorder.record_completion(
-        "curator evaluation",
-        &llm.curator_model(),
-        completion.usage.as_ref(),
-        completion_started.elapsed().as_millis() as u64,
-    );
-
     let content = completion
         .choices
         .first()
         .and_then(|c| c.message.content.clone())
         .unwrap_or_default();
+
+    recorder.record_completion(
+        "curator evaluation",
+        &llm.curator_model(),
+        completion.usage.as_ref(),
+        completion_started.elapsed().as_millis() as u64,
+        CompletionPayload {
+            input: captured_input,
+            output: recorder.capture_text(&content),
+        },
+    );
 
     let cleaned = strip_code_fences(&content);
     let (output, parsed_cleanly) = parse_curator_output(&cleaned);
@@ -449,6 +481,12 @@ async fn run_curator_inner(
                 "parsed_cleanly": parsed_cleanly,
             })),
             trace: Some(recorder.trace_json()),
+            langfuse_trace_id: emit_trace(
+                recorder,
+                state,
+                Some(&output.snapshot_summary),
+                None,
+            ),
             ..Default::default()
         },
         state,

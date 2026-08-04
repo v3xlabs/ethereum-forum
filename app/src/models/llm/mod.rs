@@ -22,6 +22,7 @@ pub struct LlmRun {
     pub error: Option<String>,
     pub metadata: Option<serde_json::Value>,
     pub trace: Option<serde_json::Value>,
+    pub langfuse_trace_id: Option<String>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -41,6 +42,7 @@ pub struct LlmRunDraft {
     pub error: Option<String>,
     pub metadata: Option<serde_json::Value>,
     pub trace: Option<serde_json::Value>,
+    pub langfuse_trace_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow, Object, Clone)]
@@ -101,11 +103,12 @@ impl LlmRun {
             Self,
             r#"INSERT INTO llm_runs
                (run_type, discourse_id, topic_id, prompt_tokens, completion_tokens, total_tokens,
-                reasoning_tokens, model_used, tool_calls, tool_rounds, duration_ms, outcome, error, metadata, trace)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                reasoning_tokens, model_used, tool_calls, tool_rounds, duration_ms, outcome, error, metadata, trace,
+                langfuse_trace_id)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                RETURNING run_id, run_type, discourse_id, topic_id, prompt_tokens, completion_tokens,
                          total_tokens, reasoning_tokens, model_used, tool_calls, tool_rounds,
-                         duration_ms, outcome, error, metadata, trace, created_at"#,
+                         duration_ms, outcome, error, metadata, trace, langfuse_trace_id, created_at"#,
             draft.run_type,
             draft.discourse_id.as_deref(),
             draft.topic_id,
@@ -120,7 +123,8 @@ impl LlmRun {
             draft.outcome,
             draft.error.as_deref(),
             draft.metadata,
-            draft.trace
+            draft.trace,
+            draft.langfuse_trace_id.as_deref()
         )
         .fetch_one(&state.database.pool)
         .await
@@ -149,7 +153,7 @@ impl LlmRun {
                VALUES ($1, $2, $3, 'running')
                RETURNING run_id, run_type, discourse_id, topic_id, prompt_tokens, completion_tokens,
                           total_tokens, reasoning_tokens, model_used, tool_calls, tool_rounds,
-                          duration_ms, outcome, error, metadata, trace, created_at"#,
+                          duration_ms, outcome, error, metadata, trace, langfuse_trace_id, created_at"#,
             run_type,
             discourse_id,
             topic_id,
@@ -172,7 +176,8 @@ impl LlmRun {
             r#"UPDATE llm_runs
                SET prompt_tokens = $2, completion_tokens = $3, total_tokens = $4,
                    reasoning_tokens = $5, model_used = $6, tool_calls = $7, tool_rounds = $8,
-                   duration_ms = $9, outcome = $10, error = $11, metadata = $12, trace = $13
+                   duration_ms = $9, outcome = $10, error = $11, metadata = $12, trace = $13,
+                   langfuse_trace_id = $14
                WHERE run_id = $1"#,
             run_id,
             draft.prompt_tokens,
@@ -187,6 +192,7 @@ impl LlmRun {
             draft.error.as_deref(),
             draft.metadata,
             draft.trace,
+            draft.langfuse_trace_id.as_deref(),
         )
         .execute(&state.database.pool)
         .await?;

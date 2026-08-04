@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT staging_id, term, content, source_discourse_id, source_topic_id,\n                    source_post_number, link_reason, created_at\n             FROM llm_memory_staging\n             ORDER BY created_at DESC\n             LIMIT $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "staging_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "term",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "source_discourse_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "source_topic_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "source_post_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "link_reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "fdda758faddda01f6e35526540c8d14c71e5c9a8aff497bc58c49d4d9fe706c4"
+}
