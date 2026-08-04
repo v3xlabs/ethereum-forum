@@ -5,6 +5,7 @@ use serde::Deserialize;
 
 use crate::modules::llm::streams::StreamRegistry;
 
+pub mod content;
 pub mod curator;
 pub mod digest;
 pub mod executor;
@@ -140,13 +141,29 @@ impl LlmService {
 use crate::models::llm::LlmMemory;
 use crate::modules::llm::tokens::estimate_tokens_in_text;
 
+/// Keeps only entries whose term appears in `corpus`. The glossary grows
+/// without bound but any one thread mentions a handful of terms, so injecting
+/// all of them scales the cost of every call with the size of the glossary
+/// rather than with the work being done. `None` keeps everything, which is what
+/// the curator needs — it is the thing that edits the glossary.
+pub fn relevant_memory<'a>(memory: &'a [LlmMemory], corpus: Option<&str>) -> Vec<&'a LlmMemory> {
+    let Some(corpus) = corpus else {
+        return memory.iter().collect();
+    };
+    let haystack = corpus.to_lowercase();
+    memory
+        .iter()
+        .filter(|entry| haystack.contains(&entry.term.to_lowercase()))
+        .collect()
+}
+
 /// Renders the shared memory glossary into a system-prompt section, with
 /// source links labelled briefly, capped to `token_budget` tokens. Returns an
 /// empty string when memory is empty or the budget is zero. Entries are
 /// rendered in `term` order; once the budget is exhausted further entries are
 /// dropped (with a warning) so a growing glossary can never silently bloat
 /// every run.
-pub fn render_memory_section(memory: &[LlmMemory], token_budget: usize) -> String {
+pub fn render_memory_section(memory: &[&LlmMemory], token_budget: usize) -> String {
     if memory.is_empty() || token_budget == 0 {
         return String::new();
     }
@@ -230,7 +247,7 @@ mod tests {
     fn empty_memory_or_zero_budget_returns_empty() {
         assert_eq!(render_memory_section(&[], 4096), "");
         let m = memory("EIP-1559", "Fee market change.", json!([]));
-        assert_eq!(render_memory_section(&[m], 0), "");
+        assert_eq!(render_memory_section(&[&m], 0), "");
     }
 
     #[test]
@@ -244,7 +261,7 @@ mod tests {
                 {"url": "", "reason": "dropped"},
             ]),
         );
-        let out = render_memory_section(&[m], 4096);
+        let out = render_memory_section(&[&m], 4096);
         assert!(out.contains("- **EIP-1559**: Fee market change."));
         assert!(out.contains("  - /t/magicians/1234#p-2 — core proposal"));
         assert!(out.contains("  - https://eips.ethereum.org/EIPS/eip-1559"));
@@ -263,9 +280,47 @@ mod tests {
                 )
             })
             .collect();
-        let out = render_memory_section(&entries, 300);
+        let refs: Vec<&LlmMemory> = entries.iter().collect();
+        let out = render_memory_section(&refs, 300);
         assert!(!out.is_empty());
         assert!(out.contains("term-0"));
         assert!(!out.contains("term-49"));
+    }
+}
+
+#[cfg(test)]
+mod relevance_tests {
+    use super::relevant_memory;
+    use crate::models::llm::LlmMemory;
+    use chrono::Utc;
+
+    fn entry(term: &str) -> LlmMemory {
+        LlmMemory {
+            entry_id: 0,
+            term: term.into(),
+            content: "definition".into(),
+            sources: None,
+            updated_at: Utc::now(),
+        }
+    }
+
+    #[test]
+    fn keeps_only_terms_present_in_the_corpus() {
+        let memory = vec![entry("EIP-1559"), entry("blob"), entry("PeerDAS")];
+        let kept = relevant_memory(&memory, Some("Discussion of EIP-1559 and blob throughput"));
+        let terms: Vec<&str> = kept.iter().map(|e| e.term.as_str()).collect();
+        assert_eq!(terms, vec!["EIP-1559", "blob"]);
+    }
+
+    #[test]
+    fn matching_ignores_case() {
+        let memory = vec![entry("PeerDAS")];
+        assert_eq!(relevant_memory(&memory, Some("peerdas rollout")).len(), 1);
+    }
+
+    #[test]
+    fn no_corpus_keeps_everything_for_the_curator() {
+        let memory = vec![entry("EIP-1559"), entry("blob")];
+        assert_eq!(relevant_memory(&memory, None).len(), 2);
     }
 }

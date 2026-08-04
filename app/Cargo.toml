@@ -85,4 +85,5 @@ url = "2.5.4"
 meilisearch-sdk = "0.28.0"
 strip-tags = "0.1.0"
 discourse-webhooks = { version = "0.2", features = ["async"] }
+htmd = "0.5"
 # openidconnect = { version = "4", default-features = false, features = ["rustls-tls"] }

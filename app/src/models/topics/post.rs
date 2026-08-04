@@ -27,34 +27,45 @@ pub struct Post {
     pub extra: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone)]
+/// A post as the summarizer sees it: Markdown content plus exactly the fields
+/// the prompt asks the model to cite. The discourse instance is stated once in
+/// the chunk header rather than repeated per post.
 pub struct SummaryPost {
-    pub discourse_id: String,
-    pub post_id: i32,
-    pub user_id: i32,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    pub post_number: i32,
     pub username: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub created_at: Option<DateTime<Utc>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cooked: Option<String>,
+    pub markdown: String,
 }
 
 impl From<Post> for SummaryPost {
     fn from(post: Post) -> SummaryPost {
         Self {
-            discourse_id: post.discourse_id,
-            post_id: post.post_id,
-            user_id: post.user_id,
-            updated_at: post.updated_at,
+            post_number: post.post_number,
+            username: post
+                .extra
+                .as_ref()
+                .and_then(|extra| extra.get("username"))
+                .and_then(|username| username.as_str())
+                .map(str::to_string),
             created_at: post.created_at,
-            cooked: post.cooked,
-            // get username field from extra object
-            username: None,
-            // username: self.extra.map(|x| x.as_object().map(|y| y.get("username"))).flatten(),
+            markdown: post
+                .cooked
+                .as_deref()
+                .map(crate::modules::llm::content::cooked_to_markdown)
+                .unwrap_or_default(),
         }
+    }
+}
+
+impl SummaryPost {
+    pub fn render(&self) -> String {
+        let author = self.username.as_deref().unwrap_or("unknown");
+        let date = self
+            .created_at
+            .map(|at| at.format("%Y-%m-%d").to_string())
+            .unwrap_or_default();
+        format!("#{} @{author} {date}\n{}", self.post_number, self.markdown)
     }
 }
 

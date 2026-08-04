@@ -160,7 +160,7 @@ fn tool_impls() -> Vec<&'static dyn executor::LlmTool> {
     ]
 }
 
-fn build_shared_memory_section(state: &AppState) -> String {
+fn build_shared_memory_section(state: &AppState, corpus: Option<&str>) -> String {
     let pool = &state.database.pool;
     let memory = task::block_on(async {
         sqlx::query_as!(
@@ -177,16 +177,33 @@ fn build_shared_memory_section(state: &AppState) -> String {
         .as_ref()
         .map(|llm| llm.config.memory_token_budget)
         .unwrap_or(0);
-    crate::modules::llm::render_memory_section(&memory, budget)
+    let relevant = crate::modules::llm::relevant_memory(&memory, corpus);
+    crate::modules::llm::render_memory_section(&relevant, budget)
 }
 
-fn build_system_prompt(base: &str, state: &AppState) -> String {
-    let memory_section = build_shared_memory_section(state);
+fn build_system_prompt(base: &str, state: &AppState, corpus: Option<&str>) -> String {
+    let memory_section = build_shared_memory_section(state, corpus);
     if memory_section.is_empty() {
         base.to_string()
     } else {
         format!("{base}{memory_section}")
     }
+}
+
+/// Posts as the model reads them: one header for the whole chunk, then each
+/// post as Markdown. Plain text rather than JSON, which halves the payload
+/// without losing anything the summarizer uses.
+fn render_chunk(topic: &Topic, posts: &[SummaryPost]) -> String {
+    let mut out = format!(
+        "topic: {} ({}/{})\n",
+        topic.title, topic.discourse_id, topic.topic_id
+    );
+    for post in posts {
+        out.push('\n');
+        out.push_str(&post.render());
+        out.push('\n');
+    }
+    out
 }
 
 async fn chunk_posts(
@@ -214,8 +231,7 @@ async fn chunk_posts(
     let mut current_tokens = 0usize;
 
     for post in summary_posts {
-        let post_text = serde_json::to_string(&post).unwrap_or_default();
-        let tokens = estimate_tokens_in_text(&post_text) + 4;
+        let tokens = estimate_tokens_in_text(&post.render()) + 4;
 
         if current_tokens + tokens > CHUNK_TOKEN_BUDGET && !current_chunk.is_empty() {
             chunks.push(std::mem::take(&mut current_chunk));
@@ -360,9 +376,17 @@ async fn generate_summary(
         return Err(SummaryError::Generation("no posts found".to_string()));
     }
 
+    let corpus = chunks
+        .iter()
+        .flatten()
+        .map(|post| post.markdown.as_str())
+        .chain(std::iter::once(topic.title.as_str()))
+        .collect::<Vec<_>>()
+        .join("\n");
+
     let base_prompt = format!(
         "{}\n\n## This thread\n\nThis thread lives on the \"{did}\" discourse instance as topic {tid}. User links MUST use the form [@username](/u/{did}/username) and post links the form /t/{did}/{tid}#p-{{post_number}}. Refer to users only by their username, never by numeric user ID; if a post has no username, refer to \"a community member\" with no link.",
-        build_system_prompt(SUMMARY_PROMPT, state),
+        build_system_prompt(SUMMARY_PROMPT, state, Some(&corpus)),
         did = topic.discourse_id,
         tid = topic.topic_id,
     );
@@ -461,13 +485,7 @@ async fn run_with_tools(
             .await;
     }
 
-    let posts_payload = chunks.first().map(|chunk| {
-        serde_json::to_string(&json!({
-            "topic_info": topic,
-            "posts": chunk,
-        }))
-        .unwrap_or_default()
-    });
+    let posts_payload = chunks.first().map(|chunk| render_chunk(topic, chunk));
 
     let mut messages = vec![ChatCompletionRequestMessage::System(
         ChatCompletionRequestSystemMessage {
@@ -589,12 +607,7 @@ async fn fold_chunks(
                 name: None,
             }),
             ChatCompletionRequestMessage::User(ChatCompletionRequestUserMessage {
-                content: serde_json::to_string(&json!({
-                    "topic_info": topic,
-                    "posts": chunk,
-                }))
-                .map_err(|e| SummaryError::Generation(e.to_string()))?
-                .into(),
+                content: render_chunk(topic, chunk).into(),
                 name: None,
             }),
         ];

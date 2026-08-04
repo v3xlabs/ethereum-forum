@@ -117,7 +117,7 @@ fn build_previous_digest_context(state: &AppState) -> String {
     }
 }
 
-fn build_shared_memory_section(state: &AppState) -> String {
+fn build_shared_memory_section(state: &AppState, corpus: Option<&str>) -> String {
     let pool = &state.database.pool;
     let memory = task::block_on(async {
         sqlx::query_as!(
@@ -134,7 +134,8 @@ fn build_shared_memory_section(state: &AppState) -> String {
         .as_ref()
         .map(|llm| llm.config.memory_token_budget)
         .unwrap_or(0);
-    crate::modules::llm::render_memory_section(&memory, budget)
+    let relevant = crate::modules::llm::relevant_memory(&memory, corpus);
+    crate::modules::llm::render_memory_section(&relevant, budget)
 }
 
 /// Emits the run to Langfuse, returning the trace id for `llm_runs`.
@@ -264,7 +265,8 @@ async fn generate_and_store_inner(
     }
 
     let previous_digest = build_previous_digest_context(state);
-    let shared_memory = build_shared_memory_section(state);
+    let corpus = serde_json::to_string(&topic_payloads).unwrap_or_default();
+    let shared_memory = build_shared_memory_section(state, Some(&corpus));
 
     let system_prompt = format!(
         "{}{}{}",

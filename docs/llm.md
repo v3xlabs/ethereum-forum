@@ -229,22 +229,56 @@ Tool executions are emitted as `langfuse.observation.type = "tool"` with
 `gen_ai.tool.name` and `gen_ai.tool.call.id`, which gives them the wrench icon
 and tool filtering.
 
+### What we send the models
+
+Discourse `cooked` is rendered HTML, and it carries structure the summarizer
+needs: code blocks, tables, links, and quoted posts with attribution. It is
+converted to Markdown (`modules::llm::content`), **not** stripped — stripping
+is ~6pp smaller but discards code fences, link targets and quote attribution.
+Only rendering chrome is dropped: icon SVGs, avatars, and upload dimension
+labels.
+
+Posts reach the model as text, not JSON:
+
+```
+topic: <title> (<discourse_id>/<topic_id>)
+
+#<post_number> @<username> <YYYY-MM-DD>
+<markdown>
+```
+
+The discourse instance is stated once per chunk instead of once per post, and
+`post_id`/`user_id`/`updated_at` are not sent at all — the model cannot use a
+raw numeric id, and `summary.md` asks it to cite `#p-<post_number>` and
+`@username`, which are the fields it now actually receives.
+
+The glossary is filtered to entries whose term appears in the text being
+summarized (`relevant_memory`), with the token budget still the hard ceiling.
+Injecting all of it made every call scale with the size of the glossary rather
+than with the work being done. The curator passes `None` and keeps receiving
+everything, since it is the thing that edits the glossary.
+
+Measured on `magicians/75` (a 111-post thread), before and after: **110,620 →
+47,564 input tokens, −57%**, and 3 fold sections became 2 because more posts fit
+per chunk.
+
 ### Traces, sessions and nesting
 
 A trace id is unique per run and is generated in `RunRecorder::new`, not at
 export time, so work a run triggers can attach to it while the run is still
 going.
 
-Sessions group traces and are deliberately *not* unique:
+Sessions are one per invocation:
 
 | Run | Session | Groups |
 |---|---|---|
-| summary | `{discourse_id}:{topic_id}` | every regeneration of one thread |
-| digest | `digest:{ISO week}` | that week's digests |
-| curator | `curator:{ISO week}` | that week's curator runs |
+| summary | `summary:{discourse_id}:{topic_id}@{trace}` | one summarization attempt |
+| digest | `digest@{trace}` | one digest run |
+| curator | `curator@{trace}` | one curator run |
 
-Background jobs are bucketed by week so a session stays navigable instead of
-accumulating every run ever made.
+One session per invocation, so the sessions list reads as a list of attempts.
+The descriptor prefix keeps it scannable; the trace suffix keeps repeat
+attempts distinct.
 
 A summary that a digest or curator triggers through `get_topic_summary` is
 emitted **inside the caller's trace**, nested under the specific tool-call
