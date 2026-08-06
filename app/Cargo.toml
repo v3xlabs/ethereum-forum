@@ -75,7 +75,7 @@ tracing = { version = "0.1.40", features = ["attributes"] }
 tracing-opentelemetry = { version = "0.29.0" }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
-jsonwebtoken = "9.3.0"
+jsonwebtoken = "10.3.0"
 urlencoding = "2.1.3"
 url = "2.5.4"
 meilisearch-sdk = "0.28.0"
